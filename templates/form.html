@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questionário Altas Habilidades/Superdotação</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Questionário para a Família</h1>
+            <p class="subtitle">Atendimento Educacional Especializado - Altas Habilidades/Superdotação</p>
+            <p class="subtitle">Secretaria de Estado de Educação do Distrito Federal</p>
+        </div>
+
+        <form method="post" action="{{ url_for('submit') }}">
+            <!-- SEÇÃO I: IDENTIFICAÇÃO DO ESTUDANTE -->
+            <div class="section">
+                <h2 class="section-title">I - Identificação do Estudante</h2>
+                
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="nome">Nome Completo</label>
+                        <input type="text" name="nome" id="nome" required>
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="idade_anos">Idade (anos)</label>
+                        <input type="number" name="idade_anos" id="idade_anos" class="small-input" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="idade_meses">Idade (meses)</label>
+                        <input type="number" name="idade_meses" id="idade_meses" class="small-input" min="0" max="11">
+                    </div>
+                    <div class="form-group">
+                        <label for="data_nascimento">Data de Nascimento</label>
+                        <input type="date" name="data_nascimento" id="data_nascimento">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label>Sexo</label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" name="sexo" value="Feminino" id="sexo_f">
+                                <label for="sexo_f">Feminino</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" name="sexo" value="Masculino" id="sexo_m">
+                                <label for="sexo_m">Masculino</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="naturalidade">Naturalidade</label>
+                        <input type="text" name="naturalidade" id="naturalidade">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="endereco">Endereço Residencial</label>
+                    <textarea name="endereco" id="endereco" rows="2"></textarea>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="fones">Telefone(s)</label>
+                        <input type="text" name="fones" id="fones">
+                    </div>
+                    <div class="form-group">
+                        <label for="celular">Celular</label>
+                        <input type="text" name="celular" id="celular">
+                    </div>
+                    <div class="form-group">
+                        <label for="cep">CEP</label>
+                        <input type="text" name="cep" id="cep">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="unidade_escolar">Unidade Escolar de Origem</label>
+                        <input type="text" name="unidade_escolar" id="unidade_escolar">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="serie">Série</label>
+                        <input type="text" name="serie" id="serie">
+                    </div>
+                    <div class="form-group">
+                        <label for="turma">Turma</label>
+                        <input type="text" name="turma" id="turma">
+                    </div>
+                    <div class="form-group">
+                        <label for="turno">Turno</label>
+                        <select name="turno" id="turno">
+                            <option value="">--</option>
+                            <option value="Matutino">Matutino</option>
+                            <option value="Vespertino">Vespertino</option>
+                            <option value="Integral">Integral</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Dados do Pai</h3>
+                <div class="form-group">
+                    <label for="nome_pai">Nome do Pai</label>
+                    <input type="text" name="nome_pai" id="nome_pai">
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="grau_instrucao_pai">Grau de Instrução</label>
+                        <input type="text" name="grau_instrucao_pai" id="grau_instrucao_pai">
+                    </div>
+                    <div class="form-group">
+                        <label for="profissao_pai">Profissão</label>
+                        <input type="text" name="profissao_pai" id="profissao_pai">
+                    </div>
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="local_trabalho_pai">Local de Trabalho</label>
+                        <input type="text" name="local_trabalho_pai" id="local_trabalho_pai">
+                    </div>
+                    <div class="form-group">
+                        <label for="fone_pai">Telefone</label>
+                        <input type="text" name="fone_pai" id="fone_pai">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Dados da Mãe</h3>
+                <div class="form-group">
+                    <label for="nome_mae">Nome da Mãe</label>
+                    <input type="text" name="nome_mae" id="nome_mae">
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="grau_instrucao_mae">Grau de Instrução</label>
+                        <input type="text" name="grau_instrucao_mae" id="grau_instrucao_mae">
+                    </div>
+                    <div class="form-group">
+                        <label for="profissao_mae">Profissão</label>
+                        <input type="text" name="profissao_mae" id="profissao_mae">
+                    </div>
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="local_trabalho_mae">Local de Trabalho</label>
+                        <input type="text" name="local_trabalho_mae" id="local_trabalho_mae">
+                    </div>
+                    <div class="form-group">
+                        <label for="fone_mae">Telefone</label>
+                        <input type="text" name="fone_mae" id="fone_mae">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Outro Responsável (se aplicável)</h3>
+                <div class="form-group">
+                    <label for="outro_responsavel">Nome</label>
+                    <input type="text" name="outro_responsavel" id="outro_responsavel">
+                </div>
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="fone_outro_responsavel">Telefone(s)</label>
+                        <input type="text" name="fone_outro_responsavel" id="fone_outro_responsavel">
+                    </div>
+                    <div class="form-group">
+                        <label for="celular_outro_responsavel">Celular</label>
+                        <input type="text" name="celular_outro_responsavel" id="celular_outro_responsavel">
+                    </div>
+                    <div class="form-group">
+                        <label for="email_outro_responsavel">E-mail</label>
+                        <input type="email" name="email_outro_responsavel" id="email_outro_responsavel">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO II: DADOS DA FAMÍLIA -->
+            <div class="section">
+                <h2 class="section-title">II - Dados da Família</h2>
+                
+                <div class="form-group">
+                    <label for="genograma">Genograma (descreva a estrutura familiar)</label>
+                    <textarea name="genograma" id="genograma" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantas_pessoas">Quantas pessoas moram em sua casa?</label>
+                    <input type="number" name="quantas_pessoas" id="quantas_pessoas" class="small-input" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="parentesco_idades">Parentesco e idade dessas pessoas (do mais velho para o mais novo)</label>
+                    <textarea name="parentesco_idades" id="parentesco_idades" rows="4"></textarea>
+                </div>
+            </div>
+
+            <!-- SEÇÃO III: DADOS DO DESENVOLVIMENTO -->
+            <div class="section">
+                <h2 class="section-title">III - Dados do Desenvolvimento</h2>
+                
+                <h3 style="margin-bottom: 15px; color: #667eea;">Gestação e Parto</h3>
+                
+                <div class="form-group">
+                    <label>A mãe teve algum problema durante a gestação?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="mae_problema_gestacao" value="sim" id="gestacao_sim">
+                            <label for="gestacao_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="mae_problema_gestacao" value="nao" id="gestacao_nao">
+                            <label for="gestacao_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mae_problema_gestacao_desc">Se sim, descreva o problema</label>
+                    <textarea name="mae_problema_gestacao_desc" id="mae_problema_gestacao_desc" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>O parto foi</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="parto_tipo" value="normal" id="parto_normal">
+                            <label for="parto_normal">Normal</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="parto_tipo" value="cesárea" id="parto_cesarea">
+                            <label for="parto_cesarea">Cesárea</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Houve algum problema durante ou após o parto?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="parto_problema" value="sim" id="parto_prob_sim">
+                            <label for="parto_prob_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="parto_problema" value="nao" id="parto_prob_nao">
+                            <label for="parto_prob_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="parto_problema_desc">Se sim, descreva o problema</label>
+                    <textarea name="parto_problema_desc" id="parto_problema_desc" rows="2"></textarea>
+                </div>
+
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Sono e Marcos do Desenvolvimento</h3>
+
+                <div class="form-group">
+                    <label>Quando bebê, ele(a) dormia bem?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="sono_bebe_bem" value="sim" id="sono_sim">
+                            <label for="sono_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="sono_bebe_bem" value="nao" id="sono_nao">
+                            <label for="sono_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="sono_atual">Atualmente, como é o sono dele(a)?</label>
+                    <textarea name="sono_atual" id="sono_atual" rows="2"></textarea>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="andou_anos">Começou a andar com (anos)</label>
+                        <input type="number" name="andou_anos" id="andou_anos" class="small-input" min="0" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="andou_meses">Começou a andar com (meses)</label>
+                        <input type="number" name="andou_meses" id="andou_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="falou_anos">Começou a falar com (anos)</label>
+                        <input type="number" name="falou_anos" id="falou_anos" class="small-input" min="0" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="falou_meses">Começou a falar com (meses)</label>
+                        <input type="number" name="falou_meses" id="falou_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="frases_completas_idade_anos">Frases completas com (anos)</label>
+                        <input type="number" name="frases_completas_idade_anos" id="frases_completas_idade_anos" class="small-input" min="0" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="frases_completas_idade_meses">Frases completas com (meses)</label>
+                        <input type="number" name="frases_completas_idade_meses" id="frases_completas_idade_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Seu(sua) filho(a) teve algum problema de saúde durante os primeiros anos?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="problema_saude_primeiros_anos" value="sim" id="saude_sim">
+                            <label for="saude_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="problema_saude_primeiros_anos" value="nao" id="saude_nao">
+                            <label for="saude_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="problema_saude_qual">Se sim, qual problema?</label>
+                    <textarea name="problema_saude_qual" id="problema_saude_qual" rows="2"></textarea>
+                </div>
+            </div>
+
+            <!-- SEÇÃO IV: VIDA ESCOLAR -->
+            <div class="section">
+                <h2 class="section-title">IV - Vida Escolar</h2>
+                
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="ingresso_escola_anos">Ingresso na escola aos (anos)</label>
+                        <input type="number" name="ingresso_escola_anos" id="ingresso_escola_anos" class="small-input" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="ingresso_escola_meses">Ingresso na escola aos (meses)</label>
+                        <input type="number" name="ingresso_escola_meses" id="ingresso_escola_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Antes de ingressar na escola, já sabia ler ou escrever?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="antes_saber_ler_escrever" value="sim" id="antes_sim">
+                            <label for="antes_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="antes_saber_ler_escrever" value="nao" id="antes_nao">
+                            <label for="antes_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="antes_saber_especifique">Se sim, especifique</label>
+                    <textarea name="antes_saber_especifique" id="antes_saber_especifique" rows="2"></textarea>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="leitura_comecou_anos">Começou a ler aos (anos)</label>
+                        <input type="number" name="leitura_comecou_anos" id="leitura_comecou_anos" class="small-input" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="leitura_comecou_meses">Começou a ler aos (meses)</label>
+                        <input type="number" name="leitura_comecou_meses" id="leitura_comecou_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="escrita_comecou_anos">Começou a escrever aos (anos)</label>
+                        <input type="number" name="escrita_comecou_anos" id="escrita_comecou_anos" class="small-input" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="escrita_comecou_meses">Começou a escrever aos (meses)</label>
+                        <input type="number" name="escrita_comecou_meses" id="escrita_comecou_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="calculo_comecou_anos">Começou a fazer cálculos aos (anos)</label>
+                        <input type="number" name="calculo_comecou_anos" id="calculo_comecou_anos" class="small-input" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="calculo_comecou_meses">Começou a fazer cálculos aos (meses)</label>
+                        <input type="number" name="calculo_comecou_meses" id="calculo_comecou_meses" class="small-input" min="0" max="11">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Em relação aos estudantes da mesma faixa etária, ele(a) é considerado(a)</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="comparacao_faixa_etaria" value="com dificuldade" id="comp_dif">
+                            <label for="comp_dif">Com dificuldade</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="comparacao_faixa_etaria" value="com facilidade" id="comp_fac">
+                            <label for="comp_fac">Com facilidade para aprender</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Geralmente faz seus deveres</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="faz_deveres" value="sozinho" id="deveres_soz">
+                            <label for="deveres_soz">Sozinho(a)</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="faz_deveres" value="com ajuda" id="deveres_ajuda">
+                            <label for="deveres_ajuda">Com ajuda de alguém</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="quem_ajuda_tarefas">Quem o(a) ajuda nas tarefas escolares?</label>
+                    <input type="text" name="quem_ajuda_tarefas" id="quem_ajuda_tarefas">
+                </div>
+
+                <div class="form-group">
+                    <label for="disciplinas_facilidade">Em quais disciplinas tem mais facilidade?</label>
+                    <input type="text" name="disciplinas_facilidade" id="disciplinas_facilidade">
+                </div>
+
+                <div class="form-group">
+                    <label for="disciplinas_dificuldade">Em quais disciplinas tem mais dificuldade?</label>
+                    <input type="text" name="disciplinas_dificuldade" id="disciplinas_dificuldade">
+                </div>
+
+                <div class="form-group">
+                    <label for="demonstra_habilidade_em">Meu(minha) filho(a) demonstra habilidade em</label>
+                    <input type="text" name="demonstra_habilidade_em" id="demonstra_habilidade_em">
+                </div>
+
+                <div class="form-group">
+                    <label for="assunto_interesse">O assunto que tem mais interesse é</label>
+                    <input type="text" name="assunto_interesse" id="assunto_interesse">
+                </div>
+
+                <div class="form-group">
+                    <label>Gosta de ler?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="gosta_de_ler" value="sim" id="ler_sim">
+                            <label for="ler_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="gosta_de_ler" value="nao" id="ler_nao">
+                            <label for="ler_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo_leitura">Qual tipo de leitura? (livros técnicos, gibis, literatura, outros)</label>
+                    <input type="text" name="tipo_leitura" id="tipo_leitura">
+                </div>
+
+                <div class="form-group">
+                    <label>Qual a opinião do seu(sua) filho(a) com relação à escola?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="opiniao_sobre_escola" value="gosta" id="escola_gosta">
+                            <label for="escola_gosta">Gosta</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="opiniao_sobre_escola" value="não gosta" id="escola_nao">
+                            <label for="escola_nao">Não gosta</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="opiniao_por_que">Por quê?</label>
+                    <textarea name="opiniao_por_que" id="opiniao_por_que" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="o_que_acha_professores">O que ele(a) acha dos professores?</label>
+                    <textarea name="o_que_acha_professores" id="o_que_acha_professores" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="o_que_professores_falam">O que os professores falam a respeito dele(a)?</label>
+                    <textarea name="o_que_professores_falam" id="o_que_professores_falam" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="o_que_pensa_colegas">O que ele(a) pensa dos colegas?</label>
+                    <textarea name="o_que_pensa_colegas" id="o_que_pensa_colegas" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Já participou de concursos na escola?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="participou_concursos" value="sim" id="concurso_sim">
+                            <label for="concurso_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="participou_concursos" value="nao" id="concurso_nao">
+                            <label for="concurso_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Foi premiado(a)?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="foi_premiado" value="sim" id="premiado_sim">
+                            <label for="premiado_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="foi_premiado" value="nao" id="premiado_nao">
+                            <label for="premiado_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="participou_concursos_especifique">Especifique concurso/premiação</label>
+                    <textarea name="participou_concursos_especifique" id="participou_concursos_especifique" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Já foi acelerado(a) alguma vez?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="foi_acelerado" value="sim" id="acel_sim">
+                            <label for="acel_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="foi_acelerado" value="nao" id="acel_nao">
+                            <label for="acel_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="para_qual_serie">Para qual série foi acelerado(a)?</label>
+                    <input type="text" name="para_qual_serie" id="para_qual_serie">
+                </div>
+
+                <div class="form-group">
+                    <label>Já reprovou alguma vez?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="ja_reprovou" value="sim" id="reprov_sim">
+                            <label for="reprov_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="ja_reprovou" value="nao" id="reprov_nao">
+                            <label for="reprov_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="em_quais_series_reprovou">Em qual(is) série(s) reprovou?</label>
+                    <input type="text" name="em_quais_series_reprovou" id="em_quais_series_reprovou">
+                </div>
+            </div>
+
+            <!-- SEÇÃO V: VIDA SOCIAL -->
+            <div class="section">
+                <h2 class="section-title">V - Vida Social</h2>
+                
+                <div class="form-group">
+                    <label>Tem muitos amigos?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="tem_muitos_amigos" value="sim" id="amigos_sim">
+                            <label for="amigos_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="tem_muitos_amigos" value="nao" id="amigos_nao">
+                            <label for="amigos_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Gosta de ficar</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="gosta_de_ficar" value="sozinho" id="ficar_soz">
+                            <label for="ficar_soz">Sozinho(a)</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="gosta_de_ficar" value="em grupo" id="ficar_grupo">
+                            <label for="ficar_grupo">Em grupo</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="gosta_de_ficar" value="sempre com companhia" id="ficar_comp">
+                            <label for="ficar_comp">Sempre com companhia</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="relacionamento_familia">Como é o relacionamento com os familiares?</label>
+                    <textarea name="relacionamento_familia" id="relacionamento_familia" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Pratica algum esporte?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="pratica_esporte" value="sim" id="esporte_sim">
+                            <label for="esporte_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="pratica_esporte" value="nao" id="esporte_nao">
+                            <label for="esporte_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="qual_esporte">Qual esporte?</label>
+                        <input type="text" name="qual_esporte" id="qual_esporte">
+                    </div>
+                    <div class="form-group">
+                        <label for="frequencia_esporte">Com que frequência?</label>
+                        <input type="text" name="frequencia_esporte" id="frequencia_esporte">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Vai a teatros, cinemas, museus, etc.?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="vai_a_cultura" value="sim" id="cultura_sim">
+                            <label for="cultura_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="vai_a_cultura" value="nao" id="cultura_nao">
+                            <label for="cultura_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="frequencia_cultura">Com que frequência?</label>
+                    <input type="text" name="frequencia_cultura" id="frequencia_cultura">
+                </div>
+
+                <div class="form-group">
+                    <label>Tem alguma religião?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="tem_religiao" value="sim" id="religiao_sim">
+                            <label for="religiao_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="tem_religiao" value="nao" id="religiao_nao">
+                            <label for="religiao_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="qual_religiao">Especifique a religião</label>
+                    <input type="text" name="qual_religiao" id="qual_religiao">
+                </div>
+
+                <div class="form-group">
+                    <label>Vai à Igreja?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="vai_igreja" value="sim" id="igreja_sim">
+                            <label for="igreja_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="vai_igreja" value="nao" id="igreja_nao">
+                            <label for="igreja_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="frequencia_igreja">Com que frequência?</label>
+                    <input type="text" name="frequencia_igreja" id="frequencia_igreja">
+                </div>
+
+                <div class="form-group">
+                    <label>Participa de alguma atividade extraescolar? (social, acadêmica, religiosa, artística, outras)</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="participa_extraescolar" value="sim" id="extra_sim">
+                            <label for="extra_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="participa_extraescolar" value="nao" id="extra_nao">
+                            <label for="extra_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="extraescolar_especifique">Especifique a atividade extraescolar</label>
+                    <textarea name="extraescolar_especifique" id="extraescolar_especifique" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="horas_lazer_gosta">Nas horas de lazer, o que ele(a) mais gosta de fazer? (passeios, programas preferidos)</label>
+                    <textarea name="horas_lazer_gosta" id="horas_lazer_gosta" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Houve alguma mudança significativa durante o desenvolvimento de seu(sua) filho(a)?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="houve_mudanca_significativa" value="sim" id="mudanca_sim">
+                            <label for="mudanca_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="houve_mudanca_significativa" value="nao" id="mudanca_nao">
+                            <label for="mudanca_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mudanca_especifique">Especifique a mudança</label>
+                    <textarea name="mudanca_especifique" id="mudanca_especifique" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>É hábito da família realizar alguma atividade em comum?</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" name="familia_atividade_comum" value="sim" id="ativ_comum_sim">
+                            <label for="ativ_comum_sim">Sim</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" name="familia_atividade_comum" value="nao" id="ativ_comum_nao">
+                            <label for="ativ_comum_nao">Não</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="familia_atividade_especifique">Especifique a atividade</label>
+                        <input type="text" name="familia_atividade_especifique" id="familia_atividade_especifique">
+                    </div>
+                    <div class="form-group">
+                        <label for="familia_atividade_frequencia">Qual a frequência?</label>
+                        <input type="text" name="familia_atividade_frequencia" id="familia_atividade_frequencia">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO VI: DESCRIÇÃO BIOPSICOSSOCIAL -->
+            <div class="section">
+                <h2 class="section-title">VI - Descrição Biopsicossocial do Estudante</h2>
+                
+                <div class="form-group">
+                    <label for="caracteristicas_marcantes">Quais são as características mais marcantes na personalidade do(a) seu(sua) filho(a)? (aspectos emocionais, afetivos e aspectos a serem melhorados)</label>
+                    <textarea name="caracteristicas_marcantes" id="caracteristicas_marcantes" rows="5"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label style="margin-bottom: 15px;">Assinale as características que foram mais observadas pela família:</label>
+                    <div class="checkbox-list">
+                        {% for opt in checkbox_options %}
+                        <div class="checkbox-item">
+                            <input type="checkbox" name="observed_characteristics" value="{{opt}}" id="char_{{loop.index}}">
+                            <label for="char_{{loop.index}}">{{opt}}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO VII: INFORMAÇÕES ADICIONAIS -->
+            <div class="section">
+                <h2 class="section-title">VII - Informações Adicionais</h2>
+                
+                <div class="form-group">
+                    <label for="medicacao_controlada">Toma alguma medicação controlada?</label>
+                    <textarea name="medicacao_controlada" id="medicacao_controlada" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="acompanhamento">Faz algum acompanhamento médico/psicológico/psicopedagógico?</label>
+                    <textarea name="acompanhamento" id="acompanhamento" rows="2"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacoes">Observações</label>
+                    <textarea name="observacoes" id="observacoes" rows="4"></textarea>
+                </div>
+
+                <div class="inline-group">
+                    <div class="form-group">
+                        <label for="bairro_data">Data (Brasília)</label>
+                        <input type="date" name="bairro_data" id="bairro_data">
+                    </div>
+                    <div class="form-group">
+                        <label for="assinatura_psicologo">Carimbo/Assinatura do Psicólogo Responsável/Matrícula</label>
+                        <input type="text" name="assinatura_psicologo" id="assinatura_psicologo">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Enviar Questionário</button>
+        </form>
+    </div>
+</body>
+</html>

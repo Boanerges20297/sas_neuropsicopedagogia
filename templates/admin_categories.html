@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Categorias - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Espaçamento adicional no final da página */
+        .admin-main {
+            padding-bottom: 80px;
+        }
+        
+        .admin-container {
+            margin-bottom: 40px;
+        }
+        
+        .categories-grid {
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- Enhanced Header -->
+            <div class="admin-header">
+                <div class="header-content">
+                    <h1>
+                        <span>🏷️</span>
+                        <span>Gerenciar Categorias</span>
+                    </h1>
+                    <p>Organize e categorize seus testes cognitivos</p>
+                </div>
+                <button data-action="add-modal" class="btn-primary">
+                    <span>➕</span>
+                    <span>Nova Categoria</span>
+                </button>
+            </div>
+
+            <!-- Grid de Categorias -->
+            <div class="categories-grid">
+                {% if categories %}
+                    {% for category in categories %}
+                    <div class="category-card">
+                        <div class="category-card-header" style="background: '{{ category.cor or '#315b61' }}'">
+                            <span class="category-icon">{{ category.icone or '📋' }}</span>
+                        </div>
+                        <div class="category-card-body">
+                            <h3 class="category-name">{{ category.nome }}</h3>
+                            {% if category.descricao %}
+                            <p class="category-description">{{ category.descricao }}</p>
+                            {% endif %}
+                            <div class="category-meta">
+                                <span class="category-color-badge" style="background: '{{ category.cor or '#315b61' }}'">
+                                    {{ category.cor or '#315b61' }}
+                                </span>
+                                <span class="category-status {% if category.ativo %}status-active{% else %}status-inactive{% endif %}">
+                                    {{ '✓ Ativa' if category.ativo else '✗ Inativa' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="category-card-actions">
+                            <button data-action="edit" data-id="{{ category.id }}" class="btn-icon-action" title="Editar">
+                                ✏️
+                            </button>
+                            <button data-action="toggle" data-id="{{ category.id }}" data-status="{{ category.ativo }}" 
+                                    class="btn-icon-action" 
+                                    title="{{ 'Desativar' if category.ativo else 'Ativar' }}">
+                                {{ '👁️' if category.ativo else '👁️‍🗨️' }}
+                            </button>
+                            <button data-action="delete" data-id="{{ category.id }}" class="btn-icon-action btn-danger" title="Excluir">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">🏷️</div>
+                        <h3>Nenhuma categoria criada</h3>
+                        <p>Crie sua primeira categoria de teste cognitivo</p>
+                        <button data-action="add-modal" class="btn btn-primary">
+                            ➕ Criar Primeira Categoria
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para Adicionar/Editar Categoria -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">➕ Nova Categoria</h2>
+                <button data-action="close-modal" class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <div class="form-group">
+                        <label for="categoryNome" class="form-label">Nome da Categoria *</label>
+                        <input type="text" 
+                               id="categoryNome" 
+                               name="nome" 
+                               class="form-input" 
+                               required
+                               placeholder="Ex: TDAH">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoryDescricao" class="form-label">Descrição</label>
+                        <textarea id="categoryDescricao" 
+                                  name="descricao" 
+                                  class="form-textarea" 
+                                  rows="3"
+                                  placeholder="Breve descrição da categoria"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="categoryCor" class="form-label">Cor *</label>
+                            <input type="color" 
+                                   id="categoryCor" 
+                                   name="cor" 
+                                   class="form-input-color" 
+                                   value="#315b61"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoryIcone" class="form-label">Ícone (Emoji) *</label>
+                            <input type="text" 
+                                   id="categoryIcone" 
+                                   name="icone" 
+                                   class="form-input" 
+                                   required
+                                   placeholder="📋"
+                                   maxlength="2">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button data-action="close-modal" class="btn btn-secondary">Cancelar</button>
+                <button data-action="save" class="btn btn-primary">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de notificação -->
+    <div id="toast" class="toast"></div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        let editingCategoryId = null;
+
+        function openAddCategoryModal() {
+            document.getElementById('modalTitle').textContent = '➕ Nova Categoria';
+            document.getElementById('categoryForm').reset();
+            document.getElementById('categoryCor').value = '#315b61';
+            editingCategoryId = null;
+            document.getElementById('categoryModal').classList.add('show');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('show');
+            editingCategoryId = null;
+        }
+
+        async function saveCategory() {
+            const form = document.getElementById('categoryForm');
+            const formData = new FormData(form);
+
+            // Validação básica
+            const nome = formData.get('nome');
+            const cor = formData.get('cor');
+            const icone = formData.get('icone');
+
+            if (!nome || !cor || !icone) {
+                showToast('Preencha todos os campos obrigatórios', 'error');
+                return;
+            }
+
+            try {
+                const url = editingCategoryId 
+                    ? `/admin/categorias/${editingCategoryId}/editar`
+                    : '/admin/categorias/adicionar';
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    closeCategoryModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Erro ao salvar categoria', 'error');
+            }
+        }
+
+        async function editCategory(categoryId) {
+            try {
+                const response = await fetch(`/admin/categorias/${categoryId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const category = data.category;
+                    
+                    document.getElementById('modalTitle').textContent = '✏️ Editar Categoria';
+                    document.getElementById('categoryNome').value = category.nome;
+                    document.getElementById('categoryDescricao').value = category.descricao || '';
+                    document.getElementById('categoryCor').value = category.cor;
+                    document.getElementById('categoryIcone').value = category.icone;
+                    
+                    editingCategoryId = categoryId;
+                    document.getElementById('categoryModal').classList.add('show');
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Erro ao carregar categoria', 'error');
+            }
+        }
+
+        async function deleteCategory(categoryId) {
+            if (!confirm('Tem certeza que deseja excluir esta categoria?\n\nIsso pode afetar testes vinculados a ela.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/categorias/${categoryId}/excluir`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Erro ao excluir categoria', 'error');
+            }
+        }
+
+        async function toggleCategoryStatus(categoryId, currentStatus) {
+            const newStatus = currentStatus ? 0 : 1;
+            
+            try {
+                const response = await fetch(`/admin/categorias/${categoryId}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ativo: newStatus })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('Erro ao atualizar status', 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast toast-' + type + ' show';
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Fechar modal clicando fora
+        document.getElementById('categoryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCategoryModal();
+            }
+        });
+
+        // Event delegation para botões de ação
+        document.addEventListener('click', function(e) {
+            const button = e.target.closest('[data-action]');
+            if (!button) return;
+
+            const action = button.dataset.action;
+            const id = parseInt(button.dataset.id);
+
+            switch(action) {
+                case 'add-modal':
+                    openAddCategoryModal();
+                    break;
+                case 'edit':
+                    editCategory(id);
+                    break;
+                case 'toggle':
+                    const status = parseInt(button.dataset.status);
+                    toggleCategoryStatus(id, status);
+                    break;
+                case 'delete':
+                    deleteCategory(id);
+                    break;
+                case 'close-modal':
+                    closeCategoryModal();
+                    break;
+                case 'save':
+                    saveCategory();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.titulo }} - M.I. Joca de Sousa Teixeira</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Modern Navbar Styling */
+        .modern-navbar {
+            background: linear-gradient(135deg, #315b61 0%, #2a4d52 100%);
+            box-shadow: 0 4px 20px rgba(49, 91, 97, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid #4a8891;
+        }
+        
+        .navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-brand:hover {
+            transform: translateX(-3px);
+            color: #e0f2fe;
+        }
+        
+        .navbar-brand-icon {
+            font-size: 32px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .navbar-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .navbar-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .navbar-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .navbar-link-icon {
+            font-size: 18px;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-container {
+                height: auto;
+                flex-wrap: wrap;
+                padding: 16px;
+                gap: 12px;
+            }
+            
+            .navbar-brand {
+                font-size: 16px;
+            }
+            
+            .navbar-brand-icon {
+                font-size: 24px;
+            }
+            
+            .navbar-menu {
+                width: 100%;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            
+            .navbar-link {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Modern Navbar -->
+    <nav class="modern-navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('index') }}" class="navbar-brand">
+                <span class="navbar-brand-icon">👩‍⚕️</span>
+                <span>M.I. Joca de Sousa Teixeira</span>
+            </a>
+            <div class="navbar-menu">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('dashboard') }}" class="navbar-link">
+                        <span class="navbar-link-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('index') }}" class="navbar-link">
+                        <span class="navbar-link-icon">🏠</span>
+                        <span>Início</span>
+                    </a>
+                    <a href="{{ url_for('user_area') }}" class="navbar-link">
+                        <span class="navbar-link-icon">👤</span>
+                        <span>{{ current_user.username }}</span>
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="navbar-link">
+                        <span class="navbar-link-icon">🚪</span>
+                        <span>Sair</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('index') }}" class="navbar-link">
+                        <span class="navbar-link-icon">🏠</span>
+                        <span>Início</span>
+                    </a>
+                    <a href="{{ url_for('login') }}" class="navbar-link">
+                        <span class="navbar-link-icon">🔐</span>
+                        <span>Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="take-test-main">
+        <div class="test-container">
+            <!-- Header do Teste -->
+            <div class="test-header">
+                <div class="test-category" style="background-color: '{{ test.categoria_cor or '#315b61' }}';">
+                    {{ test.categoria_nome }}
+                </div>
+                <h1 class="test-title">{{ test.titulo }}</h1>
+                {% if test.descricao %}
+                <p class="test-description">{{ test.descricao }}</p>
+                {% endif %}
+                
+                {% if test.instrucoes %}
+                <div class="test-instructions">
+                    <h3>📋 Instruções</h3>
+                    <p>{{ test.instrucoes }}</p>
+                </div>
+                {% endif %}
+
+                <div class="test-meta">
+                    <span class="test-meta-item">📝 {{ questions|length }} questões</span>
+                    {% if test.tempo_estimado %}
+                    <span class="test-meta-item">⏱️ {{ test.tempo_estimado }} minutos</span>
+                    {% endif %}
+                    {% if test.pontuacao_maxima %}
+                    <span class="test-meta-item">🎯 Pontuação máxima: {{ test.pontuacao_maxima }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulário de Respostas -->
+            <form id="testForm" action="{{ url_for('submit_test_response', test_id=test.id) }}" method="POST">
+                <div class="questions-container">
+                    {% for question in questions %}
+                    <div class="question-block">
+                        <div class="question-number">Questão {{ loop.index }} {% if question.obrigatoria %}*{% endif %}</div>
+                        <div class="question-text">{{ question.enunciado }}</div>
+                        {% if question.pontos %}
+                        <div class="question-points-info">💎 {{ question.pontos }} ponto(s)</div>
+                        {% endif %}
+
+                        <div class="question-answer">
+                            {% if question.tipo == 'text' %}
+                                <input type="text" 
+                                       name="question_{{ question.id }}" 
+                                       id="question_{{ question.id }}"
+                                       class="form-input"
+                                       {% if question.obrigatoria %}required{% endif %}
+                                       placeholder="Digite sua resposta aqui">
+
+                            {% elif question.tipo == 'textarea' %}
+                                <textarea name="question_{{ question.id }}" 
+                                          id="question_{{ question.id }}"
+                                          class="form-textarea"
+                                          rows="4"
+                                          {% if question.obrigatoria %}required{% endif %}
+                                          placeholder="Digite sua resposta aqui"></textarea>
+
+                            {% elif question.tipo == 'multiple_choice' %}
+                                {% set opcoes = question.opcoes.split(',') %}
+                                <div class="radio-group">
+                                    {% for opcao in opcoes %}
+                                    <label class="radio-option">
+                                        <input type="radio" 
+                                               name="question_{{ question.id }}" 
+                                               value="{{ opcao.strip() }}"
+                                               {% if question.obrigatoria %}required{% endif %}>
+                                        <span class="radio-text">{{ opcao.strip() }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+
+                            {% elif question.tipo == 'scale' %}
+                                <div class="scale-container">
+                                    <div class="scale-labels">
+                                        <span>0 - Nunca</span>
+                                        <span>10 - Sempre</span>
+                                    </div>
+                                    <input type="range" 
+                                           name="question_{{ question.id }}" 
+                                           id="question_{{ question.id }}"
+                                           class="scale-input"
+                                           min="0" 
+                                           max="10" 
+                                           value="5"
+                                           {% if question.obrigatoria %}required{% endif %}
+                                           oninput="updateScaleValue(this)">
+                                    <div class="scale-value">Valor: <span id="value_{{ question.id }}">5</span></div>
+                                </div>
+
+                            {% elif question.tipo == 'yes_no' %}
+                                <div class="yes-no-group">
+                                    <label class="yes-no-option yes">
+                                        <input type="radio" 
+                                               name="question_{{ question.id }}" 
+                                               value="Sim"
+                                               {% if question.obrigatoria %}required{% endif %}>
+                                        <span>✓ Sim</span>
+                                    </label>
+                                    <label class="yes-no-option no">
+                                        <input type="radio" 
+                                               name="question_{{ question.id }}" 
+                                               value="Não"
+                                               {% if question.obrigatoria %}required{% endif %}>
+                                        <span>✗ Não</span>
+                                    </label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Informações Pessoais -->
+                <div class="personal-info-section">
+                    <h3>👤 Informações Pessoais</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nome" class="form-label">Nome Completo *</label>
+                            <input type="text" id="nome" name="nome" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="idade" class="form-label">Idade *</label>
+                            <input type="number" id="idade" name="idade" class="form-input" required min="1" max="120">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input type="email" id="email" name="email" class="form-input" placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefone" class="form-label">Telefone</label>
+                        <input type="tel" id="telefone" name="telefone" class="form-input" placeholder="(00) 00000-0000">
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="form-actions">
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Voltar</a>
+                    <button type="submit" class="btn btn-primary">Enviar Respostas ✓</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Toast de notificação -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Atualizar valor do slider em tempo real
+        function updateScaleValue(input) {
+            const valueDisplay = document.getElementById('value_' + input.id.split('_')[1]);
+            if (valueDisplay) {
+                valueDisplay.textContent = input.value;
+            }
+        }
+
+        // Confirmação antes de sair
+        let formSubmitted = false;
+        document.getElementById('testForm').addEventListener('submit', function() {
+            formSubmitted = true;
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (!formSubmitted) {
+                const formInputs = document.querySelectorAll('#testForm input, #testForm textarea');
+                let hasContent = false;
+                
+                formInputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        if (input.checked) hasContent = true;
+                    } else if (input.value.trim() !== '') {
+                        hasContent = true;
+                    }
+                });
+
+                if (hasContent) {
+                    e.preventDefault();
+                    e.returnValue = 'Você tem respostas não salvas. Deseja realmente sair?';
+                    return e.returnValue;
+                }
+            }
+        });
+
+        // Auto-save local (opcional - salva no localStorage)
+        function autoSave() {
+            const formData = {};
+            const inputs = document.querySelectorAll('#testForm input, #testForm textarea');
+            
+            inputs.forEach(input => {
+                if (input.type === 'radio') {
+                    if (input.checked) {
+                        formData[input.name] = input.value;
+                    }
+                } else {
+                    formData[input.name] = input.value;
+                }
+            });
+
+            localStorage.setItem('test_{{ test.id }}_draft', JSON.stringify(formData));
+        }
+
+        // Carregar auto-save ao iniciar
+        function loadAutoSave() {
+            const saved = localStorage.getItem('test_{{ test.id }}_draft');
+            if (saved) {
+                const formData = JSON.parse(saved);
+                
+                for (let [name, value] of Object.entries(formData)) {
+                    const input = document.querySelector(`[name="${name}"]`);
+                    if (input) {
+                        if (input.type === 'radio') {
+                            const radio = document.querySelector(`[name="${name}"][value="${value}"]`);
+                            if (radio) radio.checked = true;
+                        } else {
+                            input.value = value;
+                            // Atualizar display de scale se necessário
+                            if (input.type === 'range') {
+                                updateScaleValue(input);
+                            }
+                        }
+                    }
+                }
+
+                // Mostrar notificação
+                showToast('Respostas anteriores recuperadas', 'info');
+            }
+        }
+
+        // Salvar a cada 30 segundos
+        setInterval(autoSave, 30000);
+
+        // Salvar ao sair de um campo
+        document.querySelectorAll('#testForm input, #testForm textarea').forEach(input => {
+            input.addEventListener('change', autoSave);
+        });
+
+        // Carregar ao iniciar página
+        loadAutoSave();
+
+        // Limpar auto-save ao enviar
+        document.getElementById('testForm').addEventListener('submit', function() {
+            localStorage.removeItem('test_{{ test.id }}_draft');
+        });
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast toast-' + type + ' show';
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

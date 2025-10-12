@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - M.I. Joca de Sousa Teixeira</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navbar Moderna -->
+    <nav class="modern-navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('index') }}" class="navbar-brand">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
+                <div class="brand-text">
+                    <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
+                    <span class="brand-subtitle">Neuropsicopedagoga</span>
+                </div>
+            </a>
+            
+            <div class="navbar-menu">
+                <a href="{{ url_for('index') }}" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span>Responder Teste</span>
+                </a>
+                <a href="{{ url_for('user_area') }}" class="nav-item active">
+                    <span class="nav-icon">👤</span>
+                    <span>Meu Perfil</span>
+                </a>
+            </div>
+            
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn">
+                        <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
+                        <span class="user-name">{{ current_user.nome }}</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('user_area') }}" class="dropdown-link">
+                            <span>👤</span> Meu Perfil
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-link logout">
+                            <span>🚪</span> Sair
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="header-content">
+                    <h1 class="dashboard-title">Meu Perfil</h1>
+                    <p class="dashboard-subtitle">Gerencie suas informações pessoais</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <!-- Card de Informações Pessoais -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Informações Pessoais</h3>
+                        <button class="btn-outline" style="padding: 8px 16px; font-size: 13px;">Editar</button>
+                    </div>
+                    <div style="padding: 20px 0;">
+                        <div class="profile-field">
+                            <span class="field-label">Nome Completo</span>
+                            <span class="field-value">{{ current_user.nome }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="field-label">E-mail</span>
+                            <span class="field-value">{{ current_user.email }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="field-label">Data de Nascimento</span>
+                            <span class="field-value">{{ current_user.data_nascimento if current_user.data_nascimento else 'Não informado' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="field-label">Escolaridade</span>
+                            <span class="field-value">{{ current_user.escolaridade if current_user.escolaridade else 'Não informado' }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <span class="field-label">Telefone</span>
+                            <span class="field-value">{{ current_user.telefone if current_user.telefone else 'Não informado' }}</span>
+                        </div>
+                        <div class="profile-field" style="border-bottom: none;">
+                            <span class="field-label">Tipo de Conta</span>
+                            <span class="badge badge-user">{{ 'Administrador' if current_user.role == 'admin' else 'Usuário' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Ações Rápidas -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3 class="table-title">Ações Rápidas</h3>
+                    </div>
+                    <div style="padding: 20px 0;">
+                        <a href="{{ url_for('index') }}" class="action-link">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📝</div>
+                            <div>
+                                <div class="action-title">Preencher Novo Teste</div>
+                                <div class="action-desc">Iniciar uma nova avaliação</div>
+                            </div>
+                        </a>
+
+                        <a href="#" class="action-link">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🔒</div>
+                            <div>
+                                <div class="action-title">Alterar Senha</div>
+                                <div class="action-desc">Manter sua conta segura</div>
+                            </div>
+                        </a>
+
+                        <a href="#" class="action-link">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">📊</div>
+                            <div>
+                                <div class="action-title">Minhas Avaliações</div>
+                                <div class="action-desc">Ver histórico de testes</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ url_for('logout') }}" class="action-link" style="border-bottom: none;">
+                            <div class="action-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🚪</div>
+                            <div>
+                                <div class="action-title">Sair</div>
+                                <div class="action-desc">Encerrar sessão</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card de Estatísticas (se admin) -->
+            {% if current_user.is_admin() %}
+            <div class="table-card" style="margin-top: 25px;">
+                <div class="table-header">
+                    <h3 class="table-title">Área Administrativa</h3>
+                </div>
+                <div style="padding: 25px; text-align: center;">
+                    <p style="color: var(--text-medium); margin-bottom: 20px;">
+                        Você tem privilégios de administrador
+                    </p>
+                    <a href="{{ url_for('dashboard') }}" class="btn-outline">
+                        Acessar Dashboard Administrativo →
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <style>
+        .profile-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .field-label {
+            font-size: 14px;
+            color: var(--text-medium);
+            font-weight: 500;
+        }
+
+        .field-value {
+            font-size: 14px;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .action-link {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--border-color);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .action-link:hover {
+            padding-left: 10px;
+        }
+
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .action-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 3px;
+        }
+
+        .action-desc {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 968px) {
+            div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+
+    <script>
+        document.querySelector('.user-btn')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.parentElement.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.user-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

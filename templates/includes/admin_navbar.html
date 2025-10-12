@@ -1,0 +1,169 @@
+<style>
+    /* Modern Admin Navbar - Consistent Style */
+    .modern-admin-navbar {
+        background: linear-gradient(135deg, #315b61 0%, #2a4d52 100%);
+        box-shadow: 0 4px 20px rgba(49, 91, 97, 0.15);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 3px solid #4a8891;
+    }
+    
+    .admin-navbar-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 0 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 70px;
+        gap: 24px;
+    }
+    
+    .admin-navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: white;
+        font-size: 20px;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .admin-navbar-brand:hover {
+        transform: translateX(-3px);
+        color: #e0f2fe;
+    }
+    
+    .admin-navbar-brand-icon {
+        font-size: 32px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+    
+    .admin-navbar-menu {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .admin-navbar-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        position: relative;
+    }
+    
+    .admin-navbar-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .admin-navbar-link.active {
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .admin-navbar-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60%;
+        height: 3px;
+        background: #e0f2fe;
+        border-radius: 2px 2px 0 0;
+    }
+    
+    .admin-navbar-divider {
+        width: 1px;
+        height: 24px;
+        background: rgba(255, 255, 255, 0.3);
+        margin: 0 4px;
+    }
+    
+    .admin-navbar-link-icon {
+        font-size: 18px;
+    }
+    
+    @media (max-width: 1200px) {
+        .admin-navbar-container {
+            padding: 12px 20px;
+            flex-wrap: wrap;
+        }
+        
+        .admin-navbar-menu {
+            width: 100%;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .admin-navbar-link {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .admin-navbar-brand {
+            font-size: 16px;
+        }
+        
+        .admin-navbar-brand-icon {
+            font-size: 24px;
+        }
+    }
+</style>
+
+<nav class="modern-admin-navbar">
+    <div class="admin-navbar-container">
+        <a href="{{ url_for('dashboard') }}" class="admin-navbar-brand">
+            <span class="admin-navbar-brand-icon">👩‍⚕️</span>
+            <span>M.I. Joca de Sousa Teixeira</span>
+        </a>
+        <div class="admin-navbar-menu">
+            <a href="{{ url_for('dashboard') }}" class="admin-navbar-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="admin-navbar-link-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('admin_responses') }}" class="admin-navbar-link {% if request.endpoint == 'admin_responses' %}active{% endif %}">
+                <span class="admin-navbar-link-icon">📋</span>
+                <span>Respostas</span>
+            </a>
+            <a href="{{ url_for('admin_tests') }}" class="admin-navbar-link {% if request.endpoint in ['admin_tests', 'new_test', 'edit_test_questions'] %}active{% endif %}">
+                <span class="admin-navbar-link-icon">🧪</span>
+                <span>Testes</span>
+            </a>
+            <a href="{{ url_for('admin_categories') }}" class="admin-navbar-link {% if request.endpoint == 'admin_categories' %}active{% endif %}">
+                <span class="admin-navbar-link-icon">🏷️</span>
+                <span>Categorias</span>
+            </a>
+            <a href="{{ url_for('admin_users') }}" class="admin-navbar-link {% if request.endpoint == 'admin_users' %}active{% endif %}">
+                <span class="admin-navbar-link-icon">👥</span>
+                <span>Usuários</span>
+            </a>
+            <div class="admin-navbar-divider"></div>
+            <a href="{{ url_for('dashboard') }}" class="admin-navbar-link">
+                <span class="admin-navbar-link-icon">🏠</span>
+                <span>Início</span>
+            </a>
+            <a href="{{ url_for('logout') }}" class="admin-navbar-link">
+                <span class="admin-navbar-link-icon">🚪</span>
+                <span>Sair</span>
+            </a>
+        </div>
+    </div>
+</nav>

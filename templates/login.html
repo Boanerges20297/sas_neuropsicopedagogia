@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - M.I. Joca de Sousa Teixeira Neuropsicopedagoga</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <!-- Lado Esquerdo - Showcase da Logo -->
+            <div class="login-left">
+                <div class="login-logo-large">
+                    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="M.I. Joca de Sousa Teixeira Neuropsicopedagoga">
+                </div>
+                <div class="login-welcome">
+                    <h2>Bem-vindo!</h2>
+                    <p>Sistema de Avaliação de Altas Habilidades</p>
+                    <p>M.I. Joca de Sousa Teixeira Neuropsicopedagoga</p>
+                </div>
+                <div class="login-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">🔒</div>
+                        <span>Acesso seguro e criptografado</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <span>Dashboard com estatísticas completas</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">👥</div>
+                        <span>Gestão de pacientes e respostas</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lado Direito - Formulário de Login -->
+            <div class="login-right">
+                <div class="login-header">
+                    <h1>Entrar</h1>
+                    <p>Acesse sua conta para continuar</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="login-alert alert-{{ category }}">
+                                {% if category == 'success' %}
+                                    <span>✓</span>
+                                {% elif category == 'danger' %}
+                                    <span>⚠</span>
+                                {% else %}
+                                    <span>ℹ</span>
+                                {% endif %}
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="seu.email@exemplo.com"
+                            required 
+                            autocomplete="email"
+                            autofocus
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="senha">Senha</label>
+                        <input 
+                            type="password" 
+                            id="senha" 
+                            name="senha" 
+                            placeholder="••••••••"
+                            required 
+                            autocomplete="current-password"
+                        >
+                    </div>
+
+                    <div class="remember-row">
+                        <div class="remember-checkbox">
+                            <input type="checkbox" id="remember" name="remember">
+                            <label for="remember">Lembrar de mim</label>
+                        </div>
+                        <a href="#" class="forgot-link">Esqueceu a senha?</a>
+                    </div>
+
+                    <button type="submit" class="login-button">Entrar</button>
+                </form>
+
+                <div class="divider">
+                    <span>OU</span>
+                </div>
+
+                <div class="register-prompt">
+                    Não tem uma conta? 
+                    <a href="{{ url_for('register') }}">Cadastre-se gratuitamente</a>
+                </div>
+
+                <div class="back-to-home">
+                    <a href="{{ url_for('index') }}">← Voltar ao formulário</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

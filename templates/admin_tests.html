@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Testes - M.I. Joca de Sousa Teixeira</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="header-content">
+                    <h1 class="dashboard-title">Gerenciar Testes Cognitivos</h1>
+                    <p class="dashboard-subtitle">Crie e gerencie testes personalizados</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{{ url_for('new_test') }}" class="btn-primary">
+                        <span>➕</span> Novo Teste
+                    </a>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-modern alert-{{ category }}">
+                            <span class="alert-message">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Grid de Testes -->
+            <div class="tests-grid">
+                {% if tests %}
+                    {% for test in tests %}
+                    <div class="test-card">
+                        <div class="test-card-header" data-color="{{ test.categoria_cor or '#315b61' }}">
+                            <div class="test-category">{{ test.categoria_nome }}</div>
+                            <div class="test-status">
+                                {% if test.ativo %}
+                                <span class="badge badge-success">✓ Ativo</span>
+                                {% else %}
+                                <span class="badge badge-secondary">○ Inativo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="test-card-body">
+                            <h3 class="test-title">{{ test.titulo }}</h3>
+                            <p class="test-description">{{ test.descricao or 'Sem descrição' }}</p>
+                            
+                            <div class="test-stats">
+                                <div class="stat-item">
+                                    <span class="stat-icon">📝</span>
+                                    <span class="stat-text">{{ test.num_questoes }} questões</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-icon">⏱️</span>
+                                    <span class="stat-text">~{{ test.tempo_estimado }} min</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-icon">🎯</span>
+                                    <span class="stat-text">{{ test.pontuacao_maxima }} pts</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="test-card-footer">
+                            <a href="{{ url_for('edit_test_questions', test_id=test.id) }}" class="btn-card">
+                                <span>✏️</span> Editar Questões
+                            </a>
+                            <button class="btn-card btn-secondary" data-duplicate-id="{{ test.id }}">
+                                <span>📋</span> Duplicar
+                            </button>
+                            <button class="btn-card btn-danger" data-delete-id="{{ test.id }}">
+                                <span>🗑️</span> Excluir
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state-full">
+                        <p style="font-size: 64px; margin-bottom: 20px;">🧪</p>
+                        <h2>Nenhum teste criado ainda</h2>
+                        <p>Comece criando seu primeiro teste cognitivo personalizado</p>
+                        <a href="{{ url_for('new_test') }}" class="btn-primary" style="margin-top: 20px;">
+                            <span>➕</span> Criar Primeiro Teste
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        // Apply background color from data-color attribute to avoid template-linter CSS errors
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.test-card-header').forEach(function(el) {
+                var color = el.getAttribute('data-color');
+                if (color) {
+                    el.style.background = color;
+                }
+            });
+
+            // Attach click handlers for duplicate and delete buttons using data attributes
+            document.querySelectorAll('[data-duplicate-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = this.getAttribute('data-duplicate-id');
+                    duplicateTest(id);
+                });
+            });
+            document.querySelectorAll('[data-delete-id]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = this.getAttribute('data-delete-id');
+                    deleteTest(id);
+                });
+            });
+        });
+
+        function deleteTest(testId) {
+            if (confirm('Tem certeza que deseja excluir este teste? Todas as questões serão perdidas.')) {
+                // TODO: Implementar exclusão
+                alert('Funcionalidade em desenvolvimento');
+            }
+        }
+        
+        function duplicateTest(testId) {
+            // TODO: Implementar duplicação
+            alert('Funcionalidade em desenvolvimento');
+        }
+    </script>
+</body>
+</html>

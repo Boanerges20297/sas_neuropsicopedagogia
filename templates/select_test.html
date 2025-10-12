@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecionar Teste - M.I. Joca de Sousa Teixeira</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="select-test-page">
+        <div class="select-header">
+            <div class="header-logo">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="logo-image">
+            </div>
+            <h1 class="page-title">Testes Cognitivos Disponíveis</h1>
+            <p class="page-subtitle">Selecione um teste para iniciar a avaliação</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts-container">
+                    {% for category, message in messages %}
+                        <div class="alert-modern alert-{{ category }}">
+                            <span class="alert-message">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="tests-selection-grid">
+            {% if tests %}
+                {% for test in tests %}
+                <a href="{{ url_for('take_test', test_id=test.id) }}" class="test-selection-card">
+                    <div class="card-icon" style="background: '{{ test.categoria_cor or '#315b61' }}';">
+                        {{ test.categoria_icone or '📋' }}
+                    </div>
+                    <div class="card-content">
+                        <div class="card-category">{{ test.categoria_nome }}</div>
+                        <h2 class="card-title">{{ test.titulo }}</h2>
+                        <p class="card-description">{{ test.descricao or 'Clique para iniciar a avaliação' }}</p>
+                        <div class="card-meta">
+                            <span class="meta-badge">
+                                <span class="meta-icon">📝</span>
+                                {{ test.num_questoes }} questões
+                            </span>
+                            <span class="meta-badge">
+                                <span class="meta-icon">⏱️</span>
+                                ~{{ test.tempo_estimado }} min
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-arrow">→</div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="empty-selection">
+                    <div class="empty-icon">🧪</div>
+                    <h2>Nenhum teste disponível</h2>
+                    <p>Entre em contato com a neuropsicopedagoga para mais informações</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="select-footer">
+            <p>🔐 Suas respostas serão mantidas em sigilo</p>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('user_area') }}" class="btn-footer">Ir para Minha Área</a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn-footer">Já tenho cadastro</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        .select-test-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            padding: 40px 20px;
+        }
+
+        .select-header {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 50px;
+        }
+
+        .header-logo {
+            margin-bottom: 30px;
+        }
+
+        .logo-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid white;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-image:hover {
+            transform: scale(1.05);
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: #2d3748;
+            margin: 0 0 15px 0;
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .alerts-container {
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        .tests-selection-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+            gap: 30px;
+            padding: 0 10px;
+        }
+
+        .test-selection-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            box-shadow: 0 2px 12px rgba(49, 91, 97, 0.08), 0 8px 32px rgba(49, 91, 97, 0.04);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-decoration: none;
+            border: 2px solid rgba(49, 91, 97, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .test-selection-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #315b61, #4a8891);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .test-selection-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(49, 91, 97, 0.15), 0 16px 48px rgba(49, 91, 97, 0.12);
+            border-color: #315b61;
+        }
+        
+        .test-selection-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            flex-shrink: 0;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            transition: transform 0.3s ease;
+        }
+        
+        .test-selection-card:hover .card-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .card-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-category {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #315b61;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0 0 12px 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.7;
+            margin: 0 0 16px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            border: 1px solid rgba(49, 91, 97, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .test-selection-card:hover .meta-badge {
+            background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+            border-color: #315b61;
+            color: #315b61;
+        }
+
+        .meta-icon {
+            font-size: 15px;
+        }
+
+        .card-arrow {
+            font-size: 32px;
+            color: #315b61;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%) translateX(-10px);
+        }
+
+        .test-selection-card:hover .card-arrow {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
+        }
+
+        .empty-selection {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .empty-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+        }
+
+        .empty-selection h2 {
+            font-size: 28px;
+            color: #2d3748;
+            margin: 0 0 10px 0;
+        }
+
+        .empty-selection p {
+            font-size: 16px;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .select-footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .select-footer p {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 15px 0;
+        }
+
+        .btn-footer {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-footer:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        @media (max-width: 1024px) {
+            .tests-selection-grid {
+                grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+                gap: 24px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .select-test-page {
+                padding: 30px 16px;
+            }
+            
+            .select-header {
+                margin-bottom: 40px;
+            }
+            
+            .logo-image {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .page-title {
+                font-size: 26px;
+            }
+            
+            .page-subtitle {
+                font-size: 16px;
+            }
+
+            .tests-selection-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .test-selection-card {
+                padding: 24px;
+                gap: 20px;
+            }
+            
+            .card-icon {
+                width: 64px;
+                height: 64px;
+                font-size: 32px;
+            }
+            
+            .card-title {
+                font-size: 18px;
+            }
+            
+            .card-description {
+                font-size: 13px;
+            }
+
+            .card-arrow {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .test-selection-card {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 28px 20px;
+            }
+            
+            .card-content {
+                width: 100%;
+            }
+            
+            .card-meta {
+                justify-content: center;
+            }
+        }
+    </style>
+</body>
+</html>

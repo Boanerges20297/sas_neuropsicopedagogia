@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Teste - M.I. Joca de Sousa Teixeira</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+                    <span class="nav-icon">🏠</span>
+                    <span>Início</span>
+                </a>
+            </div>
+            
+            <div class="navbar-user">
+                <div class="user-dropdown">
+                    <button class="user-btn">
+                        <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
+                        <span class="user-name">{{ current_user.nome }}</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('user_area') }}" class="dropdown-link">
+                            <span>👤</span> Meu Perfil
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-link logout">
+                            <span>🚪</span> Sair
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="form-main">
+        <div class="form-container" style="max-width: 900px;">
+            <div class="form-header">
+                <a href="{{ url_for('admin_tests') }}" class="btn-back">
+                    <span>←</span> Voltar
+                </a>
+                <h1 class="form-title">Criar Novo Teste Cognitivo</h1>
+                <p class="form-subtitle">Preencha as informações básicas do teste</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('create_test') }}" class="modern-form" id="newTestForm">
+                <!-- Seção 1: Informações Básicas -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h2 class="section-title">📋 Informações Básicas</h2>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="category_id" class="form-label">Categoria *</label>
+                            <select id="category_id" name="category_id" class="form-input" required>
+                                <option value="">Selecione uma categoria</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.icone }} {{ cat.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-help">Não encontrou? <a href="{{ url_for('admin_categories') }}">Criar nova categoria</a></small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="titulo" class="form-label">Título do Teste *</label>
+                            <input type="text" 
+                                   id="titulo" 
+                                   name="titulo" 
+                                   class="form-input" 
+                                   placeholder="Ex: Avaliação de Atenção Sustentada - Nível I"
+                                   required
+                                   maxlength="200">
+                            <small class="form-help">Nome descritivo e específico do teste</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <textarea id="descricao" 
+                                      name="descricao" 
+                                      class="form-textarea" 
+                                      rows="3"
+                                      placeholder="Breve descrição sobre o objetivo e escopo do teste"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="instrucoes" class="form-label">Instruções para o Avaliado</label>
+                            <textarea id="instrucoes" 
+                                      name="instrucoes" 
+                                      class="form-textarea" 
+                                      rows="4"
+                                      placeholder="Instruções que aparecerão no início do teste para o avaliado"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tempo_estimado" class="form-label">Tempo Estimado (minutos)</label>
+                            <input type="number" 
+                                   id="tempo_estimado" 
+                                   name="tempo_estimado" 
+                                   class="form-input" 
+                                   value="30"
+                                   min="5"
+                                   max="240">
+                            <small class="form-help">Tempo médio para conclusão do teste</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Método de Criação de Questões -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <h2 class="section-title">📝 Como deseja criar as questões?</h2>
+                    </div>
+
+                    <div class="creation-methods">
+                        <div class="method-card" onclick="selectMethod('manual')">
+                            <input type="radio" name="method" value="manual" id="method_manual" checked>
+                            <label for="method_manual" class="method-label">
+                                <div class="method-icon">✏️</div>
+                                <h3>Manual</h3>
+                                <p>Criar questões uma por uma manualmente</p>
+                            </label>
+                        </div>
+
+                        <div class="method-card" onclick="selectMethod('pdf')">
+                            <input type="radio" name="method" value="pdf" id="method_pdf">
+                            <label for="method_pdf" class="method-label">
+                                <div class="method-icon">📄</div>
+                                <h3>Importar PDF</h3>
+                                <p>Upload de PDF para extração automática</p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Upload PDF (oculto por padrão) -->
+                    <div id="pdfUploadSection" class="pdf-upload-section" style="display: none;">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📁</div>
+                            <p class="upload-text">Arraste o PDF aqui ou clique para selecionar</p>
+                            <input type="file" id="pdfFile" accept=".pdf" style="display: none;">
+                            <button type="button" class="btn-upload" onclick="document.getElementById('pdfFile').click()">
+                                Escolher Arquivo
+                            </button>
+                        </div>
+                        <small class="form-help">
+                            ⚠️ O PDF será usado apenas para extração e será descartado após o processamento
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="form-actions">
+                    <a href="{{ url_for('admin_tests') }}" class="btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn-primary">
+                        <span>➡️</span> Próximo: Adicionar Questões
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        function selectMethod(method) {
+            const pdfSection = document.getElementById('pdfUploadSection');
+            const manualRadio = document.getElementById('method_manual');
+            const pdfRadio = document.getElementById('method_pdf');
+            
+            if (method === 'pdf') {
+                pdfSection.style.display = 'block';
+                pdfRadio.checked = true;
+            } else {
+                pdfSection.style.display = 'none';
+                manualRadio.checked = true;
+            }
+        }
+
+        // Drag & Drop para PDF
+        const uploadArea = document.getElementById('uploadArea');
+        const pdfInput = document.getElementById('pdfFile');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                pdfInput.files = files;
+                showFileName(files[0].name);
+            }
+        });
+
+        pdfInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                showFileName(e.target.files[0].name);
+            }
+        });
+
+        function showFileName(name) {
+            uploadArea.innerHTML = `
+                <div class="upload-icon">✅</div>
+                <p class="upload-text"><strong>${name}</strong></p>
+                <button type="button" class="btn-upload btn-secondary" onclick="clearFile()">
+                    Remover
+                </button>
+            `;
+        }
+
+        function clearFile() {
+            pdfInput.value = '';
+            uploadArea.innerHTML = `
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Arraste o PDF aqui ou clique para selecionar</p>
+                <button type="button" class="btn-upload" onclick="document.getElementById('pdfFile').click()">
+                    Escolher Arquivo
+                </button>
+            `;
+        }
+    </script>
+</body>
+</html>

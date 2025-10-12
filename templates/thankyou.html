@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obrigado - Questionário Enviado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="thank-you-container">
+            <h1>✓ Obrigado!</h1>
+            <p>Sua resposta foi registrada com sucesso.</p>
+            <p style="color: #999; font-size: 14px;">Os dados foram salvos no banco de dados SQLite</p>
+            <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
+                <a href="/" class="back-link">← Novo Questionário</a>
+                <a href="/respostas" class="back-link" style="background: #28a745;">📊 Ver Respostas</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
