@@ -418,7 +418,17 @@ def get_dashboard_stats():
 # ==================== ROTAS PÚBLICAS ====================
 @app.route('/')
 def index():
-    """Página inicial - Seleção de testes disponíveis"""
+    """Página inicial - Login para não autenticados, Dashboard para autenticados"""
+    # Se estiver autenticado, redireciona para dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    # Se não estiver autenticado, redireciona para login
+    return redirect(url_for('login'))
+
+@app.route('/select-test')
+def select_test():
+    """Página de seleção de testes disponíveis"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()

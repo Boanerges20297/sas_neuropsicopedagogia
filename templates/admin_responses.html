@@ -31,11 +31,15 @@
                     <span class="nav-icon">🧪</span>
                     <span>Gerenciar Testes</span>
                 </a>
+                <a href="{{ url_for('admin_categories') }}" class="nav-item">
+                    <span class="nav-icon">🏷️</span>
+                    <span>Categorias</span>
+                </a>
                 <a href="{{ url_for('admin_users') }}" class="nav-item">
                     <span class="nav-icon">👥</span>
                     <span>Usuários</span>
                 </a>
-                <a href="{{ url_for('index') }}" class="nav-item">
+                <a href="{{ url_for('select_test') }}" class="nav-item">
                     <span class="nav-icon">📝</span>
                     <span>Responder Teste</span>
                 </a>

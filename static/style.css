@@ -133,6 +133,29 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* Compatibility aliases for newer templates that use different class names */
+.user-section {
+    position: relative;
+}
+
+.user-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 22px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.user-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
 .user-avatar {
     width: 32px;
     height: 32px;
@@ -1063,29 +1086,36 @@ textarea {
 
 /* ==================== DASHBOARD MODERNO ==================== */
 .modern-navbar {
-    background: white;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, #315b61 0%, #2a4d52 100%);
+    box-shadow: 0 4px 20px rgba(49, 91, 97, 0.15);
     position: sticky;
     top: 0;
-    z-index: 100;
-    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+    border-bottom: 3px solid #4a8891;
 }
 
 .navbar-container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 0 30px;
+    padding: 0 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 70px;
+    min-height: 70px;
 }
 
 .navbar-brand {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     text-decoration: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+    transform: translateX(-3px);
+    color: #e0f2fe;
 }
 
 .navbar-logo {
@@ -1093,6 +1123,7 @@ textarea {
     height: 50px;
     border-radius: 12px;
     object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .brand-text {
@@ -1103,42 +1134,59 @@ textarea {
 .brand-title {
     font-size: 16px;
     font-weight: 700;
-    color: var(--primary-color);
+    color: white;
     line-height: 1.2;
 }
 
 .brand-subtitle {
     font-size: 12px;
-    color: var(--text-medium);
+    color: rgba(255, 255, 255, 0.8);
     font-weight: 500;
 }
 
 .navbar-menu {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 18px;
+    padding: 10px 16px;
     border-radius: 10px;
-    color: var(--text-medium);
+    color: rgba(255, 255, 255, 0.9);
     text-decoration: none;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     transition: all 0.3s ease;
+    position: relative;
+    white-space: nowrap;
 }
 
 .nav-item:hover {
-    background: var(--background);
-    color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: translateY(-2px);
 }
 
 .nav-item.active {
-    background: var(--primary-color);
+    background: rgba(255, 255, 255, 0.25);
     color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 3px;
+    background: #e0f2fe;
+    border-radius: 2px 2px 0 0;
 }
 
 .nav-icon {
@@ -1149,7 +1197,8 @@ textarea {
     position: relative;
 }
 
-.user-dropdown {
+/* When .user-dropdown is used as the wrapper (dashboard pattern) scope relative to navbar-user */
+.navbar-user .user-dropdown {
     position: relative;
 }
 
@@ -1158,35 +1207,38 @@ textarea {
     align-items: center;
     gap: 10px;
     padding: 8px 15px;
-    background: var(--background);
-    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
+    color: white;
 }
 
 .user-btn:hover {
-    border-color: var(--primary-color);
-    background: white;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 .user-avatar {
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, #4a8891, #6ba5b0);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: 700;
     font-size: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .user-name {
     font-size: 14px;
     font-weight: 600;
-    color: var(--text-dark);
+    color: white;
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1195,7 +1247,7 @@ textarea {
 
 .dropdown-arrow {
     font-size: 10px;
-    color: var(--text-light);
+    color: rgba(255, 255, 255, 0.8);
     transition: transform 0.3s ease;
 }
 
@@ -1209,29 +1261,81 @@ textarea {
     right: 0;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-lg);
     min-width: 200px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
+    transform: translateY(-8px);
+    transition: all 0.22s ease;
+    overflow: hidden;
+    z-index: 1100;
 }
 
-.user-dropdown.active .dropdown-content {
+/* Show dropdown on hover / when parent has .active */
+.user-dropdown:hover .dropdown-content,
+.user-dropdown.active .dropdown-content,
+.user-section:hover .dropdown-content,
+.user-section.show .dropdown-content {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
 
-.dropdown-link {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+/* Alias for templates using .user-dropdown as the wrapper */
+
+/* Support case where .user-dropdown is the actual popup element directly inside .user-section
+   (some templates use: <div class="user-section"> <button ...> </button> <div class="user-dropdown"> ... </div> ) */
+.user-section > .user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.22s ease;
+    overflow: hidden;
+    z-index: 1100;
+}
+
+.user-section:hover > .user-dropdown,
+.user-section.active > .user-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Also support .user-dropdown having the active class directly (script toggles popup sometimes) */
+.user-dropdown.active,
+.user-dropdown.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+}
+
+.user-dropdown .dropdown-item,
+.dropdown-content .dropdown-item {
+    display: block;
     padding: 12px 18px;
     color: var(--text-dark);
     text-decoration: none;
-    font-size: 14px;
-    transition: background 0.2s ease;
+    transition: var(--transition);
+    border-bottom: 1px solid var(--border-color);
+    background: white;
+}
+
+.user-dropdown .dropdown-item:last-child,
+.dropdown-content .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.user-dropdown .dropdown-item:hover,
+.dropdown-content .dropdown-item:hover {
+    background: var(--background);
+    color: var(--primary-color);
 }
 
 .dropdown-link:first-child {
@@ -1654,7 +1758,7 @@ textarea {
 }
 
 /* ============================================
-   INTERFACE DE PONTUAÇÃO DE RESPOSTAS
+   INTERFACE DE PONTUAï¿½ï¿½O DE RESPOSTAS
    ============================================ */
 
 .scoring-main {
@@ -1668,7 +1772,7 @@ textarea {
     margin: 0 auto;
 }
 
-/* Header da Pontuação */
+/* Header da Pontuaï¿½ï¿½o */
 .scoring-header {
     background: white;
     border-radius: 16px;
@@ -1725,7 +1829,7 @@ textarea {
     border-radius: 8px;
 }
 
-/* Painel de Pontuação Total */
+/* Painel de Pontuaï¿½ï¿½o Total */
 .score-panel {
     background: linear-gradient(135deg, var(--primary-color) 0%, #234144 100%);
     border-radius: 16px;
@@ -1794,7 +1898,7 @@ textarea {
     cursor: not-allowed;
 }
 
-/* Grid de Itens para Pontuação */
+/* Grid de Itens para Pontuaï¿½ï¿½o */
 .scoring-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -1839,7 +1943,7 @@ textarea {
     padding-right: 15px;
 }
 
-/* Sistema de Pontuação */
+/* Sistema de Pontuaï¿½ï¿½o */
 .item-score-input {
     display: flex;
     align-items: center;
@@ -1914,7 +2018,7 @@ textarea {
     border-left: 4px solid var(--primary-color);
 }
 
-/* Seção de Observações */
+/* Seï¿½ï¿½o de Observaï¿½ï¿½es */
 .notes-section {
     background: white;
     border-radius: 12px;
@@ -1952,7 +2056,7 @@ textarea {
     color: #94a3b8;
 }
 
-/* Info de Pontuação Anterior */
+/* Info de Pontuaï¿½ï¿½o Anterior */
 .scoring-info {
     background: #fef3c7;
     border-left: 4px solid #F4A460;
@@ -1995,7 +2099,7 @@ textarea {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
-/* Responsividade da Pontuação */
+/* Responsividade da Pontuaï¿½ï¿½o */
 @media (max-width: 968px) {
     .scoring-header {
         flex-direction: column;
@@ -2056,7 +2160,7 @@ textarea {
     font-family: 'Courier New', monospace;
 }
 /* ============================================
-   GESTÃO DE TESTES COGNITIVOS
+   GESTï¿½O DE TESTES COGNITIVOS
    ============================================ */
 
 .tests-grid {
@@ -2195,7 +2299,7 @@ textarea {
     border-color: #dc2626;
 }
 
-/* Métodos de Criação */
+/* Mï¿½todos de Criaï¿½ï¿½o */
 .creation-methods {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -2366,7 +2470,7 @@ textarea {
     }
 }
 /* ============================================
-   EDITOR DE QUESTÕES
+   EDITOR DE QUESTï¿½ES
    ============================================ */
 
 .questions-editor-main {
@@ -2675,7 +2779,7 @@ textarea {
     }
 }
 /* ============================================
-   PÁGINA DE RESPONDER TESTE
+   Pï¿½GINA DE RESPONDER TESTE
    ============================================ */
 
 .take-test-main {
@@ -2860,12 +2964,13 @@ textarea {
     border-radius: 5px;
     background: #e2e8f0;
     outline: none;
+    appearance: none;
     -webkit-appearance: none;
 }
 
 .scale-input::-webkit-slider-thumb {
-    -webkit-appearance: none;
     appearance: none;
+    -webkit-appearance: none;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -2951,7 +3056,7 @@ textarea {
     color: white;
 }
 
-/* Informações Pessoais */
+/* Informaï¿½ï¿½es Pessoais */
 .personal-info-section {
     background: white;
     border-radius: 16px;
@@ -3026,7 +3131,7 @@ textarea {
     }
 }
 /* ============================================
-   PÁGINA DE GERENCIAR CATEGORIAS
+   Pï¿½GINA DE GERENCIAR CATEGORIAS
    ============================================ */
 
 .categories-grid {
@@ -3139,10 +3244,10 @@ textarea {
     }
 }
 /* ============================================
-   MELHORIAS DE NAVEGAÇÃO
+   MELHORIAS DE NAVEGAï¿½ï¿½O
    ============================================ */
 
-/* Logo clicável */
+/* Logo clicï¿½vel */
 .navbar-brand {
     text-decoration: none;
     color: inherit;
@@ -3182,7 +3287,7 @@ textarea {
     margin: 8px 0;
 }
 
-/* Item secundário na navbar moderna */
+/* Item secundï¿½rio na navbar moderna */
 .nav-item.nav-secondary {
     background: #f8fafc;
     border-radius: 8px;

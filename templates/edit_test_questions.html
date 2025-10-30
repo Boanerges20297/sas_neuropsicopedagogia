@@ -7,12 +7,100 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    {% include 'includes/admin_navbar.html' %}
-                    </div>
+    <!-- Navbar Moderna -->
+    <nav class="modern-navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
+                <div class="brand-text">
+                    <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
+                    <span class="brand-subtitle">Neuropsicopedagoga</span>
+                </div>
+            </a>
+            
+            <div class="navbar-menu">
+                <a href="{{ url_for('dashboard') }}" class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin_responses') }}" class="nav-item">
+                    <span class="nav-icon">📝</span>
+                    <span>Respostas</span>
+                </a>
+                <a href="{{ url_for('admin_tests') }}" class="nav-item active">
+                    <span class="nav-icon">📋</span>
+                    <span>Gerenciar Testes</span>
+                </a>
+                <a href="{{ url_for('admin_categories') }}" class="nav-item">
+                    <span class="nav-icon">🏷️</span>
+                    <span>Categorias</span>
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>Usuários</span>
+                </a>
+                <a href="{{ url_for('select_test') }}" class="nav-item">
+                    <span class="nav-icon">✍️</span>
+                    <span>Responder Teste</span>
+                </a>
+            </div>
+
+            <div class="user-section">
+                <button class="user-btn" onclick="toggleUserMenu()">
+                    <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
+                    <span class="user-name">{{ current_user.nome }}</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <a href="{{ url_for('user_area') }}" class="dropdown-item">
+                        <span>👤</span>
+                        <span>Meu Perfil</span>
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                        <span>🚪</span>
+                        <span>Sair</span>
+                    </a>
                 </div>
             </div>
         </div>
     </nav>
+    <script>
+        function toggleUserMenu(e){
+            var btn = (e && e.currentTarget) ? e.currentTarget : (e && e.target) ? e.target : null;
+            if(!btn) return;
+            if(btn.tagName !== 'BUTTON') btn = btn.closest('button') || btn;
+            var section = btn.closest('.user-section') || btn.closest('.navbar-user') || btn.closest('.user-dropdown');
+            if(!section) return;
+            var popup = section.querySelector('.user-dropdown') || section.querySelector('.dropdown-content');
+            if(!popup) return;
+            if(popup.classList.contains('active') || section.classList.contains('active')){
+                popup.classList.remove('active');
+                section.classList.remove('active');
+                popup.style.position = '';
+                popup.style.left = '';
+                popup.style.top = '';
+                popup.style.right = '';
+                return;
+            }
+            popup.classList.add('active');
+            section.classList.add('active');
+            var rect = btn.getBoundingClientRect();
+            popup.style.visibility = 'hidden';
+            popup.style.display = 'block';
+            popup.style.position = 'fixed';
+            var pw = popup.offsetWidth || 220;
+            var left = rect.right - pw;
+            if(left < 8) left = 8;
+            var top = rect.bottom + 8;
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.style.visibility = '';
+        }
+        document.addEventListener('click', function(ev){
+            if(ev.target.closest('.user-dropdown')) return;
+            document.querySelectorAll('.user-dropdown.active').forEach(function(el){ el.classList.remove('active'); });
+        });
+    </script>
 
     <main class="questions-editor-main">
         <div class="questions-container">
