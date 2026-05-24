@@ -1,0 +1,14 @@
+{
+  "project_name": "SaS_NeuroPsicopedagogia",
+  "version": "2.1.0",
+  "workflow": {
+    "mode": "standard",
+    "security_level": "high",
+    "database": "sqlite3_to_sqlalchemy",
+    "edge_ai": "client_server_local"
+  },
+  "compliance": {
+    "lgpd": true,
+    "audit_logging": true
+  }
+}

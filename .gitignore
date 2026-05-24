@@ -1,5 +1,6 @@
 # Arquivo de configuração sensível
 .env
+.env.example
 
 # Python
 __pycache__/
@@ -38,3 +39,5 @@ Thumbs.db
 # Backups
 backup_*/
 *.bak
+
+# .planning is not ignored anymore
