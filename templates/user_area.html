@@ -1,17 +1,18 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Perfil - M.I. Joca de Sousa Teixeira</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     <!-- Navbar Moderna -->
     <nav class="modern-navbar">
         <div class="navbar-container">
-            <a href="{{ url_for('index') }}" class="navbar-brand">
-                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
+            <a href="{% url 'index' %}" class="navbar-brand">
+                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
                     <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
                     <span class="brand-subtitle">Neuropsicopedagoga</span>
@@ -19,11 +20,7 @@
             </a>
             
             <div class="navbar-menu">
-                <a href="{{ url_for('index') }}" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    <span>Responder Teste</span>
-                </a>
-                <a href="{{ url_for('user_area') }}" class="nav-item active">
+                <a href="{% url 'user_area' %}" class="nav-item active">
                     <span class="nav-icon">👤</span>
                     <span>Meu Perfil</span>
                 </a>
@@ -32,16 +29,16 @@
             <div class="navbar-user">
                 <div class="user-dropdown">
                     <button class="user-btn">
-                        <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
-                        <span class="user-name">{{ current_user.nome }}</span>
+                        <div class="user-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
+                        <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('user_area') }}" class="dropdown-link">
+                        <a href="{% url 'user_area' %}" class="dropdown-link">
                             <span>👤</span> Meu Perfil
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="{{ url_for('logout') }}" class="dropdown-link logout">
+                        <a href="{% url 'logout' %}" class="dropdown-link logout">
                             <span>🚪</span> Sair
                         </a>
                     </div>
@@ -70,27 +67,27 @@
                     <div style="padding: 20px 0;">
                         <div class="profile-field">
                             <span class="field-label">Nome Completo</span>
-                            <span class="field-value">{{ current_user.nome }}</span>
+                            <span class="field-value">{{ request.user.first_name }}</span>
                         </div>
                         <div class="profile-field">
                             <span class="field-label">E-mail</span>
-                            <span class="field-value">{{ current_user.email }}</span>
+                            <span class="field-value">{{ request.user.email }}</span>
                         </div>
                         <div class="profile-field">
                             <span class="field-label">Data de Nascimento</span>
-                            <span class="field-value">{{ current_user.data_nascimento if current_user.data_nascimento else 'Não informado' }}</span>
+                            <span class="field-value">{{ request.user.data_nascimento|default:'Não informado' }}</span>
                         </div>
                         <div class="profile-field">
                             <span class="field-label">Escolaridade</span>
-                            <span class="field-value">{{ current_user.escolaridade if current_user.escolaridade else 'Não informado' }}</span>
+                            <span class="field-value">{{ request.user.escolaridade|default:'Não informado' }}</span>
                         </div>
                         <div class="profile-field">
                             <span class="field-label">Telefone</span>
-                            <span class="field-value">{{ current_user.telefone if current_user.telefone else 'Não informado' }}</span>
+                            <span class="field-value">{{ request.user.telefone|default:'Não informado' }}</span>
                         </div>
                         <div class="profile-field" style="border-bottom: none;">
                             <span class="field-label">Tipo de Conta</span>
-                            <span class="badge badge-user">{{ 'Administrador' if current_user.role == 'admin' else 'Usuário' }}</span>
+                            <span class="badge badge-user">{{ request.user.get_role_display|default:'Usuário' }}</span>
                         </div>
                     </div>
                 </div>
@@ -101,13 +98,6 @@
                         <h3 class="table-title">Ações Rápidas</h3>
                     </div>
                     <div style="padding: 20px 0;">
-                        <a href="{{ url_for('index') }}" class="action-link">
-                            <div class="action-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📝</div>
-                            <div>
-                                <div class="action-title">Preencher Novo Teste</div>
-                                <div class="action-desc">Iniciar uma nova avaliação</div>
-                            </div>
-                        </a>
 
                         <a href="#" class="action-link">
                             <div class="action-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🔒</div>
@@ -121,11 +111,11 @@
                             <div class="action-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">📊</div>
                             <div>
                                 <div class="action-title">Minhas Avaliações</div>
-                                <div class="action-desc">Ver histórico de testes</div>
+                                <div class="action-desc">Ver histórico de atendimentos</div>
                             </div>
                         </a>
 
-                        <a href="{{ url_for('logout') }}" class="action-link" style="border-bottom: none;">
+                        <a href="{% url 'logout' %}" class="action-link" style="border-bottom: none;">
                             <div class="action-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🚪</div>
                             <div>
                                 <div class="action-title">Sair</div>
@@ -137,7 +127,7 @@
             </div>
 
             <!-- Card de Estatísticas (se admin) -->
-            {% if current_user.is_admin() %}
+            {% if request.user.is_admin %}
             <div class="table-card" style="margin-top: 25px;">
                 <div class="table-header">
                     <h3 class="table-title">Área Administrativa</h3>
@@ -146,7 +136,7 @@
                     <p style="color: var(--text-medium); margin-bottom: 20px;">
                         Você tem privilégios de administrador
                     </p>
-                    <a href="{{ url_for('dashboard') }}" class="btn-outline">
+                    <a href="{% url 'dashboard' %}" class="btn-outline">
                         Acessar Dashboard Administrativo →
                     </a>
                 </div>
@@ -235,3 +225,4 @@
     </script>
 </body>
 </html>
+

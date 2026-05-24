@@ -1,3 +1,4 @@
+{% load static %}
 <style>
     /* Modern Admin Navbar - Consistent Style */
     .modern-admin-navbar {
@@ -130,40 +131,42 @@
 
 <nav class="modern-admin-navbar">
     <div class="admin-navbar-container">
-        <a href="{{ url_for('dashboard') }}" class="admin-navbar-brand">
+        <a href="{% url 'dashboard' %}" class="admin-navbar-brand">
             <span class="admin-navbar-brand-icon">👩‍⚕️</span>
-            <span>M.I. Joca de Sousa Teixeira</span>
+            <span>Neuro-Diagnosis</span>
         </a>
         <div class="admin-navbar-menu">
-            <a href="{{ url_for('dashboard') }}" class="admin-navbar-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+            <a href="{% url 'dashboard' %}" class="admin-navbar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <span class="admin-navbar-link-icon">📊</span>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ url_for('admin_responses') }}" class="admin-navbar-link {% if request.endpoint == 'admin_responses' %}active{% endif %}">
+            <a href="{% url 'admin_avaliacoes' %}" class="admin-navbar-link {% if request.resolver_match.url_name == 'admin_avaliacoes' or request.resolver_match.url_name == 'view_avaliacao' %}active{% endif %}">
                 <span class="admin-navbar-link-icon">📋</span>
-                <span>Respostas</span>
+                <span>Avaliações</span>
             </a>
-            <a href="{{ url_for('admin_tests') }}" class="admin-navbar-link {% if request.endpoint in ['admin_tests', 'new_test', 'edit_test_questions'] %}active{% endif %}">
-                <span class="admin-navbar-link-icon">🧪</span>
-                <span>Testes</span>
+            <a href="{% url 'pacientes_list' %}" class="admin-navbar-link {% if request.resolver_match.url_name == 'pacientes_list' or request.resolver_match.url_name == 'paciente_create' or request.resolver_match.url_name == 'paciente_detail' %}active{% endif %}">
+                <span class="admin-navbar-link-icon">👥</span>
+                <span>Pacientes</span>
             </a>
-            <a href="{{ url_for('admin_categories') }}" class="admin-navbar-link {% if request.endpoint == 'admin_categories' %}active{% endif %}">
-                <span class="admin-navbar-link-icon">🏷️</span>
-                <span>Categorias</span>
+            <a href="{% url 'ia_consulta' %}" class="admin-navbar-link {% if request.resolver_match.url_name == 'ia_consulta' %}active{% endif %}">
+                <span class="admin-navbar-link-icon">🧠</span>
+                <span>Consulta IA</span>
             </a>
-            <a href="{{ url_for('admin_users') }}" class="admin-navbar-link {% if request.endpoint == 'admin_users' %}active{% endif %}">
+            <a href="{% url 'admin_users' %}" class="admin-navbar-link {% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
                 <span class="admin-navbar-link-icon">👥</span>
                 <span>Usuários</span>
             </a>
             <div class="admin-navbar-divider"></div>
-            <a href="{{ url_for('dashboard') }}" class="admin-navbar-link">
-                <span class="admin-navbar-link-icon">🏠</span>
+            <a href="{% url 'dashboard' %}" class="admin-navbar-link">
+                <span class="admin-navbar-link-icon"></span>
                 <span>Início</span>
             </a>
-            <a href="{{ url_for('logout') }}" class="admin-navbar-link">
+            <a href="{% url 'logout' %}" class="admin-navbar-link">
                 <span class="admin-navbar-link-icon">🚪</span>
                 <span>Sair</span>
             </a>
         </div>
     </div>
 </nav>
+
+

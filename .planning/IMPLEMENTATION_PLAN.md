@@ -1,96 +1,97 @@
-# Plano de Implementação - Milestone 1 (Segurança, LGPD & Auditoria)
+# Plano de Implementação - Modernização e Limpeza do App Neuro-Diagnosis
 
-Data: 2026-05-24  
-Escopo: Executar as fases 1.1, 1.2 e 1.3 do roadmap com validação incremental e rollback seguro.
+Este plano descreve as etapas para remover os resquícios da arquitetura legado (Flask), renomear referências de "SaS" e "Teste" para termos mais adequados ("Avaliação", "Anamnese"), unificar o fluxo de atendimento em torno de **Pacientes** e aprimorar a interface e o assistente de IA local para a Neuropsicopedagoga.
 
-## Estratégia de Execução
-- Ordem: Fase 1.1 -> Fase 1.2 -> Fase 1.3.
-- Entregas pequenas por commit (uma subfase por vez).
-- Validação manual e técnica ao final de cada subfase.
-- Sem quebra de compatibilidade com dados já existentes no SQLite.
+## User Review Required
 
-## Fase 1.1 - Proteção CSRF e Hardening de Sessão
-Objetivo: mitigar CSRF/session hijacking em todas as rotas POST e autenticação.
+> [!IMPORTANT]
+> **Mudanças Críticas de Banco de Dados:**
+> 1. Removeremos tabelas legadas (`CategoriaTeste`, `Teste`, `Questao`, `RespostaQuestao`) que pertenciam ao sistema de testes dinâmicos antigo, focando na ficha clínica estruturada de 105 campos.
+> 2. Associaremos a ficha clínica estruturada (atualmente no modelo `Resposta`) diretamente ao modelo `Paciente` via chave estrangeira.
+> 3. Renomearemos o projeto Django de `sas_project` para `neuro_diagnosis` para alinhar com o domínio da VPS (`neuro-diagnosis.tech`).
 
-### Tarefas
-1. Adicionar dependência `Flask-WTF`.
-2. Configurar `CSRFProtect` no bootstrap da aplicação (`app.py`).
-3. Configurar cookies de sessão:
-   - `SESSION_COOKIE_HTTPONLY=True`
-   - `SESSION_COOKIE_SAMESITE='Lax'`
-   - `SESSION_COOKIE_SECURE` por variável de ambiente (produção: `True`).
-4. Revisar formulários HTML e incluir token CSRF em todos os POST.
-5. Revisar POST via JavaScript (AJAX/fetch) para enviar cabeçalho de CSRF.
-6. Criar handler amigável para erro CSRF (HTTP 400) com mensagem de reenvio.
+> [!WARNING]
+> **Exclusão de Arquivos:**
+> Arquivos Flask antigos (`app.py`, `app_database.db`, `responses.db`, `migrate_sqlite_to_mysql.py`) e arquivos temporários serão completamente removidos do repositório para limpar o diretório.
 
-### Critérios de aceite
-- Todo POST sem token válido retorna bloqueio CSRF.
-- Login, cadastro, envio de questionário e ações administrativas continuam funcionais.
-- Cookies de sessão aparecem com flags de segurança corretas.
+## Open Questions
 
-## Fase 1.2 - Criptografia de Dados Sensíveis
-Objetivo: proteger PII de menores em repouso no banco.
+- **Nome da Clínica/Profissional:** Gostaria de personalizar a marca "M.I. Joca de Sousa Teixeira" para o nome específico da sua esposa ou da clínica dela? (Podemos parametrizar isso via `.env` como `CLINICA_NOME` e `PROFISSIONAL_NOME`).
 
-### Tarefas
-1. Criar `security_utils.py` com API:
-   - `get_fernet()`
-   - `encrypt_value(value)`
-   - `decrypt_value(value)`
-   - fallback seguro para valores vazios.
-2. Definir lista de campos sensíveis no backend.
-3. Criptografar ao persistir dados do formulário.
-4. Descriptografar para exibição em telas administrativas.
-5. Descriptografar para exportação (Excel/relatórios).
-6. Adicionar `FIELD_ENCRYPTION_KEY` em `.env.example` e instruções de geração.
+---
 
-### Critérios de aceite
-- Dados sensíveis ficam ilegíveis em leitura direta do SQLite.
-- UI administrativa continua legível para usuário autorizado.
-- Exportações mantêm consistência e não quebram estrutura.
+## Proposed Changes
 
-## Fase 1.3 - Auditoria e Política de Senhas
-Objetivo: rastreabilidade de acesso e reforço de credenciais.
+### 1. Limpeza de Código Legado (Flask e Scripts Órfãos)
 
-### Tarefas
-1. Criar tabela `audit_logs`.
-2. Criar utilitário `log_audit_event(user_id, action, target, metadata)`.
-3. Registrar eventos críticos:
-   - login/logout
-   - visualização de resposta
-   - pontuação
-   - exportação
-   - gestão de usuários/categorias/testes.
-4. Validar senha forte no cadastro com regex (mínimo 8, maiúscula, minúscula e número).
-5. Exibir feedback claro de política de senha na UI de cadastro.
+#### [DELETE] [app.py](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/app.py)
+#### [DELETE] [app_database.db](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/app_database.db)
+#### [DELETE] [responses.db](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/responses.db)
+#### [DELETE] [responses.xlsx](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/responses.xlsx)
+#### [DELETE] [migrate_sqlite_to_mysql.py](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/migrate_sqlite_to_mysql.py)
 
-### Critérios de aceite
-- Eventos críticos geram trilha auditável com timestamp e usuário.
-- Cadastros com senha fraca são recusados.
-- Mensagens de erro orientam correção pelo usuário.
+---
 
-## Riscos e Mitigações
-- Risco: templates misturados (sintaxe Flask vs Django).  
-  Mitigação: padronizar templates usados em runtime antes de fechar Fase 1.1.
-- Risco: dados antigos sem criptografia.  
-  Mitigação: script de migração progressiva por lote com backup prévio.
-- Risco: regressão em rotas administrativas.  
-  Mitigação: checklist funcional por rota e usuário admin.
+### 2. Renomeação do Projeto e Atualização de Infraestrutura
 
-## Plano de Verificação
-- Teste manual guiado por fluxo:
-  1. cadastro
-  2. login
-  3. preenchimento de questionário
-  4. visão admin
-  5. pontuação
-  6. exportação.
-- Verificação técnica:
-  - tentativa de POST sem CSRF
-  - leitura direta do banco para validar criptografia
-  - inspeção de cookies de sessão
-  - consulta da tabela de auditoria.
+#### [MODIFY] [manage.py](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/manage.py)
+* Atualizar `DJANGO_SETTINGS_MODULE` de `sas_project.settings` para `neuro_diagnosis.settings`.
 
-## Definição de Conclusão do Milestone 1
-- Fase 1.1, 1.2 e 1.3 concluídas e marcadas no roadmap.
-- `STATE.md` atualizado com status "Execução concluída".
-- README e guia de operação atualizados com segurança e variáveis de ambiente.
+#### [MODIFY] [Dockerfile](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/Dockerfile)
+#### [MODIFY] [docker-compose.yml](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/docker-compose.yml)
+#### [MODIFY] [entrypoint.sh](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/entrypoint.sh)
+* Renomear caminhos e referências de `sas_project` para `neuro_diagnosis`.
+
+#### [NEW] [neuro_diagnosis/](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/neuro_diagnosis)
+* Renomear pasta `sas_project` para `neuro_diagnosis`.
+* Atualizar `wsgi.py`, `asgi.py` e `settings.py` com o novo nome do projeto.
+
+---
+
+### 3. Ajuste de Modelos e Banco de Dados (Django ORM)
+
+#### [MODIFY] [avaliacao/models.py](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/avaliacao/models.py)
+* Remover modelos órfãos: `CategoriaTeste`, `Teste`, `Questao`, `RespostaQuestao`.
+* Renomear modelo `Resposta` para `AvaliacaoClinica`.
+* Adicionar chave estrangeira em `AvaliacaoClinica` para `Paciente`:
+  ```python
+  paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='avaliacoes', null=True, blank=True)
+  ```
+* Criar migrações do Django (`python manage.py makemigrations` e `python manage.py migrate`).
+
+---
+
+### 4. Limpeza de Visualizações e Fluxo de Pacientes
+
+#### [MODIFY] [avaliacao/urls.py](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/avaliacao/urls.py)
+#### [MODIFY] [avaliacao/views.py](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/avaliacao/views.py)
+* Remover rotas e funções de controle ligadas a "Testes" (`legacy_test`, `submit_test`, `take_test`, etc.).
+* Atualizar rota `/dashboard/` para focar em métricas de Pacientes e Atendimentos.
+* Adaptar `/exportar/` para gerar a planilha com base no novo modelo `AvaliacaoClinica` associado aos Pacientes.
+
+---
+
+### 5. Modernização e Refinamento do Frontend
+
+#### [MODIFY] [templates/includes/admin_navbar.html](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/templates/includes/admin_navbar.html)
+* Ajustar links: remover "Respostas" e "Consulta IA" soltos; integrar "Avaliações" e centralizar o fluxo na listagem de "Pacientes".
+* Tornar o título parametrizável para o nome da clínica/profissional.
+
+#### [MODIFY] [templates/dashboard.html](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/templates/dashboard.html)
+* Modernizar visual do dashboard para exibir total de pacientes ativos, número de atendimentos na semana, e atalhos rápidos para "Cadastrar Paciente" e "Ver Prontuários".
+
+#### [MODIFY] [templates/paciente_detail.html](file:///c:/Users/Boanerges/Desktop/Projetos/SaS_NeuroPsicopedagogia/templates/paciente_detail.html)
+* Adicionar seção estilizada para exibir as avaliações clínicas vinculadas àquele paciente.
+* Adicionar card interativo da IA local de borda que permite consultar a anamnese do paciente instantaneamente contra as diretrizes do DSM-5-TR indexadas.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Criar teste de sanidade em `avaliacao/tests.py` validando que as rotas básicas do painel do paciente respondem HTTP 200.
+- Executar `python manage.py test` localmente.
+
+### Manual Verification
+- Rodar o app localmente com SQLite e certificar-se de que o fluxo de login, listagem de pacientes, criação de anotação de sessão, e consulta à IA funcionam perfeitamente.
+- Subir alterações para a VPS de teste usando os scripts em `scripts/` e validar o container `neuro-diagnosis-app` em produção.

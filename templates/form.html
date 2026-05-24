@@ -1,10 +1,11 @@
+{% load static %}
 <!doctype html>
 <html lang="pt-br">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Questionário Altas Habilidades/Superdotação</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     <div class="container">
@@ -14,7 +15,8 @@
             <p class="subtitle">Secretaria de Estado de Educação do Distrito Federal</p>
         </div>
 
-        <form method="post" action="{{ url_for('submit') }}">
+        <form method="post" action="{% url 'submit_test' %}">
+            {% csrf_token %}
             <!-- SEÇÃO I: IDENTIFICAÇÃO DO ESTUDANTE -->
             <div class="section">
                 <h2 class="section-title">I - Identificação do Estudante</h2>
@@ -108,7 +110,7 @@
                     </div>
                 </div>
 
-                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Dados do Pai</h3>
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #8B5A3C;">Dados do Pai</h3>
                 <div class="form-group">
                     <label for="nome_pai">Nome do Pai</label>
                     <input type="text" name="nome_pai" id="nome_pai">
@@ -134,7 +136,7 @@
                     </div>
                 </div>
 
-                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Dados da Mãe</h3>
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #8B5A3C;">Dados da Mãe</h3>
                 <div class="form-group">
                     <label for="nome_mae">Nome da Mãe</label>
                     <input type="text" name="nome_mae" id="nome_mae">
@@ -160,7 +162,7 @@
                     </div>
                 </div>
 
-                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Outro Responsável (se aplicável)</h3>
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #8B5A3C;">Outro Responsável (se aplicável)</h3>
                 <div class="form-group">
                     <label for="outro_responsavel">Nome</label>
                     <input type="text" name="outro_responsavel" id="outro_responsavel">
@@ -205,7 +207,7 @@
             <div class="section">
                 <h2 class="section-title">III - Dados do Desenvolvimento</h2>
                 
-                <h3 style="margin-bottom: 15px; color: #667eea;">Gestação e Parto</h3>
+                <h3 style="margin-bottom: 15px; color: #8B5A3C;">Gestação e Parto</h3>
                 
                 <div class="form-group">
                     <label>A mãe teve algum problema durante a gestação?</label>
@@ -259,7 +261,7 @@
                     <textarea name="parto_problema_desc" id="parto_problema_desc" rows="2"></textarea>
                 </div>
 
-                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #667eea;">Sono e Marcos do Desenvolvimento</h3>
+                <h3 style="margin-top: 25px; margin-bottom: 15px; color: #8B5A3C;">Sono e Marcos do Desenvolvimento</h3>
 
                 <div class="form-group">
                     <label>Quando bebê, ele(a) dormia bem?</label>
@@ -784,8 +786,8 @@
                     <div class="checkbox-list">
                         {% for opt in checkbox_options %}
                         <div class="checkbox-item">
-                            <input type="checkbox" name="observed_characteristics" value="{{opt}}" id="char_{{loop.index}}">
-                            <label for="char_{{loop.index}}">{{opt}}</label>
+                            <input type="checkbox" name="observed_characteristics" value="{{opt}}" id="char_{{forloop.counter}}">
+                            <label for="char_{{forloop.counter}}">{{opt}}</label>
                         </div>
                         {% endfor %}
                     </div>

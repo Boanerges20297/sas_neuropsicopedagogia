@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paciente - {{ paciente.nome }}</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+<main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-header">
+                <div class="header-content">
+                    <a href="{% url 'pacientes_list' %}" class="btn-back">Voltar</a>
+                    <h1>{{ paciente.nome }}</h1>
+                    <p>{{ paciente.escola|default:"Sem escola informada" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p>
+                </div>
+                <a href="{% url 'ia_consulta' %}?paciente={{ paciente.id }}" class="btn-outline">Consultar IA</a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="table-card" style="margin-bottom: 24px;">
+                <div class="table-header"><h3 class="table-title">Dados do paciente</h3></div>
+                <div style="padding: 20px; display: grid; gap: 12px;">
+                    <p><strong>Responsável:</strong> {{ paciente.responsavel|default:"-" }}</p>
+                    <p><strong>Telefone:</strong> {{ paciente.telefone|default:"-" }}</p>
+                    <p><strong>E-mail:</strong> {{ paciente.email|default:"-" }}</p>
+                    <p><strong>Queixa principal:</strong> {{ paciente.queixa_principal|default:"-" }}</p>
+                    <p><strong>Observações:</strong> {{ paciente.observacoes|default:"-" }}</p>
+                </div>
+            </div>
+
+            <div class="notes-section">
+                <h3 class="notes-title">Nova anotação de atendimento</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="tipo">Tipo</label>
+                            <select class="form-input" id="tipo" name="tipo">
+                                <option value="sessao">Sessão</option>
+                                <option value="observacao">Observação</option>
+                                <option value="orientacao">Orientação familiar/escolar</option>
+                                <option value="encaminhamento">Encaminhamento</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="titulo">Título</label>
+                            <input class="form-input" id="titulo" name="titulo">
+                        </div>
+                    </div>
+                    <textarea class="notes-textarea" name="conteudo" rows="6" required></textarea>
+                    <div class="form-actions">
+                        <button class="btn-primary" type="submit">Salvar anotação</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-card" style="margin-top: 24px;">
+                <div class="table-header"><h3 class="table-title">Histórico de atendimento</h3></div>
+                <div style="padding: 20px; display: grid; gap: 16px;">
+                    {% for anotacao in anotacoes %}
+                        <article style="border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                            <strong>{{ anotacao.titulo|default:anotacao.get_tipo_display }}</strong>
+                            <p style="color: var(--text-medium); font-size: 13px;">{{ anotacao.created_at|date:"d/m/Y H:i" }} - {{ anotacao.get_tipo_display }}</p>
+                            <p style="white-space: pre-wrap;">{{ anotacao.conteudo }}</p>
+                        </article>
+                    {% empty %}
+                        <p>Nenhuma anotação registrada ainda.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

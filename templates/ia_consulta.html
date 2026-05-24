@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta IA - Neuro Diagnosis</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="header-content">
+                    <h1 class="dashboard-title">Consulta a IA</h1>
+                    <p class="dashboard-subtitle">Apoio neuropsicopedagógico local, sem envio para APIs externas por padrão.</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'pacientes_list' %}" class="btn-outline">Pacientes</a>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">IA em uso</p>
+                        <h2 class="stat-value" style="font-size: 22px;">{{ engine_info.nome }}</h2>
+                        <p class="stat-change">{{ engine_info.tipo }}</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">Modelo</p>
+                        <h2 class="stat-value" style="font-size: 18px;">Heurístico local</h2>
+                        <p class="stat-change">{{ engine_info.modelo }}</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <p class="stat-label">Privacidade</p>
+                        <h2 class="stat-value" style="font-size: 18px;">Local-first</h2>
+                        <p class="stat-change">{{ engine_info.nuvem }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {% if erro %}
+                <div class="alert-modern alert-error">{{ erro }}</div>
+            {% endif %}
+
+            <div class="notes-section">
+                <h3 class="notes-title">Nova consulta</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="paciente_id">Paciente relacionado</label>
+                            <select class="form-input" id="paciente_id" name="paciente_id">
+                                <option value="">Consulta geral</option>
+                                {% for paciente in pacientes %}
+                                    <option value="{{ paciente.id }}" {% if selected_paciente_id == paciente.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ paciente.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="pergunta">Pergunta clínica</label>
+                            <input class="form-input" id="pergunta" name="pergunta" required placeholder="Ex.: quais sinais merecem acompanhamento neste caso?">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="contexto">Contexto observado</label>
+                        <textarea class="notes-textarea" id="contexto" name="contexto" rows="7" placeholder="Cole observações, queixa principal, comportamento em sessão, contexto escolar ou familiar."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary" type="submit">Consultar IA local</button>
+                    </div>
+                </form>
+            </div>
+
+            {% if resultado %}
+                <div class="table-card" style="margin-top: 24px;">
+                    <div class="table-header">
+                        <h3 class="table-title">Resultado da IA</h3>
+                    </div>
+                    <div style="padding: 24px; display: grid; gap: 18px;">
+                        {% if resultado.insights %}
+                            <section>
+                                <h4>Leitura preliminar</h4>
+                                {% for item in resultado.insights %}
+                                    <p style="white-space: pre-wrap;">{{ item }}</p>
+                                {% endfor %}
+                            </section>
+                        {% endif %}
+
+                        {% if resultado.alerts %}
+                            <section>
+                                <h4>Alertas observados</h4>
+                                {% for alerta in resultado.alerts %}
+                                    <p><strong>{{ alerta.title }}</strong>: {{ alerta.description }}</p>
+                                {% endfor %}
+                            </section>
+                        {% endif %}
+
+                        {% if resultado.scores %}
+                            <section>
+                                <h4>Dimensões estimadas</h4>
+                                <div class="stats-grid">
+                                    {% for chave, valor in resultado.scores.items %}
+                                        <div class="stat-card">
+                                            <div class="stat-content">
+                                                <p class="stat-label">{{ chave|title }}</p>
+                                                <h2 class="stat-value">{{ valor }}%</h2>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+
+                        {% if resultado.dsm5_citations %}
+                            <section>
+                                <h4>Memria semntica consultada</h4>
+                                {% for citacao in resultado.dsm5_citations %}
+                                    <p><strong>{{ citacao.term_searched }}</strong>: {{ citacao.text }}</p>
+                                {% endfor %}
+                            </section>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

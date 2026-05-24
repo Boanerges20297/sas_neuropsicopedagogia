@@ -1,186 +1,99 @@
-<!DOCTYPE html><!doctype html>
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Sistema de Avaliação</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <!-- Lado Esquerdo - Showcase da Logo -->
+            <div class="login-left">
+                <div class="login-logo-large">
+                    <img src="{% static 'logo.jpg' %}" alt="M.I. Joca de Sousa Teixeira Neuropsicopedagoga">
+                </div>
+                <div class="login-welcome">
+                    <h2>Criar Conta</h2>
+                    <p>Preencha os dados abaixo para começar</p>
+                    <p>M.I. Joca de Sousa Teixeira Neuropsicopedagoga</p>
+                </div>
+                <div class="login-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">✨</div>
+                        <span>Cadastro rápido e gratuito</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">🔒</div>
+                        <span>Seus dados estão seguros (LGPD)</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">📊</div>
+                        <span>Acesso imediato ao sistema</span>
+                    </div>
+                </div>
+            </div>
 
-<html lang="pt-BR"><html lang="pt-br">
-
-<head><head>
-
-    <meta charset="UTF-8">    <meta charset="utf-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Cadastro - M.I. Joca de Sousa Teixeira</title>    <title>Cadastro - Sistema de Avaliação</title>
-
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-</head></head>
-
-<body class="login-page"><body>
-
-    <div class="login-container">    <div class="auth-container">
-
-        <div class="login-box">        <div class="auth-card">
-
-            <!-- Lado Esquerdo - Showcase da Logo -->            <div class="auth-logo">
-
-            <div class="login-left">                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo">
-
-                <div class="login-logo-large">            </div>
-
-                    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="M.I. Joca de Sousa Teixeira Neuropsicopedagoga">            
-
-                </div>            <h2 class="auth-title">Criar nova conta</h2>
-
-                <div class="login-welcome">            
-
-                    <h2>Criar Conta</h2>            {% with messages = get_flashed_messages(with_categories=true) %}
-
-                    <p>Preencha os dados abaixo para começar</p>                {% if messages %}
-
-                    <p>M.I. Joca de Sousa Teixeira Neuropsicopedagoga</p>                    {% for category, message in messages %}
-
-                </div>                        <div class="alert alert-{{ category }}">
-
-                <div class="login-features">                            {{ message }}
-
-                    <div class="feature-item">                        </div>
-
-                        <div class="feature-icon">✨</div>                    {% endfor %}
-
-                        <span>Cadastro rápido e gratuito</span>                {% endif %}
-
-                    </div>            {% endwith %}
-
-                    <div class="feature-item">            
-
-                        <div class="feature-icon">🔒</div>            <form method="post">
-
-                        <span>Seus dados estão seguros</span>                <div class="form-group">
-
-                    </div>                    <label for="nome">Nome Completo *</label>
-
-                    <div class="feature-item">                    <input type="text" name="nome" id="nome" required autofocus>
-
-                        <div class="feature-icon">📊</div>                </div>
-
-                        <span>Acesso imediato ao sistema</span>                
-
-                    </div>                <div class="form-group">
-
-                </div>                    <label for="email">E-mail *</label>
-
-            </div>                    <input type="email" name="email" id="email" required>
-
+            <!-- Lado Direito - Formulário de Cadastro -->
+            <div class="login-right">
+                <div class="login-header">
+                    <h1>Cadastro</h1>
+                    <p>Crie sua conta para acessar o sistema</p>
                 </div>
 
-            <!-- Lado Direito - Formulário de Cadastro -->                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="login-alert alert-{{ message.tags }}">
+                            {% if message.tags == 'success' %}
+                                <span>✓</span>
+                            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                <span>⚠</span>
+                            {% else %}
+                                <span>ℹ</span>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
-            <div class="login-right">                <div class="form-group">
+                <form method="POST" action="{% url 'register' %}" class="login-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="nome">Nome Completo *</label>
+                        <input 
+                            type="text" 
+                            id="nome" 
+                            name="nome" 
+                            placeholder="Seu nome completo"
+                            required 
+                            autofocus
+                        >
+                    </div>
 
-                <div class="login-header">                    <label for="senha">Senha *</label>
+                    <div class="form-group">
+                        <label for="email">E-mail *</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="seu.email@exemplo.com"
+                            required 
+                        >
+                    </div>
 
-                    <h1>Cadastro</h1>                    <input type="password" name="senha" id="senha" required minlength="6">
-
-                    <p>Crie sua conta para acessar o sistema</p>                    <small style="color: var(--text-light); display: block; margin-top: 5px;">Mínimo 6 caracteres</small>
-
-                </div>                </div>
-
-                
-
-                {% with messages = get_flashed_messages(with_categories=true) %}                <div class="inline-group">
-
-                    {% if messages %}                    <div class="form-group">
-
-                        {% for category, message in messages %}                        <label for="data_nascimento">Data de Nascimento</label>
-
-                            <div class="login-alert alert-{{ category }}">                        <input type="date" name="data_nascimento" id="data_nascimento">
-
-                                {% if category == 'success' %}                    </div>
-
-                                    <span>✓</span>                    
-
-                                {% elif category == 'danger' %}                    <div class="form-group">
-
-                                    <span>⚠</span>                        <label for="telefone">Telefone</label>
-
-                                {% else %}                        <input type="tel" name="telefone" id="telefone">
-
-                                    <span>ℹ</span>                    </div>
-
-                                {% endif %}                </div>
-
-                                {{ message }}                
-
-                            </div>                <div class="form-group">
-
-                        {% endfor %}                    <label for="escolaridade">Escolaridade</label>
-
-                    {% endif %}                    <select name="escolaridade" id="escolaridade">
-
-                {% endwith %}                        <option value="">Selecione...</option>
-
-                        <option value="Fundamental Incompleto">Fundamental Incompleto</option>
-
-                <form method="POST" action="{{ url_for('register') }}" class="login-form">                        <option value="Fundamental Completo">Fundamental Completo</option>
-
-                    <div class="form-group">                        <option value="Médio Incompleto">Médio Incompleto</option>
-
-                        <label for="nome">Nome Completo *</label>                        <option value="Médio Completo">Médio Completo</option>
-
-                        <input                         <option value="Superior Incompleto">Superior Incompleto</option>
-
-                            type="text"                         <option value="Superior Completo">Superior Completo</option>
-
-                            id="nome"                         <option value="Pós-graduação">Pós-graduação</option>
-
-                            name="nome"                         <option value="Mestrado">Mestrado</option>
-
-                            placeholder="Seu nome completo"                        <option value="Doutorado">Doutorado</option>
-
-                            required                     </select>
-
-                            autofocus                </div>
-
-                        >                
-
-                    </div>                <button type="submit" class="btn btn-primary btn-block btn-lg">Cadastrar</button>
-
-            </form>
-
-                    <div class="form-group">            
-
-                        <label for="email">E-mail *</label>            <div class="auth-link">
-
-                        <input                 Já tem uma conta? <a href="{{ url_for('login') }}">Faça login</a>
-
-                            type="email"             </div>
-
-                            id="email"             
-
-                            name="email"             <div class="auth-link" style="margin-top: 10px;">
-
-                            placeholder="seu.email@exemplo.com"                <a href="{{ url_for('index') }}">← Voltar ao formulário</a>
-
-                            required            </div>
-
-                        >        </div>
-
-                    </div>    </div>
-
-</body>
-
-                    <div class="form-group"></html>
-
+                    <div class="form-group">
                         <label for="senha">Senha *</label>
                         <input 
                             type="password" 
                             id="senha" 
                             name="senha" 
-                            placeholder="Mínimo 6 caracteres"
+                            placeholder="Mínimo 8 caracteres"
                             required
-                            minlength="6"
                         >
                         <small style="color: var(--text-light); display: block; margin-top: 5px; font-size: 12px;">
-                            A senha deve ter no mínimo 6 caracteres
+                            Mínimo 8 caracteres com maiúscula e número.
                         </small>
                     </div>
 
@@ -236,11 +149,7 @@
 
                 <div class="register-prompt">
                     Já tem uma conta? 
-                    <a href="{{ url_for('login') }}">Faça login</a>
-                </div>
-
-                <div class="back-to-home">
-                    <a href="{{ url_for('index') }}">← Voltar ao formulário</a>
+                    <a href="{% url 'login' %}">Faça login</a>
                 </div>
             </div>
         </div>
@@ -268,7 +177,7 @@
             outline: none;
             border-color: var(--primary-color);
             background: white;
-            box-shadow: 0 0 0 4px rgba(49, 91, 97, 0.08);
+            box-shadow: 0 0 0 4px rgba(139, 90, 60, 0.08);
         }
 
         .checkbox-label {
@@ -291,3 +200,4 @@
     </style>
 </body>
 </html>
+

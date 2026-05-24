@@ -1,63 +1,60 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Respostas - M.I. Joca de Sousa Teixeira</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     <!-- Navbar Moderna -->
     <nav class="modern-navbar">
         <div class="navbar-container">
-            <a href="{{ url_for('dashboard') }}" class="navbar-brand">
-                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
+            <a href="{% url 'dashboard' %}" class="navbar-brand">
+                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
                     <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
                     <span class="brand-subtitle">Neuropsicopedagoga</span>
                 </div>
             </a>
             
-            <div class="navbar-menu">
-                <a href="{{ url_for('dashboard') }}" class="nav-item">
+                        <div class="navbar-menu">
+                <a href="{% url 'dashboard' %}" class="nav-item">
                     <span class="nav-icon">📊</span>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('admin_responses') }}" class="nav-item active">
+                <a href="{% url 'pacientes_list' %}" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>Pacientes</span>
+                </a>
+                <a href="{% url 'ia_consulta' %}" class="nav-item">
+                    <span class="nav-icon">🧠</span>
+                    <span>Consulta IA</span>
+                </a>
+                <a href="{% url 'admin_responses' %}" class="nav-item active">
                     <span class="nav-icon">📋</span>
                     <span>Respostas</span>
                 </a>
-                <a href="{{ url_for('admin_tests') }}" class="nav-item">
-                    <span class="nav-icon">🧪</span>
-                    <span>Gerenciar Testes</span>
-                </a>
-                <a href="{{ url_for('admin_categories') }}" class="nav-item">
-                    <span class="nav-icon">🏷️</span>
-                    <span>Categorias</span>
-                </a>
-                <a href="{{ url_for('admin_users') }}" class="nav-item">
-                    <span class="nav-icon">👥</span>
+                <a href="{% url 'admin_users' %}" class="nav-item">
+                    <span class="nav-icon">👤</span>
                     <span>Usuários</span>
-                </a>
-                <a href="{{ url_for('select_test') }}" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    <span>Responder Teste</span>
                 </a>
             </div>
             
             <div class="navbar-user">
                 <div class="user-dropdown">
                     <button class="user-btn">
-                        <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
-                        <span class="user-name">{{ current_user.nome }}</span>
+                        <div class="user-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
+                        <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('user_area') }}" class="dropdown-link">
+                        <a href="{% url 'user_area' %}" class="dropdown-link">
                             <span>👤</span> Meu Perfil
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="{{ url_for('logout') }}" class="dropdown-link logout">
+                        <a href="{% url 'logout' %}" class="dropdown-link logout">
                             <span>🚪</span> Sair
                         </a>
                     </div>
@@ -75,12 +72,9 @@
                     <p class="dashboard-subtitle">Gerencie e visualize todas as avaliações</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn-icon" title="Filtrar">
-                        <span>🔍</span>
-                    </button>
-                    <button class="btn-icon" title="Exportar Tudo">
-                        <span>📥</span>
-                    </button>
+                    <a href="{% url 'export_excel' %}" class="btn-outline" style="background: #52A675; color: white; border-color: #52A675; text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                        <span>📥</span> Exportar Excel
+                    </a>
                 </div>
             </div>
 
@@ -95,34 +89,34 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Data/Hora</th>
-                                <th>Nome</th>
-                                <th>Tipo de Teste</th>
+                                <th>Estudante</th>
+                                <th>Escola</th>
                                 <th>Pontuação</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% if responses %}
-                                {% for response in responses %}
+                                {% for r in responses %}
                                 <tr>
-                                    <td><span class="badge badge-id">#{{ response.id }}</span></td>
-                                    <td>{{ response.timestamp.strftime('%d/%m/%Y %H:%M') if response.timestamp else 'N/A' }}</td>
-                                    <td>{{ response.nome_completo }}</td>
-                                    <td>{{ response.test_type }}</td>
+                                    <td><span class="badge badge-id">#{{ r.id }}</span></td>
+                                    <td>{{ r.timestamp|date:"d/m/Y H:i" }}</td>
+                                    <td><strong>{{ r.nome|default:"Anônimo" }}</strong></td>
+                                    <td>{{ r.unidade_escolar|default:"Não informada" }}</td>
                                     <td>
-                                        {% if response.score %}
-                                            <span class="badge badge-success">✓ {{ response.score }} pts</span>
+                                        {% if r.score %}
+                                            <span class="badge badge-success">✓ {{ r.score }} pts</span>
                                         {% else %}
                                             <span class="badge badge-warning">⏳ Pendente</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('view_response', response_id=response.id) }}" 
+                                        <a href="{% url 'view_response' r.id %}" 
                                            class="btn-table-action" 
-                                           title="{% if response.score %}Ver Pontuação{% else %}Pontuar{% endif %}">
-                                            {% if response.score %}👁️{% else %}✏️{% endif %}
+                                           style="text-decoration: none;"
+                                           title="{% if r.score %}Ver Pontuação{% else %}Pontuar{% endif %}">
+                                            {% if r.score %}️{% else %}️{% endif %}
                                         </a>
-                                        <button class="btn-table-action" title="Exportar PDF">📄</button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -143,6 +137,19 @@
         </div>
     </main>
 
-    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        document.querySelector('.user-btn')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.parentElement.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.user-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
+

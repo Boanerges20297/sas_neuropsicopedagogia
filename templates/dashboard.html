@@ -1,60 +1,58 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - M.I. Joca de Sousa Teixeira</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+    <!-- Mapeamento simples para dashboard.js -->
+    <script src="{% static 'dashboard.js' %}" defer></script>
 </head>
 <body>
     <nav class="modern-navbar">
         <div class="navbar-container">
-            <a href="{{ url_for('dashboard') }}" class="navbar-brand">
-                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
+            <a href="{% url 'dashboard' %}" class="navbar-brand">
+                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
                     <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
                     <span class="brand-subtitle">Neuropsicopedagoga</span>
                 </div>
             </a>
-            <div class="navbar-menu">
-                <a href="{{ url_for('dashboard') }}" class="nav-item active">
+                        <div class="navbar-menu">
+                <a href="{% url 'dashboard' %}" class="nav-item active">
                     <span class="nav-icon">📊</span>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('admin_responses') }}" class="nav-item">
+                <a href="{% url 'pacientes_list' %}" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>Pacientes</span>
+                </a>
+                <a href="{% url 'ia_consulta' %}" class="nav-item">
+                    <span class="nav-icon">🧠</span>
+                    <span>Consulta IA</span>
+                </a>
+                <a href="{% url 'admin_responses' %}" class="nav-item">
                     <span class="nav-icon">📋</span>
                     <span>Respostas</span>
                 </a>
-                <a href="{{ url_for('admin_tests') }}" class="nav-item">
-                    <span class="nav-icon">🧪</span>
-                    <span>Gerenciar Testes</span>
-                </a>
-                <a href="{{ url_for('admin_categories') }}" class="nav-item">
-                    <span class="nav-icon">🏷️</span>
-                    <span>Categorias</span>
-                </a>
-                <a href="{{ url_for('admin_users') }}" class="nav-item">
-                    <span class="nav-icon">👥</span>
+                <a href="{% url 'admin_users' %}" class="nav-item">
+                    <span class="nav-icon">👤</span>
                     <span>Usuários</span>
-                </a>
-                <a href="{{ url_for('select_test') }}" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    <span>Responder Teste</span>
                 </a>
             </div>
             <div class="navbar-user">
                 <div class="user-dropdown">
                     <button class="user-btn">
-                        <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
-                        <span class="user-name">{{ current_user.nome }}</span>
+                        <div class="user-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
+                        <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('user_area') }}" class="dropdown-link"><span>👤</span> Meu Perfil</a>
+                        <a href="{% url 'user_area' %}" class="dropdown-link"><span>👤</span> Meu Perfil</a>
                         <div class="dropdown-divider"></div>
-                        <a href="{{ url_for('logout') }}" class="dropdown-link logout"><span>🚪</span> Sair</a>
+                        <a href="{% url 'logout' %}" class="dropdown-link logout"><span>🚪</span> Sair</a>
                     </div>
                 </div>
             </div>
@@ -71,19 +69,19 @@
                     <button class="btn-icon" title="Atualizar" onclick="location.reload()"><span>🔄</span></button>
                 </div>
             </div>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert-modern alert-{{ category }}">
-                            <span class="alert-icon">{% if category == 'success' %}✓{% elif category == 'danger' %}⚠{% else %}ℹ{% endif %}</span>
-                            <span class="alert-message">{{ message }}</span>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-modern alert-{{ message.tags }}">
+                        <span class="alert-icon">{% if message.tags == 'success' %}✓{% else %}ℹ{% endif %}</span>
+                        <span class="alert-message">{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📊</div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #8B5A3C 0%, #D4A574 100%);">📊</div>
                     <div class="stat-content">
                         <p class="stat-label">Total de Respostas</p>
                         <h2 class="stat-value">{{ stats.total_responses }}</h2>
@@ -99,11 +97,11 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">📋</div>
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">👥</div>
                     <div class="stat-content">
-                        <p class="stat-label">Tipos de Testes</p>
-                        <h2 class="stat-value">{{ stats.test_types|length }}</h2>
-                        <p class="stat-change">Disponíveis</p>
+                        <p class="stat-label">Pacientes</p>
+                        <h2 class="stat-value">{{ stats.total_pacientes }}</h2>
+                        <p class="stat-change">cadastro clínico</p>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -115,10 +113,11 @@
                     </div>
                 </div>
             </div>
+
             <div class="charts-grid">
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3 class="chart-title">Distribuição por Tipo de Teste</h3>
+                        <h3 class="chart-title">Distribuição por Categoria</h3>
                     </div>
                     <div class="chart-container">
                         <canvas id="testTypesChart"></canvas>
@@ -133,10 +132,14 @@
                     </div>
                 </div>
             </div>
+
             <div class="table-card">
                 <div class="table-header">
                     <h3 class="table-title">Respostas Recentes</h3>
-                    <a href="{{ url_for('admin_responses') }}" class="btn-outline">Ver todas</a>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="{% url 'export_excel' %}" class="btn-outline" style="background: #52A675; color: white; border-color: #52A675;">📥 Exportar Excel</a>
+                        <a href="{% url 'admin_responses' %}" class="btn-outline">Ver todas</a>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="modern-table">
@@ -144,22 +147,21 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Data/Hora</th>
-                                <th>Tipo de Teste</th>
-                                <th>Status</th>
+                                <th>Estudante</th>
+                                <th>Escola</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% if stats.recent_responses %}
-                                {% for response in stats.recent_responses %}
+                                {% for resp in stats.recent_responses %}
                                 <tr>
-                                    <td><span class="badge badge-id">#{{ response.id }}</span></td>
-                                    <td>{{ response.timestamp.strftime('%d/%m/%Y %H:%M') if response.timestamp else 'N/A' }}</td>
-                                    <td>{{ response.test_type }}</td>
-                                    <td><span class="badge badge-success">Completo</span></td>
+                                    <td><span class="badge badge-id">#{{ resp.id }}</span></td>
+                                    <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
+                                    <td><strong>{{ resp.nome|default:"Anônimo" }}</strong></td>
+                                    <td>{{ resp.unidade_escolar|default:"Não informada" }}</td>
                                     <td>
-                                        <button class="btn-table-action" title="Visualizar">👁️</button>
-                                        <button class="btn-table-action" title="Exportar">📥</button>
+                                        <a href="{% url 'view_response' resp.id %}" class="btn-table-action" title="Visualizar" style="text-decoration: none;">️</a>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -177,8 +179,22 @@
     
     <!-- Dados para os gráficos (via data attributes) -->
     <div id="chartData" 
-         data-test-types='{"labels":[{% for test_type, count in stats.responses_by_type %}"{{ test_type }}"{% if not loop.last %},{% endif %}{% endfor %}],"values":[{% for test_type, count in stats.responses_by_type %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}]}'
-         data-daily-responses='{"labels":[{% for date, count in stats.daily_responses %}"{{ date }}"{% if not loop.last %},{% endif %}{% endfor %}],"values":[{% for date, count in stats.daily_responses %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}]}'
+         data-test-types='{"labels":["Altas Habilidades / SD"],"values":[{{ stats.total_responses }}]}'
+         data-daily-responses='{"labels":{{ stats.daily_labels|safe }},"values":{{ stats.daily_values|safe }}}'
          style="display:none;"></div>
+
+    <script>
+        document.querySelector('.user-btn')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.parentElement.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.querySelector('.user-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

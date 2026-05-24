@@ -1,17 +1,18 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Questões - {{ test.titulo }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     <!-- Navbar Moderna -->
     <nav class="modern-navbar">
         <div class="navbar-container">
-            <a href="{{ url_for('dashboard') }}" class="navbar-brand">
-                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
+            <a href="{% url 'dashboard' %}" class="navbar-brand">
+                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
                     <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
                     <span class="brand-subtitle">Neuropsicopedagoga</span>
@@ -19,27 +20,27 @@
             </a>
             
             <div class="navbar-menu">
-                <a href="{{ url_for('dashboard') }}" class="nav-item">
+                <a href="{% url 'dashboard' %}" class="nav-item">
                     <span class="nav-icon">📊</span>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('admin_responses') }}" class="nav-item">
+                <a href="{% url 'admin_responses' %}" class="nav-item">
                     <span class="nav-icon">📝</span>
                     <span>Respostas</span>
                 </a>
-                <a href="{{ url_for('admin_tests') }}" class="nav-item active">
+                <a href="{% url 'admin_tests' %}" class="nav-item active">
                     <span class="nav-icon">📋</span>
                     <span>Gerenciar Testes</span>
                 </a>
-                <a href="{{ url_for('admin_categories') }}" class="nav-item">
+                <a href="{% url 'admin_categories' %}" class="nav-item">
                     <span class="nav-icon">🏷️</span>
                     <span>Categorias</span>
                 </a>
-                <a href="{{ url_for('admin_users') }}" class="nav-item">
+                <a href="{% url 'admin_users' %}" class="nav-item">
                     <span class="nav-icon">👥</span>
                     <span>Usuários</span>
                 </a>
-                <a href="{{ url_for('select_test') }}" class="nav-item">
+                <a href="{% url 'select_test' %}" class="nav-item">
                     <span class="nav-icon">✍️</span>
                     <span>Responder Teste</span>
                 </a>
@@ -47,16 +48,16 @@
 
             <div class="user-section">
                 <button class="user-btn" onclick="toggleUserMenu()">
-                    <div class="user-avatar">{{ current_user.nome[0].upper() }}</div>
-                    <span class="user-name">{{ current_user.nome }}</span>
+                    <div class="user-avatar">{{ request.user.first_name|default:request.user.username|slice:':1'|upper }}</div>
+                    <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
                     <span class="dropdown-arrow">▼</span>
                 </button>
                 <div class="user-dropdown" id="userDropdown">
-                    <a href="{{ url_for('user_area') }}" class="dropdown-item">
+                    <a href="{% url 'user_area' %}" class="dropdown-item">
                         <span>👤</span>
                         <span>Meu Perfil</span>
                     </a>
-                    <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                    <a href="{% url 'logout' %}" class="dropdown-item logout">
                         <span>🚪</span>
                         <span>Sair</span>
                     </a>
@@ -106,7 +107,7 @@
         <div class="questions-container">
             <!-- Header -->
             <div class="editor-header">
-                <a href="{{ url_for('admin_tests') }}" class="btn-back">
+                <a href="{% url 'admin_tests' %}" class="btn-back">
                     <span>←</span> Voltar para Testes
                 </a>
                 <div class="header-info">
@@ -118,15 +119,15 @@
                 </button>
             </div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
                 {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert-modern alert-{{ category }}">
+                    {% for message in messages %}
+                        <div class="alert-modern alert-{{ message.tags }}">
                             <span class="alert-message">{{ message }}</span>
                         </div>
                     {% endfor %}
                 {% endif %}
-            {% endwith %}
+            {% endif %}
 
             <!-- Lista de Questões -->
             <div class="questions-list" id="questionsList">
@@ -230,7 +231,7 @@
     <!-- Toast para notificações -->
     <div id="toast" class="toast"></div>
 
-    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script src="{% static 'dashboard.js' %}"></script>
     <script>
         const testId = "{{ test.id }}";
 

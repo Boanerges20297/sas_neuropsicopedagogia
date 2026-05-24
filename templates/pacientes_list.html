@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pacientes - Neuro Diagnosis</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+<main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-header">
+                <div class="header-content">
+                    <h1>Pacientes</h1>
+                    <p>Cadastro, acompanhamento e anotações de atendimento.</p>
+                </div>
+                <a href="{% url 'paciente_create' %}" class="btn-outline">Novo paciente</a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Pacientes cadastrados</h3>
+                </div>
+                <table class="responses-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Responsável</th>
+                            <th>Escola</th>
+                            <th>Atualizado em</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paciente in pacientes %}
+                            <tr>
+                                <td>{{ paciente.nome }}</td>
+                                <td>{{ paciente.responsavel|default:"-" }}</td>
+                                <td>{{ paciente.escola|default:"-" }}</td>
+                                <td>{{ paciente.updated_at|date:"d/m/Y H:i" }}</td>
+                                <td><a href="{% url 'paciente_detail' paciente.id %}" class="btn-table-action">Abrir</a></td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5">Nenhum paciente cadastrado ainda.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+

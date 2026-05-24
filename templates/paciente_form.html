@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Paciente</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    {% include 'includes/admin_navbar.html' %}
+<main class="form-main">
+        <div class="form-container">
+            <div class="form-header">
+                <a href="{% url 'pacientes_list' %}" class="btn-back">Voltar</a>
+                <h1 class="form-title">Novo paciente</h1>
+                <p class="form-subtitle">Dados iniciais para acompanhamento clínico.</p>
+            </div>
+
+            <form method="POST" class="modern-form">
+                {% csrf_token %}
+                <div class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="nome">Nome completo *</label>
+                            <input class="form-input" id="nome" name="nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="data_nascimento">Data de nascimento</label>
+                            <input class="form-input" id="data_nascimento" name="data_nascimento" type="date">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="responsavel">Responsável</label>
+                            <input class="form-input" id="responsavel" name="responsavel">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="telefone">Telefone</label>
+                            <input class="form-input" id="telefone" name="telefone">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="email">E-mail</label>
+                            <input class="form-input" id="email" name="email" type="email">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="escola">Escola</label>
+                            <input class="form-input" id="escola" name="escola">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="serie">Série/turma</label>
+                            <input class="form-input" id="serie" name="serie">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="queixa_principal">Queixa principal</label>
+                        <textarea class="form-textarea" id="queixa_principal" name="queixa_principal" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="observacoes">Observações iniciais</label>
+                        <textarea class="form-textarea" id="observacoes" name="observacoes" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <a href="{% url 'pacientes_list' %}" class="btn-secondary">Cancelar</a>
+                    <button class="btn-primary" type="submit">Salvar paciente</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
+

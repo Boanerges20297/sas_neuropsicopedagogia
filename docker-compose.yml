@@ -1,0 +1,88 @@
+services:
+  app:
+    build: .
+    container_name: neuro-diagnosis-app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG_MODE=${DEBUG_MODE:-False}
+      - USE_SQLITE=${USE_SQLITE:-False}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - DB_NAME=${DB_NAME:-neuro_diagnosis_db}
+      - DB_USER=${DB_USER:-neuro_diagnosis_user}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - AI_SERVICE_URL=http://ai:5001
+      - SECRET_KEY=${SECRET_KEY}
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_NAME=${ADMIN_NAME}
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-False}
+      - CSRF_COOKIE_SECURE=${CSRF_COOKIE_SECURE:-False}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://neuro-diagnosis.tech,https://www.neuro-diagnosis.tech,http://76.13.121.172:8000}
+    depends_on:
+      db:
+        condition: service_healthy
+      ai:
+        condition: service_started
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.neuro-diagnosis.rule=Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)
+      - traefik.http.routers.neuro-diagnosis.entrypoints=websecure
+      - traefik.http.routers.neuro-diagnosis.tls=true
+      - traefik.http.routers.neuro-diagnosis.tls.certresolver=letsencrypt
+      - traefik.http.services.neuro-diagnosis.loadbalancer.server.port=8000
+    volumes:
+      - .:/code
+      - neuro-diagnosis-static:/code/staticfiles
+    networks:
+      - neuro-diagnosis-network
+
+  ai:
+    build: ./ai_service
+    container_name: neuro-diagnosis-ai
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - DSM_LIBRARY_PATH=/code/static/library/DSM-5-TR 2023 AHA portugues.pdf
+    volumes:
+      - ./ai_service:/app
+      - neuro-diagnosis-ai-memory:/app/memory_db
+      - .:/code # Mapeia raiz para ter acesso compartilhado a static/library
+    networks:
+      - neuro-diagnosis-network
+
+  db:
+    image: mysql:8.0
+    container_name: neuro-diagnosis-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-neuro_diagnosis_db}
+      MYSQL_USER: ${DB_USER:-neuro_diagnosis_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - neuro-diagnosis-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - neuro-diagnosis-network
+
+volumes:
+  neuro-diagnosis-mysql-data:
+  neuro-diagnosis-ai-memory:
+  neuro-diagnosis-static:
+
+networks:
+  neuro-diagnosis-network:
+    driver: bridge

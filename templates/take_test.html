@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ test.titulo }} - M.I. Joca de Sousa Teixeira</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     <style>
         /* Modern Navbar Styling */
         .modern-navbar {
@@ -111,36 +112,36 @@
     <!-- Modern Navbar -->
     <nav class="modern-navbar">
         <div class="navbar-container">
-            <a href="{{ url_for('index') }}" class="navbar-brand">
+            <a href="{% url 'index' %}" class="navbar-brand">
                 <span class="navbar-brand-icon">👩‍⚕️</span>
                 <span>M.I. Joca de Sousa Teixeira</span>
             </a>
             <div class="navbar-menu">
-                {% if current_user.is_authenticated %}
-                    {% if current_user.is_admin %}
-                    <a href="{{ url_for('dashboard') }}" class="navbar-link">
+                {% if request.user.is_authenticated %}
+                    {% if request.user.role == 'admin' %}
+                    <a href="{% url 'dashboard' %}" class="navbar-link">
                         <span class="navbar-link-icon">📊</span>
                         <span>Dashboard</span>
                     </a>
                     {% endif %}
-                    <a href="{{ url_for('index') }}" class="navbar-link">
+                    <a href="{% url 'index' %}" class="navbar-link">
                         <span class="navbar-link-icon">🏠</span>
                         <span>Início</span>
                     </a>
-                    <a href="{{ url_for('user_area') }}" class="navbar-link">
+                    <a href="{% url 'user_area' %}" class="navbar-link">
                         <span class="navbar-link-icon">👤</span>
-                        <span>{{ current_user.username }}</span>
+                        <span>{{ request.user.username }}</span>
                     </a>
-                    <a href="{{ url_for('logout') }}" class="navbar-link">
+                    <a href="{% url 'logout' %}" class="navbar-link">
                         <span class="navbar-link-icon">🚪</span>
                         <span>Sair</span>
                     </a>
                 {% else %}
-                    <a href="{{ url_for('index') }}" class="navbar-link">
+                    <a href="{% url 'index' %}" class="navbar-link">
                         <span class="navbar-link-icon">🏠</span>
                         <span>Início</span>
                     </a>
-                    <a href="{{ url_for('login') }}" class="navbar-link">
+                    <a href="{% url 'login' %}" class="navbar-link">
                         <span class="navbar-link-icon">🔐</span>
                         <span>Login</span>
                     </a>
@@ -181,7 +182,7 @@
             </div>
 
             <!-- Formulário de Respostas -->
-            <form id="testForm" action="{{ url_for('submit_test_response', test_id=test.id) }}" method="POST">
+            <form id="testForm" action="{% url 'submit_test_response' test.id %}" method="POST">
                 <div class="questions-container">
                     {% for question in questions %}
                     <div class="question-block">
@@ -288,7 +289,7 @@
 
                 <!-- Botões -->
                 <div class="form-actions">
-                    <a href="{{ url_for('index') }}" class="btn btn-secondary">← Voltar</a>
+                    <a href="{% url 'index' %}" class="btn btn-secondary">← Voltar</a>
                     <button type="submit" class="btn btn-primary">Enviar Respostas ✓</button>
                 </div>
             </form>

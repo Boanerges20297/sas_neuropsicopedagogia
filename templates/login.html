@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - M.I. Joca de Sousa Teixeira Neuropsicopedagoga</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body class="login-page">
     <div class="login-container">
@@ -12,7 +13,7 @@
             <!-- Lado Esquerdo - Showcase da Logo -->
             <div class="login-left">
                 <div class="login-logo-large">
-                    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="M.I. Joca de Sousa Teixeira Neuropsicopedagoga">
+                    <img src="{% static 'logo.jpg' %}" alt="M.I. Joca de Sousa Teixeira Neuropsicopedagoga">
                 </div>
                 <div class="login-welcome">
                     <h2>Bem-vindo!</h2>
@@ -42,24 +43,23 @@
                     <p>Acesse sua conta para continuar</p>
                 </div>
 
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="login-alert alert-{{ category }}">
-                                {% if category == 'success' %}
-                                    <span>✓</span>
-                                {% elif category == 'danger' %}
-                                    <span>⚠</span>
-                                {% else %}
-                                    <span>ℹ</span>
-                                {% endif %}
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="login-alert alert-{{ message.tags }}">
+                            {% if message.tags == 'success' %}
+                                <span>✓</span>
+                            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                <span>⚠</span>
+                            {% else %}
+                                <span>ℹ</span>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
 
-                <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                <form method="POST" action="{% url 'login' %}" class="login-form">
+                    {% csrf_token %}
                     <div class="form-group">
                         <label for="email">E-mail</label>
                         <input 
@@ -102,14 +102,11 @@
 
                 <div class="register-prompt">
                     Não tem uma conta? 
-                    <a href="{{ url_for('register') }}">Cadastre-se gratuitamente</a>
-                </div>
-
-                <div class="back-to-home">
-                    <a href="{{ url_for('index') }}">← Voltar ao formulário</a>
+                    <a href="{% url 'register' %}">Cadastre-se gratuitamente</a>
                 </div>
             </div>
         </div>
     </div>
 </body>
 </html>
+
