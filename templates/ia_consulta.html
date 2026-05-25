@@ -1,138 +1,146 @@
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consulta IA - Neuro Diagnosis</title>
+    <title>Consulta IA - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
+<body class="ai-studio-page">
     {% include 'includes/admin_navbar.html' %}
 
-    <main class="dashboard-main">
-        <div class="dashboard-container">
-            <div class="dashboard-header">
-                <div class="header-content">
-                    <h1 class="dashboard-title">Consulta a IA</h1>
-                    <p class="dashboard-subtitle">Apoio neuropsicopedagógico local, sem envio para APIs externas por padrão.</p>
-                </div>
-                <div class="header-actions">
-                    <a href="{% url 'pacientes_list' %}" class="btn-outline">Pacientes</a>
-                </div>
+    <main class="ai-studio">
+        <section class="ai-hero">
+            <div>
+                <span class="ai-eyebrow">Nucleo de raciocinio clinico</span>
+                <h1>Consulta IA Clínica</h1>
+                <p>Assistente local para apoiar hipótese, conduta e aprendizado supervisionado com feedback da profissional.</p>
             </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">IA em uso</p>
-                        <h2 class="stat-value" style="font-size: 22px;">{{ engine_info.nome }}</h2>
-                        <p class="stat-change">{{ engine_info.tipo }}</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">Modelo</p>
-                        <h2 class="stat-value" style="font-size: 18px;">Heurístico local</h2>
-                        <p class="stat-change">{{ engine_info.modelo }}</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-content">
-                        <p class="stat-label">Privacidade</p>
-                        <h2 class="stat-value" style="font-size: 18px;">Local-first</h2>
-                        <p class="stat-change">{{ engine_info.nuvem }}</p>
-                    </div>
-                </div>
+            <div class="ai-hero-metrics">
+                <div><span>Motor</span><strong>Edge AI local</strong></div>
+                <div><span>Privacidade</span><strong>Local-first</strong></div>
+                <div><span>Aprendizado</span><strong>{{ score_ia }}</strong></div>
             </div>
+        </section>
 
-            {% if erro %}
-                <div class="alert-modern alert-error">{{ erro }}</div>
-            {% endif %}
+        {% if erro %}
+            <div class="alert-modern alert-error">{{ erro }}</div>
+        {% endif %}
 
-            <div class="notes-section">
-                <h3 class="notes-title">Nova consulta</h3>
+        <section class="ai-workbench">
+            <div class="ai-console">
+                <div class="ai-section-head">
+                    <span>Entrada clínica</span>
+                    <strong>Nova consulta</strong>
+                </div>
                 <form method="POST">
                     {% csrf_token %}
-                    <div class="form-row">
+                    <div class="ai-consult-grid">
                         <div class="form-group">
-                            <label class="form-label" for="paciente_id">Paciente relacionado</label>
+                            <label class="form-label" for="paciente_id">Paciente</label>
                             <select class="form-input" id="paciente_id" name="paciente_id">
                                 <option value="">Consulta geral</option>
                                 {% for paciente in pacientes %}
-                                    <option value="{{ paciente.id }}" {% if selected_paciente_id == paciente.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ paciente.nome }}
-                                    </option>
+                                    <option value="{{ paciente.id }}" {% if selected_paciente_id == paciente.id|stringformat:"s" %}selected{% endif %}>{{ paciente.nome }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="pergunta">Pergunta clínica</label>
-                            <input class="form-input" id="pergunta" name="pergunta" required placeholder="Ex.: quais sinais merecem acompanhamento neste caso?">
+                            <input class="form-input" id="pergunta" name="pergunta" required placeholder="Ex.: quais hipóteses e próximos passos cabem neste caso?">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="contexto">Contexto observado</label>
-                        <textarea class="notes-textarea" id="contexto" name="contexto" rows="7" placeholder="Cole observações, queixa principal, comportamento em sessão, contexto escolar ou familiar."></textarea>
+                        <label class="form-label" for="contexto">Contexto da sessão</label>
+                        <textarea class="form-textarea ai-contextarea" id="contexto" name="contexto" rows="9" placeholder="Observações da sessão, queixa, escola, família, comportamento, repertório, marcos de desenvolvimento e pontos de atenção."></textarea>
                     </div>
-                    <div class="form-actions">
-                        <button class="btn-primary" type="submit">Consultar IA local</button>
-                    </div>
+                    <div class="ai-actions"><button class="ai-primary-action" type="submit">Analisar caso</button></div>
                 </form>
             </div>
 
+            <aside class="ai-side-rail">
+                <div class="ai-rail-block">
+                    <span>Modelo</span>
+                    <strong>{{ engine_info.tipo }}</strong>
+                    <p>{{ engine_info.modelo }}</p>
+                </div>
+                <div class="ai-rail-block is-score">
+                    <span>Score supervisionado</span>
+                    <strong>{{ score_ia }}</strong>
+                    <p>Acertos aumentam confiança; erros reduzem peso sem apagar o histórico.</p>
+                </div>
+                <div class="ai-rail-block">
+                    <span>Base</span>
+                    <strong>Memória clínica local</strong>
+                    <p>Anotações, pareceres e feedbacks entram no aprendizado do paciente.</p>
+                </div>
+            </aside>
+        </section>
+
             {% if resultado %}
-                <div class="table-card" style="margin-top: 24px;">
-                    <div class="table-header">
-                        <h3 class="table-title">Resultado da IA</h3>
+                <section class="ai-result-panel">
+                    <div class="ai-section-head">
+                        <span>Saída assistida</span>
+                        <strong>Resultado da IA</strong>
                     </div>
-                    <div style="padding: 24px; display: grid; gap: 18px;">
-                        {% if resultado.insights %}
-                            <section>
-                                <h4>Leitura preliminar</h4>
-                                {% for item in resultado.insights %}
-                                    <p style="white-space: pre-wrap;">{{ item }}</p>
-                                {% endfor %}
-                            </section>
-                        {% endif %}
+                    <div class="ai-result-body">
+                        {% for item in resultado.insights %}<p class="ai-insight">{{ item }}</p>{% endfor %}
 
                         {% if resultado.alerts %}
-                            <section>
-                                <h4>Alertas observados</h4>
-                                {% for alerta in resultado.alerts %}
-                                    <p><strong>{{ alerta.title }}</strong>: {{ alerta.description }}</p>
-                                {% endfor %}
-                            </section>
+                            <div class="ai-alert-strip">
+                                <h4>Alertas clínicos</h4>
+                                {% for alerta in resultado.alerts %}<p><strong>{{ alerta.title }}</strong>: {{ alerta.description }}</p>{% endfor %}
+                            </div>
                         {% endif %}
 
-                        {% if resultado.scores %}
-                            <section>
-                                <h4>Dimensões estimadas</h4>
-                                <div class="stats-grid">
-                                    {% for chave, valor in resultado.scores.items %}
-                                        <div class="stat-card">
-                                            <div class="stat-content">
-                                                <p class="stat-label">{{ chave|title }}</p>
-                                                <h2 class="stat-value">{{ valor }}%</h2>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
+                        {% if consulta_id %}
+                            <form method="POST" action="{% url 'feedback_consulta_ia' consulta_id %}" class="ai-feedback-form">
+                                {% csrf_token %}
+                                <h4>Feedback clínico para aprendizado da IA</h4>
+                                <div class="ai-consult-grid">
+                                    <div class="form-group">
+                                        <label class="form-label" for="julgamento">Qualidade da resposta</label>
+                                        <select class="form-input" id="julgamento" name="julgamento" required>
+                                            <option value="acerto">Acerto clínico (+2)</option>
+                                            <option value="parcial">Parcialmente útil (+1)</option>
+                                            <option value="erro">Erro clínico (-2)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label" for="comentario">Comentário da profissional</label>
+                                        <input class="form-input" id="comentario" name="comentario" placeholder="Opcional">
+                                    </div>
                                 </div>
-                            </section>
-                        {% endif %}
-
-                        {% if resultado.dsm5_citations %}
-                            <section>
-                                <h4>Memria semntica consultada</h4>
-                                {% for citacao in resultado.dsm5_citations %}
-                                    <p><strong>{{ citacao.term_searched }}</strong>: {{ citacao.text }}</p>
-                                {% endfor %}
-                            </section>
+                                <button class="ai-primary-action" type="submit">Registrar feedback</button>
+                            </form>
                         {% endif %}
                     </div>
-                </div>
+                </section>
             {% endif %}
-        </div>
+
+            <section class="ai-history-panel">
+                <div class="ai-section-head">
+                    <span>Memória recente</span>
+                    <strong>Consultas IA</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead><tr><th>Data</th><th>Paciente</th><th>Pergunta</th></tr></thead>
+                        <tbody>
+                            {% for c in consultas_recentes %}
+                                <tr>
+                                    <td>{{ c.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>{% if c.paciente %}{{ c.paciente.nome }}{% else %}Geral{% endif %}</td>
+                                    <td>{{ c.pergunta|truncatechars:120 }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="empty-state">Ainda não há consultas registradas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
     </main>
 </body>
 </html>

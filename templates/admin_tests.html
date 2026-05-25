@@ -4,36 +4,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Testes</title>
+    <title>Testes - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
-    <main class="admin-main">
-        <div class="admin-container">
-            <h1>Gerenciar Testes</h1>
-            <p><a href="{% url 'new_test' %}">Criar Novo Teste</a></p>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Instrumentos</span>
+                <h1>Biblioteca de testes</h1>
+                <p>Organizacao dos instrumentos ativos da clinica com foco em aplicacao, manutencao e rastreabilidade do acervo.</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Total</span><strong>{{ tests|length }}</strong></div>
+                <div><span>Uso</span><strong>Aplicacao clinica</strong></div>
+                <div><span>Acao</span><a href="{% url 'new_test' %}" class="ops-hero-action">Novo teste</a></div>
+            </div>
+        </section>
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <section>
-                <ul>
-                    {% for test in tests %}
-                        <li>
-                            <strong>{{ test.titulo }}</strong>
-                            - {{ test.category.nome|default:'Sem categoria' }}
-                            - {{ test.descricao|default:'Sem descrição' }}
-                            - <a href="{% url 'edit_test_questions' test.id %}">Editar questões</a>
-                        </li>
-                    {% empty %}
-                        <li>Nenhum teste cadastrado.</li>
-                    {% endfor %}
-                </ul>
+        <section class="ops-workbench">
+            <section class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Acervo</span>
+                    <strong>Instrumentos disponiveis</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table ops-table">
+                        <thead>
+                            <tr>
+                                <th>Titulo</th>
+                                <th>Categoria</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for test in tests %}
+                            <tr>
+                                <td>{{ test.titulo }}</td>
+                                <td>{% if test.category %}{{ test.category.nome }}{% else %}Sem categoria{% endif %}</td>
+                                <td>
+                                    {% if test.ativo %}
+                                    <span class="ops-pill is-ok">Ativo</span>
+                                    {% else %}
+                                    <span class="ops-pill is-warn">Inativo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state">Nenhum teste cadastrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </section>
-        </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Curadoria</span>
+                    <strong>Acervo clinico</strong>
+                    <p>Mantenha os instrumentos organizados por objetivo e categoria para reduzir atrito na selecao durante o atendimento.</p>
+                </div>
+            </aside>
+        </section>
     </main>
 </body>
 </html>

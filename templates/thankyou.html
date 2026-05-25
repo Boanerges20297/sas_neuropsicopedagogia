@@ -4,22 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucesso - Questionário Recebido</title>
+    <title>Registro concluido</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-box" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px;">
-            <div style="font-size: 80px; margin-bottom: 20px; color: var(--primary-color);">✔️</div>
-            <h1 style="color: var(--primary-color); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 28px; margin-bottom: 15px;">Questionário Recebido!</h1>
-            <p style="color: var(--text-medium); font-size: 16px; max-width: 450px; line-height: 1.6; margin-bottom: 25px;">
-                Agradecemos as informações fornecidas. Os dados foram salvos com segurança em conformidade com a LGPD e estão disponíveis para análise da Neuropsicopedagoga.
-            </p>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
-                <a href="{% url 'legacy_test' %}" class="login-button" style="text-decoration: none; padding: 12px 25px;">Preencher Novamente</a>
-                <a href="{% url 'login' %}" class="forgot-link" style="padding: 12px 25px; border: 2px solid var(--border-color); border-radius: 12px; font-weight: bold; text-decoration: none;">Acessar Sistema</a>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Registro salvo</span>
+                <h1>Anamnese incorporada ao caso</h1>
+                <p>O conteudo foi salvo com sucesso e ja pode ser utilizado no prontuario do paciente, nas avaliacoes e na Consulta IA.</p>
             </div>
-        </div>
-    </div>
+            <div class="ops-hero-metrics">
+                <div><span>Status</span><strong>Concluido</strong></div>
+                <div><span>Destino</span><strong>Historico clinico</strong></div>
+                <div><span>Data</span><strong>{% now "d/m/Y" %}</strong></div>
+            </div>
+        </section>
+
+        <section class="ops-workbench">
+            <section class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Proximo passo</span>
+                    <strong>Continuar atendimento</strong>
+                </div>
+                <div class="ops-content-body">
+                    <p>Voce pode voltar ao painel clinico, abrir uma nova anamnese ou seguir para a area de pacientes.</p>
+                    <div class="ops-inline-actions">
+                        <a href="{% url 'dashboard' %}" class="ops-hero-action">Ir para dashboard</a>
+                        <a href="{% url 'nova_anamnese' %}" class="btn-outline">Nova anamnese</a>
+                        <a href="{% url 'pacientes_list' %}" class="btn-outline">Area de pacientes</a>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card is-highlight">
+                    <span>IA clinica</span>
+                    <strong>Contexto ampliado</strong>
+                    <p>Quanto mais consistente o registro, melhor a base para hipoteses supervisionadas e comparacao evolutiva do caso.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
 </body>
 </html>

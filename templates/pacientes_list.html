@@ -7,78 +7,105 @@
     <title>Pacientes - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body class="admin-body">
+<body class="patients-hub-page">
     {% include 'includes/admin_navbar.html' %}
 
-    <main class="admin-main">
-        <div class="admin-container">
-            <div class="admin-header flex-between" style="margin-bottom: 24px;">
-                <div class="header-content">
-                    <h1>Pacientes</h1>
-                    <p>Gestão e prontuários de pacientes em acompanhamento</p>
+    <main class="patients-hub">
+        <section class="patients-hero">
+            <div>
+                <span class="ai-eyebrow">Prontuarios em acompanhamento</span>
+                <h1>Pacientes</h1>
+                <p>Visualize rapidamente quem esta em seguimento, o contexto escolar e a demanda principal antes de abrir o prontuario completo.</p>
+            </div>
+            <div class="patients-hero-metrics">
+                <div>
+                    <span>Total</span>
+                    <strong>{{ pacientes|length }}</strong>
                 </div>
-                <div class="header-actions">
-                    <a href="{% url 'paciente_create' %}" class="btn-primary">➕ Novo Paciente</a>
+                <div>
+                    <span>Foco</span>
+                    <strong>Triagem e seguimento</strong>
+                </div>
+                <div>
+                    <span>Acao</span>
+                    <a href="{% url 'paciente_create' %}" class="patients-hero-action">Novo paciente</a>
+                </div>
+            </div>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="patients-workbench">
+            <div class="patients-table-panel">
+                <div class="patients-section-head">
+                    <span>Lista operacional</span>
+                    <strong>Pacientes ativos</strong>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="modern-table patients-table">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Nascimento</th>
+                                <th>Contato</th>
+                                <th>Escola</th>
+                                <th>Queixa</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for paciente in pacientes %}
+                            <tr>
+                                <td>
+                                    <div class="patients-name-cell">
+                                        <strong>{{ paciente.nome }}</strong>
+                                        <small>{{ paciente.bairro|default:"Bairro não informado" }}</small>
+                                    </div>
+                                </td>
+                                <td>{{ paciente.data_nascimento|default:"-" }}</td>
+                                <td>
+                                    <div class="patients-contact-cell">
+                                        <span>{{ paciente.telefone|default:"-" }}</span>
+                                        <small>{{ paciente.email|default:"Sem e-mail" }}</small>
+                                    </div>
+                                </td>
+                                <td>{{ paciente.escola|default:"-" }}{% if paciente.serie %}<br><small>{{ paciente.serie }}</small>{% endif %}</td>
+                                <td class="patients-complaint">{{ paciente.queixa_principal|default:"-"|truncatechars:90 }}</td>
+                                <td class="patients-action-cell"><a href="{% url 'paciente_detail' paciente.id %}" class="patients-open-link">Abrir</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="empty-state">Nenhum paciente cadastrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <div class="table-card">
-                <div class="table-header">
-                    <h3 class="table-title">Lista de Pacientes</h3>
+            <aside class="patients-side-rail">
+                <div class="patients-side-card">
+                    <span>Leitura rapida</span>
+                    <strong>Como usar a lista</strong>
+                    <p>Abra o prontuario quando precisar registrar sessao, consultar a IA ou revisar historico e avaliacoes do caso.</p>
                 </div>
-
-                {% if pacientes %}
-                    <div class="table-responsive">
-                        <table class="modern-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Data Nasc.</th>
-                                    <th>Telefone</th>
-                                    <th>Bairro</th>
-                                    <th>Escola / Série</th>
-                                    <th>Queixa Principal</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for paciente in pacientes %}
-                                <tr>
-                                    <td><strong>{{ paciente.nome }}</strong></td>
-                                    <td>
-                                        {% if paciente.data_nascimento %}
-                                            {{ paciente.data_nascimento }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ paciente.telefone|default:'-' }}</td>
-                                    <td>{{ paciente.bairro|default:'-' }}</td>
-                                    <td>{{ paciente.escola|default:"-" }}{% if paciente.serie %} ({{ paciente.serie }}){% endif %}</td>
-                                    <td>{{ paciente.queixa_principal|default:"-"|truncatechars:50 }}</td>
-                                    <td>
-                                        <a href="{% url 'paciente_detail' paciente.id %}" class="btn-outline" style="padding: 6px 12px; font-size: 13px;">Ver Prontuário / Anotar</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <h3 class="empty-state-text">Nenhum paciente cadastrado</h3>
-                        <a href="{% url 'paciente_create' %}" class="btn-primary">Cadastrar o primeiro paciente</a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+                <div class="patients-side-card is-highlight">
+                    <span>Entrada ideal</span>
+                    <strong>Cadastro enxuto</strong>
+                    <p>Nome, contato, escola e queixa principal bastam para iniciar. O restante amadurece nas anotacoes e na anamnese.</p>
+                </div>
+                <div class="patients-side-card">
+                    <span>Fluxo clinico</span>
+                    <strong>Paciente &rarr; Prontuario &rarr; IA</strong>
+                    <p>A lista funciona como porta de entrada para o acompanhamento e para o aprendizado supervisionado da IA.</p>
+                </div>
+            </aside>
+        </section>
     </main>
 </body>
 </html>

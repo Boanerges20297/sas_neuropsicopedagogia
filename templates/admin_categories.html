@@ -4,35 +4,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categorias</title>
+    <title>Categorias - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
-    <main class="admin-main">
-        <div class="admin-container">
-            <h1>Gerenciar Categorias</h1>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Classificacao</span>
+                <h1>Categorias de avaliacao</h1>
+                <p>Camada de organizacao para agrupar instrumentos por finalidade clinica, leitura de caso e uso operacional.</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Total</span><strong>{{ categories|length }}</strong></div>
+                <div><span>Tipo</span><strong>Catalogacao</strong></div>
+                <div><span>Foco</span><strong>Gestao interna</strong></div>
+            </div>
+        </section>
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <section>
-                <h2>Categorias</h2>
-                <ul>
-                    {% for category in categories %}
-                        <li>
-                            <strong>{{ category.nome }}</strong>
-                            - {{ category.descricao|default:'Sem descrição' }}
-                            - {% if category.ativo %}Ativa{% else %}Inativa{% endif %}
-                        </li>
-                    {% empty %}
-                        <li>Nenhuma categoria cadastrada.</li>
-                    {% endfor %}
-                </ul>
+        <section class="ops-workbench">
+            <section class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Mapa</span>
+                    <strong>Categorias cadastradas</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table ops-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Descricao</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td>{{ category.nome }}</td>
+                                <td>{{ category.descricao|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="empty-state">Sem categorias cadastradas.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </section>
-        </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card is-highlight">
+                    <span>Leitura rapida</span>
+                    <strong>Menos ruido na escolha</strong>
+                    <p>Uma boa taxonomia deixa a aplicacao mais vendavel, acelera a triagem e aproxima a sensacao de produto clinico maduro.</p>
+                </div>
+            </aside>
+        </section>
     </main>
 </body>
 </html>

@@ -4,197 +4,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - {{ CLINICA_NOME }}</title>
+    <title>Dashboard Clínico - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Mapeamento simples para dashboard.js -->
     <script src="{% static 'dashboard.js' %}" defer></script>
 </head>
-<body>
-    <nav class="modern-navbar">
-        <div class="navbar-container">
-            <a href="{% url 'dashboard' %}" class="navbar-brand">
-                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
-                <div class="brand-text">
-                    <span class="brand-title">{{ CLINICA_NOME }}</span>
-                    <span class="brand-subtitle">Neuropsicopedagoga</span>
-                </div>
-            </a>
-                        <div class="navbar-menu">
-                <a href="{% url 'dashboard' %}" class="nav-item active">
-                    <span class="nav-icon">📊</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{% url 'pacientes_list' %}" class="nav-item">
-                    <span class="nav-icon">👥</span>
-                    <span>Pacientes</span>
-                </a>
-                <a href="{% url 'ia_consulta' %}" class="nav-item">
-                    <span class="nav-icon">🧠</span>
-                    <span>Consulta IA</span>
-                </a>
-                <a href="{% url 'admin_avaliacoes' %}" class="nav-item">
-                    <span class="nav-icon">📋</span>
-                    <span>Respostas</span>
-                </a>
-                <a href="{% url 'admin_users' %}" class="nav-item">
-                    <span class="nav-icon">👤</span>
-                    <span>Usuários</span>
-                </a>
-            </div>
-            <div class="navbar-user">
-                <div class="user-dropdown">
-                    <button class="user-btn">
-                        <div class="user-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
-                        <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-content">
-                        <a href="{% url 'user_area' %}" class="dropdown-link"><span>👤</span> Meu Perfil</a>
-                        <div class="dropdown-divider"></div>
-                        <a href="{% url 'logout' %}" class="dropdown-link logout"><span>🚪</span> Sair</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <main class="dashboard-main">
-        <div class="dashboard-container">
-            <div class="dashboard-header">
-                <div class="header-content">
-                    <h1 class="dashboard-title">Dashboard Administrativo</h1>
-                    <p class="dashboard-subtitle">Visão geral do sistema de avaliações</p>
-                </div>
-                <div class="header-actions">
-                    <button class="btn-icon" title="Atualizar" onclick="location.reload()"><span>🔄</span></button>
-                </div>
-            </div>
-            
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert-modern alert-{{ message.tags }}">
-                        <span class="alert-icon">{% if message.tags == 'success' %}✓{% else %}ℹ{% endif %}</span>
-                        <span class="alert-message">{{ message }}</span>
-                    </div>
-                {% endfor %}
-            {% endif %}
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #8B5A3C 0%, #D4A574 100%);">📊</div>
-                    <div class="stat-content">
-                        <p class="stat-label">Total de Respostas</p>
-                        <h2 class="stat-value">{{ stats.total_responses }}</h2>
-                        <p class="stat-change positive">+{{ stats.new_today }} hoje</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">👥</div>
-                    <div class="stat-content">
-                        <p class="stat-label">Usuários Cadastrados</p>
-                        <h2 class="stat-value">{{ stats.total_users }}</h2>
-                        <p class="stat-change">{{ stats.admin_count }} admins</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">👥</div>
-                    <div class="stat-content">
-                        <p class="stat-label">Pacientes</p>
-                        <h2 class="stat-value">{{ stats.total_pacientes }}</h2>
-                        <p class="stat-change">cadastro clínico</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">⏱️</div>
-                    <div class="stat-content">
-                        <p class="stat-label">Última Resposta</p>
-                        <h2 class="stat-value" style="font-size: 18px;">{{ stats.last_response_date }}</h2>
-                        <p class="stat-change">{{ stats.last_response_time }}</p>
-                    </div>
-                </div>
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Controle operacional</span>
+                <h1>Painel Clínico</h1>
+                <p>Visão rápida do atendimento neuropsicopedagógico, prontuários recentes e ritmo de avaliações da clínica.</p>
             </div>
-
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Distribuição por Categoria</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="testTypesChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Respostas nos Últimos 7 Dias</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="dailyResponsesChart"></canvas>
-                    </div>
-                </div>
+            <div class="ops-hero-metrics">
+                <div><span>Pacientes</span><strong>{{ stats.total_pacientes }}</strong></div>
+                <div><span>Avaliações</span><strong>{{ stats.total_responses }}</strong></div>
+                <div><span>Hoje</span><strong>+{{ stats.new_today }}</strong></div>
             </div>
+        </section>
 
-            <div class="table-card">
-                <div class="table-header">
-                    <h3 class="table-title">Respostas Recentes</h3>
-                    <div style="display: flex; gap: 10px;">
-                        <a href="{% url 'export_excel' %}" class="btn-outline" style="background: #52A675; color: white; border-color: #52A675;">📥 Exportar Excel</a>
-                        <a href="{% url 'admin_avaliacoes' %}" class="btn-outline">Ver todas</a>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Monitoramento</span>
+                    <strong>Indicadores da clínica</strong>
+                </div>
+
+                <div class="ops-metric-grid">
+                    <article class="ops-metric"><span>Pacientes ativos</span><strong>{{ stats.total_pacientes }}</strong><small>Base em acompanhamento</small></article>
+                    <article class="ops-metric"><span>Usuários</span><strong>{{ stats.total_users }}</strong><small>{{ stats.admin_count }} administradores</small></article>
+                    <article class="ops-metric"><span>Último registro</span><strong>{{ stats.last_response_date }}</strong><small>{{ stats.last_response_time|default:"Sem horário" }}</small></article>
+                </div>
+
+                <div class="ops-grid-2">
+                    <div class="ops-chart-box">
+                        <div class="ops-box-head">Distribuição de avaliações</div>
+                        <div class="ops-chart-area"><canvas id="testTypesChart"></canvas></div>
+                    </div>
+                    <div class="ops-chart-box">
+                        <div class="ops-box-head">Últimos 7 dias</div>
+                        <div class="ops-chart-area"><canvas id="dailyResponsesChart"></canvas></div>
                     </div>
                 </div>
+
                 <div class="table-responsive">
-                    <table class="modern-table">
+                    <table class="modern-table ops-table">
                         <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Data/Hora</th>
-                                <th>Estudante</th>
-                                <th>Escola</th>
-                                <th>Ações</th>
-                            </tr>
+                            <tr><th>ID</th><th>Data</th><th>Paciente</th><th>Escola</th><th></th></tr>
                         </thead>
                         <tbody>
                             {% if stats.recent_responses %}
                                 {% for resp in stats.recent_responses %}
                                 <tr>
-                                    <td><span class="badge badge-id">#{{ resp.id }}</span></td>
+                                    <td>#{{ resp.id }}</td>
                                     <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
-                                    <td><strong>{{ resp.nome|default:"Anônimo" }}</strong></td>
+                                    <td>{{ resp.nome|default:"Não informado" }}</td>
                                     <td>{{ resp.unidade_escolar|default:"Não informada" }}</td>
-                                    <td>
-                                        <a href="{% url 'view_avaliacao' resp.id %}" class="btn-table-action" title="Visualizar" style="text-decoration: none;">️</a>
-                                    </td>
+                                    <td><a href="{% url 'view_avaliacao' resp.id %}" class="patients-open-link">Abrir</a></td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
-                                <tr>
-                                    <td colspan="5" class="empty-state"><p>📭 Nenhuma resposta encontrada</p></td>
-                                </tr>
+                                <tr><td colspan="5" class="empty-state">Nenhum prontuário recente.</td></tr>
                             {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Exportação</span>
+                    <strong>Base consolidada</strong>
+                    <p>Use a exportação em Excel para revisão externa, relatórios e fechamento operacional da clínica.</p>
+                    <a href="{% url 'export_excel' %}" class="ops-hero-action">Exportar Excel</a>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Leitura rápida</span>
+                    <strong>O que olhar primeiro</strong>
+                    <ul>
+                        <li>Pacientes novos do dia</li>
+                        <li>Avaliações pendentes de parecer</li>
+                        <li>Volume recente de atendimento</li>
+                    </ul>
+                </div>
+            </aside>
+        </section>
     </main>
-    
-    <!-- Dados para os gráficos (via data attributes) -->
-    <div id="chartData" 
-         data-test-types='{"labels":["Altas Habilidades / SD"],"values":[{{ stats.total_responses }}]}'
-         data-daily-responses='{"labels":{{ stats.daily_labels|safe }},"values":{{ stats.daily_values|safe }}}'
-         style="display:none;"></div>
 
-    <script>
-        document.querySelector('.user-btn')?.addEventListener('click', function(e) {
-            e.stopPropagation();
-            this.parentElement.classList.toggle('active');
-        });
-
-        document.addEventListener('click', function(e) {
-            const dropdown = document.querySelector('.user-dropdown');
-            if (dropdown && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-    </script>
+    <div id="chartData" data-test-types='{"labels":["Atendimentos"],"values":[{{ stats.total_responses }}]}' data-daily-responses='{"labels":{{ stats.daily_labels|safe }},"values":{{ stats.daily_values|safe }}}' style="display:none;"></div>
 </body>
 </html>

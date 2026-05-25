@@ -30,6 +30,7 @@ urlpatterns = [
     
     # Consulta IA de Borda (Local)
     path('admin/ia/', views.ia_consulta, name='ia_consulta'),
+    path('admin/ia/<int:consulta_id>/feedback/', views.feedback_consulta_ia, name='feedback_consulta_ia'),
     
     # Exportação
     path('exportar/', views.export_excel, name='export_excel'),

@@ -5,7 +5,8 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Max
+from django.utils.dateparse import parse_date
+from django.db.models import Max, Sum
 from datetime import datetime, timedelta
 import requests
 import json
@@ -13,7 +14,8 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 from .models import (
-    PerfilUsuario, LogAuditoria, Paciente, AnotacaoAtendimento, AvaliacaoClinica
+    PerfilUsuario, LogAuditoria, Paciente, AnotacaoAtendimento, AvaliacaoClinica,
+    ConsultaIAClinica, FeedbackConsultaIA
 )
 from .security_utils import decrypt_data, encrypt_data
 
@@ -22,14 +24,14 @@ def admin_required(view_func):
     """Garante acesso exclusivo para a Neuropsicopedagoga (administradora)."""
     def _wrapped_view_func(request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.is_admin():
-            messages.error(request, 'Você não tem permissão para acessar esta área.')
+            messages.error(request, 'VocÃª nÃ£o tem permissÃ£o para acessar esta Ã¡rea.')
             return redirect('index')
         return view_func(request, *args, **kwargs)
     return _wrapped_view_func
 
 # ==================== REGISTRO DE TRILHA DE AUDITORIA ====================
 def register_audit_log(request, action):
-    """Grava logs de auditoria automáticos na tabela MySQL para LGPD."""
+    """Grava logs de auditoria automÃ¡ticos na tabela MySQL para LGPD."""
     ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
     LogAuditoria.objects.create(
         user=request.user if request.user.is_authenticated else None,
@@ -37,7 +39,36 @@ def register_audit_log(request, action):
         ip_address=ip
     )
 
-# ==================== ROTAS DE AUTENTICAÇÃO ====================
+
+def normalizar_data_br(valor):
+    if not valor:
+        return ""
+    try:
+        if "/" in valor:
+            dt = datetime.strptime(valor, "%d/%m/%Y")
+        else:
+            dt = datetime.strptime(valor, "%Y-%m-%d")
+        return dt.strftime("%d/%m/%Y")
+    except Exception:
+        return valor
+
+
+def enviar_aprendizado_ia(content, context_domain="geral", clinical_category="casos_clinicos", target_age="todas"):
+    if not content or len(content.strip()) < 10:
+        return
+    try:
+        ai_learn_url = f"{settings.AI_SERVICE_URL}/api/v1/learn"
+        payload = {
+            "content": content.strip(),
+            "context_domain": context_domain,
+            "clinical_category": clinical_category,
+            "target_age": target_age
+        }
+        requests.post(ai_learn_url, json=payload, timeout=2.5)
+    except Exception:
+        pass
+
+# ==================== ROTAS DE AUTENTICAÃ‡ÃƒO ====================
 def login_view(request):
     """Login que preserva o layout original marrom/dourado e valida cookies seguros."""
     if request.user.is_authenticated:
@@ -68,7 +99,7 @@ def login_view(request):
     return render(request, 'login.html')
 
 def register_view(request):
-    """Cadastro de novos usuários com validação forte de senhas."""
+    """Cadastro de novos usuÃ¡rios com validaÃ§Ã£o forte de senhas."""
     if request.user.is_authenticated:
         return redirect('dashboard' if request.user.is_admin() else 'user_area')
 
@@ -81,11 +112,11 @@ def register_view(request):
         telefone = request.POST.get('telefone')
 
         if PerfilUsuario.objects.filter(email=email).exists():
-            messages.error(request, "Este e-mail já está cadastrado no sistema.")
+            messages.error(request, "Este e-mail jÃ¡ estÃ¡ cadastrado no sistema.")
             return render(request, 'register.html')
 
         if len(senha) < 8 or not any(c.isupper() for c in senha) or not any(c.isdigit() for c in senha):
-            messages.error(request, "A senha deve ter pelo menos 8 caracteres, contendo pelo menos uma letra maiúscula e um número.")
+            messages.error(request, "A senha deve ter pelo menos 8 caracteres, contendo pelo menos uma letra maiÃºscula e um nÃºmero.")
             return render(request, 'register.html')
 
         username = email.split('@')[0] + "_" + str(PerfilUsuario.objects.count() + 1)
@@ -100,37 +131,37 @@ def register_view(request):
             telefone=telefone
         )
         
-        register_audit_log(request, f"Novo usuário cadastrado: {email}")
-        messages.success(request, "Cadastro realizado com sucesso! Faça login para continuar.")
+        register_audit_log(request, f"Novo usuÃ¡rio cadastrado: {email}")
+        messages.success(request, "Cadastro realizado com sucesso! FaÃ§a login para continuar.")
         return redirect('login')
 
     return render(request, 'register.html')
 
 @login_required
 def logout_view(request):
-    """Logout seguro do usuário."""
+    """Logout seguro do usuÃ¡rio."""
     register_audit_log(request, "Realizou logout do sistema.")
     logout_user(request)
-    messages.info(request, "Você saiu da sua conta.")
+    messages.info(request, "VocÃª saiu da sua conta.")
     return redirect('login')
 
-# ==================== ROTAS PÚBLICAS E REDIRECIONAMENTOS ====================
+# ==================== ROTAS PÃšBLICAS E REDIRECIONAMENTOS ====================
 def index(request):
-    """Página inicial com redirecionamento contextual."""
+    """PÃ¡gina inicial com redirecionamento contextual."""
     if request.user.is_authenticated:
         return redirect('dashboard' if request.user.is_admin() else 'user_area')
     return redirect('login')
 
 @login_required
 def user_area(request):
-    """Área exclusiva para usuários comuns cadastrados."""
+    """Ãrea exclusiva para usuÃ¡rios comuns cadastrados."""
     return render(request, 'user_area.html')
 
 # ==================== CONTROLLER ADMINISTRATIVO (DASHBOARD) ====================
 @login_required
 @admin_required
 def dashboard(request):
-    """Agrega estatísticas operacionais de alto nível com Django ORM para o Chart.js."""
+    """Agrega estatÃ­sticas operacionais de alto nÃ­vel com Django ORM para o Chart.js."""
     total_responses = AvaliacaoClinica.objects.count()
     total_pacientes = Paciente.objects.count()
     
@@ -177,24 +208,24 @@ def dashboard(request):
 @login_required
 @admin_required
 def admin_avaliacoes(request):
-    """Lista todas as avaliações clínicas / anamneses preenchidas."""
+    """Lista todas as avaliaÃ§Ãµes clÃ­nicas / anamneses preenchidas."""
     responses_raw = AvaliacaoClinica.objects.all().order_by('-timestamp')
     responses = []
     for r in responses_raw:
         r.decrypt_sensitive()
         responses.append(r)
         
-    register_audit_log(request, "Acessou a lista de avaliações clínicas.")
+    register_audit_log(request, "Acessou a lista de avaliaÃ§Ãµes clÃ­nicas.")
     return render(request, 'admin_avaliacoes.html', {'avaliacoes': responses})
 
 @login_required
 @admin_required
 def view_avaliacao(request, avaliacao_id):
-    """Detalhes clínicos do prontuário, consultando o microsserviço de IA de Borda."""
+    """Detalhes clÃ­nicos do prontuÃ¡rio, consultando o microsserviÃ§o de IA de Borda."""
     avaliacao = get_object_or_404(AvaliacaoClinica, id=avaliacao_id)
     avaliacao.decrypt_sensitive()
     
-    register_audit_log(request, f"Visualizou prontuário de avaliação ID {avaliacao_id} ({avaliacao.nome}).")
+    register_audit_log(request, f"Visualizou prontuÃ¡rio de avaliaÃ§Ã£o ID {avaliacao_id} ({avaliacao.nome}).")
 
     ai_data = None
     ai_error = False
@@ -227,7 +258,7 @@ def view_avaliacao(request, avaliacao_id):
         else:
             ai_error = True
     except Exception as e:
-        print(f"⚠ Erro na comunicação com Microsserviço de IA: {e}")
+        print(f"âš  Erro na comunicaÃ§Ã£o com MicrosserviÃ§o de IA: {e}")
         ai_error = True
 
     fields_list = []
@@ -251,7 +282,7 @@ def view_avaliacao(request, avaliacao_id):
 @login_required
 @admin_required
 def score_avaliacao(request, avaliacao_id):
-    """Salva a pontuação atribuída e anotações clínicas via AJAX."""
+    """Salva a pontuaÃ§Ã£o atribuÃ­da e anotaÃ§Ãµes clÃ­nicas via AJAX."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -264,19 +295,24 @@ def score_avaliacao(request, avaliacao_id):
             avaliacao.scored_by = request.user
             avaliacao.scored_at = timezone.now()
             avaliacao.save()
+            enviar_aprendizado_ia(
+                content=f"AvaliaÃ§Ã£o pontuada com score {score}. Parecer clÃ­nico: {notes}",
+                context_domain=f"paciente_{avaliacao.paciente_id}" if avaliacao.paciente_id else "geral",
+                clinical_category="pareceres_clinicos"
+            )
 
-            register_audit_log(request, f"Pontuou prontuário de avaliação ID {avaliacao_id} com {score} pontos.")
-            return JsonResponse({'success': True, 'message': 'Parecer e pontuação salvos com sucesso!'})
+            register_audit_log(request, f"Pontuou prontuÃ¡rio de avaliaÃ§Ã£o ID {avaliacao_id} com {score} pontos.")
+            return JsonResponse({'success': True, 'message': 'Parecer e pontuaÃ§Ã£o salvos com sucesso!'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
-    return JsonResponse({'success': False, 'message': 'Método inválido'}, status=400)
+    return JsonResponse({'success': False, 'message': 'MÃ©todo invÃ¡lido'}, status=400)
 
 @login_required
 @admin_required
 def admin_users(request):
-    """Lista usuários cadastrados."""
+    """Lista usuÃ¡rios cadastrados."""
     users = PerfilUsuario.objects.all().order_by('-created_at')
-    register_audit_log(request, "Visualizou lista geral de usuários cadastrados.")
+    register_audit_log(request, "Visualizou lista geral de usuÃ¡rios cadastrados.")
     return render(request, 'admin_users.html', {'users': users})
 
 # ==================== PACIENTES E ATENDIMENTOS ====================
@@ -286,17 +322,19 @@ def pacientes_list(request):
     pacientes = []
     for paciente in Paciente.objects.all().order_by('-updated_at'):
         paciente.decrypt_sensitive()
+        paciente.data_nascimento = normalizar_data_br(paciente.data_nascimento)
         pacientes.append(paciente)
-    register_audit_log(request, "Acessou a área de pacientes.")
+    register_audit_log(request, "Acessou a Ã¡rea de pacientes.")
     return render(request, 'pacientes_list.html', {'pacientes': pacientes})
 
 @login_required
 @admin_required
 def paciente_create(request):
     if request.method == 'POST':
+        data_nascimento = normalizar_data_br(request.POST.get('data_nascimento', '').strip())
         paciente = Paciente.objects.create(
             nome=request.POST.get('nome', '').strip(),
-            data_nascimento=request.POST.get('data_nascimento', '').strip(),
+            data_nascimento=data_nascimento,
             responsavel=request.POST.get('responsavel', '').strip(),
             telefone=request.POST.get('telefone', '').strip(),
             email=request.POST.get('email', '').strip(),
@@ -320,19 +358,46 @@ def paciente_create(request):
 def paciente_detail(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     paciente.decrypt_sensitive()
+    paciente.data_nascimento = normalizar_data_br(paciente.data_nascimento)
 
     if request.method == 'POST':
-        data_consulta = request.POST.get('data_consulta')
+        raw_data_consulta = request.POST.get('data_consulta', '').strip()
+        tipo = request.POST.get('tipo', 'sessao')
+        titulo = request.POST.get('titulo', '').strip()
+        conteudo = request.POST.get('conteudo', '').strip()
+        data_consulta = parse_date(raw_data_consulta) if raw_data_consulta else None
+
+        if raw_data_consulta and not data_consulta:
+            messages.error(request, "Data da consulta invalida.")
+            return redirect('paciente_detail', paciente_id=paciente.id)
+
+        if tipo not in dict(AnotacaoAtendimento.TIPO_CHOICES):
+            messages.error(request, "Tipo de anotacao invalido.")
+            return redirect('paciente_detail', paciente_id=paciente.id)
+
+        if not conteudo:
+            messages.error(request, "Informe o conteudo da anotacao.")
+            return redirect('paciente_detail', paciente_id=paciente.id)
+
+        if len(titulo) > 160:
+            messages.error(request, "O titulo deve ter no maximo 160 caracteres.")
+            return redirect('paciente_detail', paciente_id=paciente.id)
+
         anotacao = AnotacaoAtendimento.objects.create(
             paciente=paciente,
             profissional=request.user,
-            tipo=request.POST.get('tipo', 'sessao'),
-            titulo=request.POST.get('titulo', '').strip(),
-            conteudo=request.POST.get('conteudo', '').strip(),
-            data_consulta=data_consulta if data_consulta else None,
+            tipo=tipo,
+            titulo=titulo,
+            conteudo=conteudo,
+            data_consulta=data_consulta,
         )
-        register_audit_log(request, f"Registrou anotação ID {anotacao.id} no paciente ID {paciente_id}.")
-        messages.success(request, "Anotação registrada.")
+        enviar_aprendizado_ia(
+            content=f"AnotaÃ§Ã£o clÃ­nica ({tipo}). TÃ­tulo: {titulo or 'Sem tÃ­tulo'}. ConteÃºdo: {conteudo}",
+            context_domain=f"paciente_{paciente.id}",
+            clinical_category="anotacoes_clinicas"
+        )
+        register_audit_log(request, f"Registrou anotaÃ§Ã£o ID {anotacao.id} no paciente ID {paciente_id}.")
+        messages.success(request, "AnotaÃ§Ã£o registrada.")
         return redirect('paciente_detail', paciente_id=paciente.id)
 
     anotacoes = []
@@ -340,7 +405,7 @@ def paciente_detail(request, paciente_id):
         item.decrypt_sensitive()
         anotacoes.append(item)
 
-    # Buscar avaliações vinculadas
+    # Buscar avaliaÃ§Ãµes vinculadas
     avaliacoes = paciente.avaliacoes.all().order_by('-timestamp')
     for av in avaliacoes:
         av.decrypt_sensitive()
@@ -354,7 +419,7 @@ def paciente_detail(request, paciente_id):
 @login_required
 @admin_required
 def paciente_nova_anamnese(request, paciente_id):
-    """Garante redirecionamento para ficha com ID do paciente pré-configurado."""
+    """Garante redirecionamento para ficha com ID do paciente prÃ©-configurado."""
     return redirect(f"/anamnese/nova/?paciente_id={paciente_id}")
 
 @login_required
@@ -367,6 +432,7 @@ def ia_consulta(request):
         pacientes.append(paciente)
 
     resultado = None
+    consulta_id = None
     erro = None
     engine_info = {
         'nome': 'Neuro-Diagnosis Edge AI',
@@ -405,6 +471,15 @@ def ia_consulta(request):
             ai_resp = requests.post(ai_url, json=payload, timeout=8.0)
             ai_resp.raise_for_status()
             resultado = ai_resp.json().get('data')
+            consulta = ConsultaIAClinica.objects.create(
+                paciente=paciente,
+                profissional=request.user,
+                pergunta=pergunta,
+                contexto=contexto,
+                resultado_json=json.dumps(resultado, ensure_ascii=False)
+            )
+            consulta_id = consulta.id
+
             if paciente and pergunta:
                 AnotacaoAtendimento.objects.create(
                     paciente=paciente,
@@ -413,46 +488,102 @@ def ia_consulta(request):
                     titulo='Consulta IA',
                     conteudo=f"Pergunta: {pergunta}\n\nResultado: {json.dumps(resultado, ensure_ascii=False)}",
                 )
+
+            enviar_aprendizado_ia(
+                content=f"Consulta IA. Pergunta: {pergunta}. Contexto: {contexto}. Resultado: {json.dumps(resultado, ensure_ascii=False)}",
+                context_domain=f"paciente_{paciente.id}" if paciente else "consulta_geral",
+                clinical_category="consultas_ia"
+            )
             register_audit_log(request, "Realizou consulta à IA.")
         except Exception as exc:
             erro = f"Não foi possível consultar a IA local: {exc}"
 
+    consultas_recentes = list(ConsultaIAClinica.objects.select_related('paciente').order_by('-created_at')[:10])
+    for consulta in consultas_recentes:
+        consulta.decrypt_sensitive()
+
+    score_ia = FeedbackConsultaIA.objects.aggregate(total=Sum('peso')).get('total') or 0
+
     return render(request, 'ia_consulta.html', {
         'pacientes': pacientes,
         'resultado': resultado,
+        'consulta_id': consulta_id,
+        'consultas_recentes': consultas_recentes,
+        'score_ia': score_ia,
         'erro': erro,
         'engine_info': engine_info,
         'selected_paciente_id': selected_paciente_id,
     })
 
-# ==================== PREENCHIMENTO E SUBMISSÃO DA ANAMNESE ====================
+
+@login_required
+@admin_required
+def feedback_consulta_ia(request, consulta_id):
+    if request.method != 'POST':
+        return redirect('ia_consulta')
+
+    consulta = get_object_or_404(ConsultaIAClinica, id=consulta_id)
+    julgamento = request.POST.get('julgamento', '').strip().lower()
+    comentario = request.POST.get('comentario', '').strip()
+    mapa_pesos = {'acerto': 2, 'parcial': 1, 'erro': -2}
+
+    if julgamento not in mapa_pesos:
+        messages.error(request, "Julgamento inválido para feedback da IA.")
+        return redirect('ia_consulta')
+
+    peso = mapa_pesos[julgamento]
+    FeedbackConsultaIA.objects.create(
+        consulta=consulta,
+        avaliador=request.user,
+        julgamento=julgamento,
+        peso=peso,
+        comentario=comentario,
+    )
+
+    consulta.decrypt_sensitive()
+    categoria = "feedback_positivo_ia" if peso > 0 else "feedback_negativo_ia"
+    enviar_aprendizado_ia(
+        content=(
+            f"Feedback IA ({julgamento}) com peso {peso}. "
+            f"Pergunta original: {consulta.pergunta}. "
+            f"Comentário clínico da profissional: {comentario or 'Sem comentário.'}"
+        ),
+        context_domain=f"paciente_{consulta.paciente_id}" if consulta.paciente_id else "consulta_geral",
+        clinical_category=categoria,
+    )
+
+    register_audit_log(request, f"Registrou feedback IA ({julgamento}) na consulta {consulta_id}.")
+    messages.success(request, "Feedback da IA registrado e incorporado ao aprendizado clínico.")
+    return redirect('ia_consulta')
+
+# ==================== PREENCHIMENTO E SUBMISSÃƒO DA ANAMNESE ====================
 def nova_anamnese(request):
-    """Renderiza a ficha clínica estruturada de 105 campos (Anamnese)."""
+    """Renderiza a ficha clÃ­nica estruturada de 105 campos (Anamnese)."""
     CHECKBOX_OPTIONS = [
-        "Facilidade em processar informações, integrar experiências e emitir respostas apropriadas",
-        "Aprendizagem rápida/fácil e com pouca repetição",
-        "Pensador crítico; lida com problemas abstraatos/complexos",
-        "Boa memória e facilidade para acumular conhecimento",
-        "Habilidade de raciocínio lógico-matemático",
-        "Vocabulário avançado para a idade; verbalmente fluente",
+        "Facilidade em processar informaÃ§Ãµes, integrar experiÃªncias e emitir respostas apropriadas",
+        "Aprendizagem rÃ¡pida/fÃ¡cil e com pouca repetiÃ§Ã£o",
+        "Pensador crÃ­tico; lida com problemas abstraatos/complexos",
+        "Boa memÃ³ria e facilidade para acumular conhecimento",
+        "Habilidade de raciocÃ­nio lÃ³gico-matemÃ¡tico",
+        "VocabulÃ¡rio avanÃ§ado para a idade; verbalmente fluente",
         "Capacidade de generalizar e transferir aprendizagem",
-        "Percepções incomuns na resolução de problemas",
+        "PercepÃ§Ãµes incomuns na resoluÃ§Ã£o de problemas",
         "Facilidade e agilidade para produzir ideias",
-        "Flexibilidade ou facilidade para pensar fora dos padrões",
+        "Flexibilidade ou facilidade para pensar fora dos padrÃµes",
         "Originalidade de pensamento",
         "Capacidade de resolver problemas de forma criativa e efetiva",
-        "Abertura a novas experiências e disposição para correr riscos",
-        "Vê relações entre ideias diversas",
-        "Independência e autonomia de pensamento",
+        "Abertura a novas experiÃªncias e disposiÃ§Ã£o para correr riscos",
+        "VÃª relaÃ§Ãµes entre ideias diversas",
+        "IndependÃªncia e autonomia de pensamento",
         "Apurado senso de humor",
-        "Interesse constante por certos tópicos",
-        "Tendência a iniciar suas próprias atividades",
-        "Persistência na realização de tarefas de interesse",
-        "Auto-imposição para atingir a perfeição",
+        "Interesse constante por certos tÃ³picos",
+        "TendÃªncia a iniciar suas prÃ³prias atividades",
+        "PersistÃªncia na realizaÃ§Ã£o de tarefas de interesse",
+        "Auto-imposiÃ§Ã£o para atingir a perfeiÃ§Ã£o",
         "Ocupa seu tempo de forma produtiva",
-        "Concentra-se por período prolongado sem aborrecer-se",
-        "Preferência por responsabilidade pessoal sobre sua produção",
-        "Obstinação em procurar informações sobre tópicos de interesse"
+        "Concentra-se por perÃ­odo prolongado sem aborrecer-se",
+        "PreferÃªncia por responsabilidade pessoal sobre sua produÃ§Ã£o",
+        "ObstinaÃ§Ã£o em procurar informaÃ§Ãµes sobre tÃ³picos de interesse"
     ]
     
     paciente_id = request.GET.get('paciente_id')
@@ -467,7 +598,7 @@ def nova_anamnese(request):
     })
 
 def salvar_anamnese(request):
-    """Processa e salva as submissões da anamnese clínica no banco de dados MySQL de forma segura."""
+    """Processa e salva as submissÃµes da anamnese clÃ­nica no banco de dados MySQL de forma segura."""
     if request.method == 'POST':
         data = {}
         for f in AvaliacaoClinica._meta.fields:
@@ -479,12 +610,15 @@ def salvar_anamnese(request):
                 else:
                     data[name] = request.POST.get(name, '').strip()
 
+        data['data_nascimento'] = normalizar_data_br(data.get('data_nascimento', ''))
+        data['bairro_data'] = normalizar_data_br(data.get('bairro_data', ''))
+
         # Vincular paciente se informado
         paciente_id = request.POST.get('paciente_id')
         if paciente_id and paciente_id.isdigit():
             data['paciente_id'] = int(paciente_id)
 
-        # Se não vier nome preenchido mas vier paciente_id, preencher com o nome do paciente
+        # Se nÃ£o vier nome preenchido mas vier paciente_id, preencher com o nome do paciente
         if not data.get('nome') and paciente_id:
             p = Paciente.objects.filter(id=paciente_id).first()
             if p:
@@ -493,23 +627,23 @@ def salvar_anamnese(request):
 
         new_resp = AvaliacaoClinica.objects.create(**data)
         
-        # Dispara aprendizado silencioso no microsserviço de IA (se ativo) sobre este caso
+        # Dispara aprendizado silencioso no microsserviÃ§o de IA (se ativo) sobre este caso
         try:
             ai_learn_url = f"{settings.AI_SERVICE_URL}/api/v1/learn"
             payload = {
-                "content": f"Caso clínico com observações: {data.get('observacoes')}. Características notadas: {data.get('observed_characteristics')}",
+                "content": f"Caso clÃ­nico com observaÃ§Ãµes: {data.get('observacoes')}. CaracterÃ­sticas notadas: {data.get('observed_characteristics')}",
                 "context_domain": f"paciente_{new_resp.paciente_id}" if new_resp.paciente_id else "geral",
                 "clinical_category": "casos_clinicos",
                 "target_age": "infantil" if int(data.get('idade_anos') or 10) < 12 else "adolescente"
             }
             requests.post(ai_learn_url, json=payload, timeout=2.0)
         except Exception as e:
-            print(f"Sem conexão para aprendizado na IA: {e}")
+            print(f"Sem conexÃ£o para aprendizado na IA: {e}")
 
         ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
         LogAuditoria.objects.create(
             user=request.user if request.user.is_authenticated else None,
-            action=f"Nova avaliação preenchida na internet e salva. ID do Prontuário: {new_resp.id}",
+            action=f"Nova avaliaÃ§Ã£o preenchida na internet e salva. ID do ProntuÃ¡rio: {new_resp.id}",
             ip_address=ip
         )
 
@@ -517,16 +651,16 @@ def salvar_anamnese(request):
 
     return redirect('nova_anamnese')
 
-# ==================== EXPORTAÇÃO COMPLETA PARA EXCEL ====================
+# ==================== EXPORTAÃ‡ÃƒO COMPLETA PARA EXCEL ====================
 @login_required
 @admin_required
 def export_excel(request):
-    """Gera planilha Excel profissional e estilizada contendo todos os prontuários e respostas."""
-    register_audit_log(request, "Exportou a base de dados de avaliações para planilha Excel (.xlsx).")
+    """Gera planilha Excel profissional e estilizada contendo todos os prontuÃ¡rios e respostas."""
+    register_audit_log(request, "Exportou a base de dados de avaliaÃ§Ãµes para planilha Excel (.xlsx).")
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Avaliações Clínicas"
+    ws.title = "AvaliaÃ§Ãµes ClÃ­nicas"
 
     ws.views.sheetView[0].showGridLines = True
 
@@ -544,7 +678,7 @@ def export_excel(request):
         bottom=Side(style='thin', color='E5E0D8')
     )
 
-    headers = ["ID Avaliação", "Paciente Vinculado", "Data e Hora", "Pontuação Atribuída", "Parecer Clínico"]
+    headers = ["ID AvaliaÃ§Ã£o", "Paciente Vinculado", "Data e Hora", "PontuaÃ§Ã£o AtribuÃ­da", "Parecer ClÃ­nico"]
     fields_to_export = []
     
     for f in AvaliacaoClinica._meta.fields:
@@ -568,7 +702,7 @@ def export_excel(request):
     for resp in responses:
         resp.decrypt_sensitive()
         
-        paciente_nome = "Não Vinculado"
+        paciente_nome = "NÃ£o Vinculado"
         if resp.paciente:
             resp.paciente.decrypt_sensitive()
             paciente_nome = resp.paciente.nome
@@ -578,7 +712,7 @@ def export_excel(request):
             paciente_nome,
             resp.timestamp.strftime('%d/%m/%Y %H:%M'),
             resp.score,
-            resp.notes or "Sem parecer atribuído"
+            resp.notes or "Sem parecer atribuÃ­do"
         ]
         
         for field_name in fields_to_export:

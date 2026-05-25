@@ -4,200 +4,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro - Sistema de Avaliação</title>
+    <title>Cadastro - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-box">
-            <!-- Lado Esquerdo - Showcase da Logo -->
-            <div class="login-left">
-                <div class="login-logo-large">
-                    <img src="{% static 'logo.jpg' %}" alt="{{ CLINICA_NOME }} Neuropsicopedagoga">
-                </div>
-                <div class="login-welcome">
-                    <h2>Criar Conta</h2>
-                    <p>Preencha os dados abaixo para começar</p>
-                    <p>{{ CLINICA_NOME }} Neuropsicopedagoga</p>
-                </div>
-                <div class="login-features">
-                    <div class="feature-item">
-                        <div class="feature-icon">✨</div>
-                        <span>Cadastro rápido e gratuito</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">🔒</div>
-                        <span>Seus dados estão seguros (LGPD)</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">📊</div>
-                        <span>Acesso imediato ao sistema</span>
-                    </div>
-                </div>
+<body class="ops-page">
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Acesso interno</span>
+                <h1>Criar conta profissional</h1>
+                <p>Cadastro nominal para auditoria, rastreabilidade e operacao clinica dentro da plataforma.</p>
             </div>
-
-            <!-- Lado Direito - Formulário de Cadastro -->
-            <div class="login-right">
-                <div class="login-header">
-                    <h1>Cadastro</h1>
-                    <p>Crie sua conta para acessar o sistema</p>
-                </div>
-
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="login-alert alert-{{ message.tags }}">
-                            {% if message.tags == 'success' %}
-                                <span>✓</span>
-                            {% elif message.tags == 'error' or message.tags == 'danger' %}
-                                <span>⚠</span>
-                            {% else %}
-                                <span>ℹ</span>
-                            {% endif %}
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <form method="POST" action="{% url 'register' %}" class="login-form">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="nome">Nome Completo *</label>
-                        <input 
-                            type="text" 
-                            id="nome" 
-                            name="nome" 
-                            placeholder="Seu nome completo"
-                            required 
-                            autofocus
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email">E-mail *</label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            placeholder="seu.email@exemplo.com"
-                            required 
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="senha">Senha *</label>
-                        <input 
-                            type="password" 
-                            id="senha" 
-                            name="senha" 
-                            placeholder="Mínimo 8 caracteres"
-                            required
-                        >
-                        <small style="color: var(--text-light); display: block; margin-top: 5px; font-size: 12px;">
-                            Mínimo 8 caracteres com maiúscula e número.
-                        </small>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="data_nascimento">Data de Nascimento</label>
-                            <input 
-                                type="date" 
-                                id="data_nascimento" 
-                                name="data_nascimento"
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label for="telefone">Telefone</label>
-                            <input 
-                                type="tel" 
-                                id="telefone" 
-                                name="telefone"
-                                placeholder="(00) 00000-0000"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="escolaridade">Escolaridade</label>
-                        <select id="escolaridade" name="escolaridade">
-                            <option value="">Selecione...</option>
-                            <option value="Ensino Fundamental">Ensino Fundamental</option>
-                            <option value="Ensino Médio">Ensino Médio</option>
-                            <option value="Ensino Superior">Ensino Superior</option>
-                            <option value="Pós-Graduação">Pós-Graduação</option>
-                            <option value="Mestrado">Mestrado</option>
-                            <option value="Doutorado">Doutorado</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 10px;">
-                        <label class="checkbox-label">
-                            <input type="checkbox" required>
-                            <span style="font-size: 13px; color: var(--text-medium);">
-                                Li e aceito os termos de uso e política de privacidade
-                            </span>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="login-button">Criar Conta</button>
-                </form>
-
-                <div class="divider">
-                    <span>OU</span>
-                </div>
-
-                <div class="register-prompt">
-                    Já tem uma conta? 
-                    <a href="{% url 'login' %}">Faça login</a>
-                </div>
+            <div class="ops-hero-metrics">
+                <div><span>Uso</span><strong>Equipe interna</strong></div>
+                <div><span>Controle</span><strong>Acesso auditavel</strong></div>
+                <div><span>Retorno</span><a href="{% url 'login' %}" class="ops-hero-action">Voltar ao login</a></div>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <style>
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
-        select {
-            width: 100%;
-            padding: 14px 18px;
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 15px;
-            transition: all 0.3s ease;
-            background: var(--background);
-            color: var(--text-dark);
-        }
+        <section class="ops-workbench">
+            <form method="post" class="ops-stack">
+                {% csrf_token %}
+                <section class="ops-panel">
+                    <div class="ops-section-head">
+                        <span>Conta</span>
+                        <strong>Dados de acesso</strong>
+                    </div>
+                    <div class="ops-content-body">
+                        <div class="patient-block-grid patient-block-grid--identity">
+                            <div class="form-group patient-span-2">
+                                <label class="form-label">Nome</label>
+                                <input class="form-input" name="nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">E-mail</label>
+                                <input class="form-input" name="email" type="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Telefone</label>
+                                <input class="form-input" name="telefone">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Data de nascimento</label>
+                                <input class="form-input" name="data_nascimento" placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Escolaridade</label>
+                                <input class="form-input" name="escolaridade">
+                            </div>
+                            <div class="form-group patient-span-2">
+                                <label class="form-label">Senha</label>
+                                <input class="form-input" name="senha" type="password" required>
+                            </div>
+                        </div>
+                        <div class="ops-inline-actions">
+                            <a href="{% url 'login' %}" class="btn-outline">Cancelar</a>
+                            <button class="ai-primary-action" type="submit">Cadastrar conta</button>
+                        </div>
+                    </div>
+                </section>
+            </form>
 
-        select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(139, 90, 60, 0.08);
-        }
-
-        .checkbox-label {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .checkbox-label input[type="checkbox"] {
-            margin-top: 3px;
-            cursor: pointer;
-        }
-
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Boas praticas</span>
+                    <strong>Conta pessoal</strong>
+                    <p>Prefira um acesso por profissional para manter historico clinico, trilha de auditoria e atribuicao correta de registros.</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Seguranca</span>
+                    <strong>Base interna</strong>
+                    <p>O cadastro foi desenhado para equipe operacional da clinica, nao para acesso publico irrestrito.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
 </body>
 </html>
-

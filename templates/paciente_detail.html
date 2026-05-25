@@ -4,98 +4,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paciente - {{ paciente.nome }}</title>
+    <title>Prontuário do paciente - {{ paciente.nome }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
+<body class="ops-page">
     {% include 'includes/admin_navbar.html' %}
-<main class="admin-main">
-        <div class="admin-container">
-            <div class="admin-header">
-                <div class="header-content">
-                    <a href="{% url 'pacientes_list' %}" class="btn-back">Voltar</a>
-                    <h1>{{ paciente.nome }}</h1>
-                    <p>{{ paciente.escola|default:"Sem escola informada" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p>
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <a href="{% url 'pacientes_list' %}" class="intake-back-link">Voltar</a>
+                <span class="ai-eyebrow">Prontuario ativo</span>
+                <h1>{{ paciente.nome }}</h1>
+                <p>{{ paciente.escola|default:"Sem escola informada" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Nascimento</span><strong>{{ paciente.data_nascimento|default:"-" }}</strong></div>
+                <div><span>Contato</span><strong>{{ paciente.telefone|default:"-" }}</strong></div>
+                <div><span>Acao</span><a href="{% url 'ia_consulta' %}?paciente={{ paciente.id }}" class="ops-hero-action">Consultar IA</a></div>
+            </div>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Resumo clinico</span>
+                    <strong>Dados do paciente</strong>
                 </div>
-                <a href="{% url 'ia_consulta' %}?paciente={{ paciente.id }}" class="btn-outline">Consultar IA</a>
-            </div>
-
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <div class="table-card" style="margin-bottom: 24px;">
-                <div class="table-header"><h3 class="table-title">Dados do paciente</h3></div>
-                <div style="padding: 20px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr;">
-                    <div>
-                        <p><strong>Data de nascimento:</strong> {{ paciente.data_nascimento|default:"-" }}</p>
-                        <p><strong>CPF:</strong> {{ paciente.cpf|default:"-" }}</p>
-                        <p><strong>RG:</strong> {{ paciente.identidade|default:"-" }}</p>
-                        <p><strong>Telefone:</strong> {{ paciente.telefone|default:"-" }}</p>
-                        <p><strong>E-mail:</strong> {{ paciente.email|default:"-" }}</p>
-                    </div>
-                    <div>
-                        <p><strong>Endereço:</strong> {{ paciente.endereco|default:"-" }}</p>
-                        <p><strong>Bairro:</strong> {{ paciente.bairro|default:"-" }}</p>
-                        <p><strong>CEP:</strong> {{ paciente.cep|default:"-" }}</p>
-                        <p><strong>Escola / Série:</strong> {{ paciente.escola|default:"-" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p>
-                        <p><strong>Queixa principal:</strong> {{ paciente.queixa_principal|default:"-" }}</p>
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        <p><strong>Observações:</strong> {{ paciente.observacoes|default:"-" }}</p>
-                    </div>
+                <div class="ops-content-body ops-content-body--grid">
+                    <div><strong>CPF</strong><p>{{ paciente.cpf|default:"-" }}</p></div>
+                    <div><strong>RG</strong><p>{{ paciente.identidade|default:"-" }}</p></div>
+                    <div><strong>E-mail</strong><p>{{ paciente.email|default:"-" }}</p></div>
+                    <div><strong>Endereco</strong><p>{{ paciente.endereco|default:"-" }}</p></div>
+                    <div><strong>Bairro</strong><p>{{ paciente.bairro|default:"-" }}</p></div>
+                    <div><strong>CEP</strong><p>{{ paciente.cep|default:"-" }}</p></div>
+                    <div><strong>Escola / Serie</strong><p>{{ paciente.escola|default:"-" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p></div>
+                    <div><strong>Queixa principal</strong><p>{{ paciente.queixa_principal|default:"-" }}</p></div>
+                    <div class="patient-span-2"><strong>Observacoes</strong><p>{{ paciente.observacoes|default:"-" }}</p></div>
                 </div>
             </div>
 
-            <div class="notes-section">
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Uso rapido</span>
+                    <strong>Daqui voce avanca</strong>
+                    <p>Registre sessao, consulte a IA, abra avaliações vinculadas e aprofunde o caso sem sair do prontuário.</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Contexto</span>
+                    <strong>Cadastro resumido</strong>
+                    <p>Se faltar detalhe, o histórico de anotações e a anamnese completam a visão clínica do acompanhamento.</p>
+                </div>
+            </aside>
+        </section>
 
-                <h3 class="notes-title">Nova anotação de atendimento</h3>
-                <form method="POST">
-                    {% csrf_token %}
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="data_consulta">Data da Consulta</label>
-                            <input type="date" class="form-input" id="data_consulta" name="data_consulta" required>
+        <section class="ops-workbench" style="margin-top:18px;">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Registro longitudinal</span>
+                    <strong>Nova anotação de atendimento</strong>
+                </div>
+                <div class="ops-content-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="patient-block-grid patient-block-grid--identity">
+                            <div class="form-group">
+                                <label class="form-label" for="data_consulta">Data da consulta</label>
+                                <input type="date" class="form-input" id="data_consulta" name="data_consulta" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="tipo">Tipo</label>
+                                <select class="form-input" id="tipo" name="tipo">
+                                    <option value="sessao">Sessao</option>
+                                    <option value="observacao">Observacao</option>
+                                    <option value="orientacao">Orientacao familiar/escolar</option>
+                                    <option value="encaminhamento">Encaminhamento</option>
+                                </select>
+                            </div>
+                            <div class="form-group patient-span-2">
+                                <label class="form-label" for="titulo">Titulo</label>
+                                <input class="form-input" id="titulo" name="titulo" maxlength="160" placeholder="Resumo da sessao">
+                            </div>
+                            <div class="form-group patient-span-2">
+                                <label class="form-label" for="conteudo">Conteudo</label>
+                                <textarea class="form-textarea" id="conteudo" name="conteudo" rows="6" placeholder="Detalhes do atendimento..." required></textarea>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="tipo">Tipo</label>
-                            <select class="form-input" id="tipo" name="tipo">
-                                <option value="sessao">Sessão</option>
-                                <option value="observacao">Observação</option>
-                                <option value="orientacao">Orientação familiar/escolar</option>
-                                <option value="encaminhamento">Encaminhamento</option>
-                            </select>
+                        <div class="patient-intake-actions">
+                            <div></div>
+                            <button class="ai-primary-action" type="submit">Salvar anotacao</button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="titulo">Título</label>
-                            <input class="form-input" id="titulo" name="titulo">
-                        </div>
-                    </div>
-                    <textarea class="form-textarea" name="conteudo" rows="6" placeholder="Detalhes do atendimento..." required></textarea>
-                    <div class="form-actions" style="margin-top: 16px;">
-                        <button class="btn-primary" type="submit">Salvar anotação</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
 
-            <div class="table-card" style="margin-top: 24px;">
-                <div class="table-header"><h3 class="table-title">Histórico de atendimento</h3></div>
-                <div style="padding: 20px; display: grid; gap: 16px;">
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Qualidade do registro</span>
+                    <strong>Anotacao clinica</strong>
+                    <p>Prefira linguagem objetiva: comportamento observado, hipótese, conduta aplicada e próximos passos.</p>
+                </div>
+            </aside>
+        </section>
+
+        <section class="ops-workbench" style="margin-top:18px;">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Historico</span>
+                    <strong>Anotacoes de atendimento</strong>
+                </div>
+                <div class="notes-history-list">
                     {% for anotacao in anotacoes %}
-                        <article style="border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
-                            <strong>{{ anotacao.titulo|default:anotacao.get_tipo_display }}</strong>
-                            <p style="color: var(--text-medium); font-size: 13px;">{{ anotacao.created_at|date:"d/m/Y H:i" }} - {{ anotacao.get_tipo_display }}</p>
-                            <p style="white-space: pre-wrap;">{{ anotacao.conteudo }}</p>
+                        <article class="notes-item">
+                            <div class="notes-item-head"><strong>{{ anotacao.titulo|default:anotacao.get_tipo_display }}</strong><span class="notes-type-chip">{{ anotacao.get_tipo_display }}</span></div>
+                            <p class="notes-item-meta">{% if anotacao.data_consulta %}Consulta: {{ anotacao.data_consulta|date:"d/m/Y" }}{% else %}Sem data da consulta{% endif %} - Registro: {{ anotacao.created_at|date:"d/m/Y H:i" }}</p>
+                            <p class="notes-item-content">{{ anotacao.conteudo }}</p>
                         </article>
                     {% empty %}
-                        <p>Nenhuma anotação registrada ainda.</p>
+                        <p class="empty-state">Nenhuma anotacao registrada ainda.</p>
                     {% endfor %}
                 </div>
             </div>
-        </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-panel">
+                    <div class="ops-section-head">
+                        <span>Relacionados</span>
+                        <strong>Avaliacoes vinculadas</strong>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="modern-table ops-table">
+                            <thead><tr><th>ID</th><th>Data</th><th>Score</th><th></th></tr></thead>
+                            <tbody>
+                                {% for av in avaliacoes %}
+                                <tr>
+                                    <td>#{{ av.id }}</td>
+                                    <td>{{ av.timestamp|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ av.score }}</td>
+                                    <td><a href="{% url 'view_avaliacao' av.id %}" class="patients-open-link">Abrir</a></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="empty-state">Sem avaliações vinculadas.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </aside>
+        </section>
     </main>
 </body>
 </html>
-

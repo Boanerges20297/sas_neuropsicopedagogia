@@ -4,317 +4,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prontuário - {{ CLINICA_NOME }}</title>
+    <title>Prontuário de avaliação - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="{% static 'scoring.js' %}" defer></script>
 </head>
-<body>
-    <!-- Navbar Moderna -->
-    <nav class="modern-navbar">
-        <div class="navbar-container">
-            <a href="{% url 'dashboard' %}" class="navbar-brand">
-                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
-                <div class="brand-text">
-                    <span class="brand-title">{{ CLINICA_NOME }}</span>
-                    <span class="brand-subtitle">Neuropsicopedagoga</span>
-                </div>
-            </a>
-            
-                        <div class="navbar-menu">
-                <a href="{% url 'dashboard' %}" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{% url 'pacientes_list' %}" class="nav-item">
-                    <span class="nav-icon">👥</span>
-                    <span>Pacientes</span>
-                </a>
-                <a href="{% url 'ia_consulta' %}" class="nav-item">
-                    <span class="nav-icon">🧠</span>
-                    <span>Consulta IA</span>
-                </a>
-                <a href="{% url 'admin_avaliacoes' %}" class="nav-item active">
-                    <span class="nav-icon">📋</span>
-                    <span>Respostas</span>
-                </a>
-                <a href="{% url 'admin_users' %}" class="nav-item">
-                    <span class="nav-icon">👤</span>
-                    <span>Usuários</span>
-                </a>
-            </div>
-            
-            <div class="navbar-user">
-                <div class="user-dropdown">
-                    <button class="user-btn">
-                        <div class="user-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
-                        <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-content">
-                        <a href="{% url 'user_area' %}" class="dropdown-link">
-                            <span>👤</span> Meu Perfil
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="{% url 'logout' %}" class="dropdown-link logout">
-                            <span>🚪</span> Sair
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
 
-    <main class="scoring-main">
-        <div class="scoring-container">
-            <!-- Header com informações da resposta -->
-            <div class="scoring-header">
-                <div class="header-left">
-                    <a href="{% url 'admin_avaliacoes' %}" class="btn-back" style="text-decoration: none;">
-                        <span></span> Voltar para Respostas
-                    </a>
-                    <h1 class="scoring-title">Prontuário de Avaliação #{{ response.id }}</h1>
-                    <div class="response-meta">
-                        <span class="meta-item">👤 Estudante: <strong>{{ response.nome }}</strong></span>
-                        <span class="meta-item">📅 Data: {{ response.timestamp|date:"d/m/Y H:i" }}</span>
-                        <span class="meta-item"> Escola: {{ response.unidade_escolar|default:"Não informada" }}</span>
-                    </div>
-                </div>
-                
-                <!-- Painel de Pontuação Total -->
-                <div class="score-panel">
-                    <div class="score-display">
-                        <span class="score-label">Pontuação do Caso</span>
-                        <span class="score-value" id="totalScore">{{ response.score|default:0 }}</span>
-                    </div>
-                    <button class="btn-save-score" id="saveScoreBtn" data-url="{% url 'score_avaliacao' response.id %}">
-                        <span>💾</span> Salvar Parecer
-                    </button>
-                </div>
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <a href="{% url 'admin_avaliacoes' %}" class="intake-back-link">Voltar</a>
+                <span class="ai-eyebrow">Leitura diagnostica</span>
+                <h1>Prontuário #{{ response.id }}</h1>
+                <p>Paciente: {{ response.nome|default:"Não informado" }} | Data: {{ response.timestamp|date:"d/m/Y H:i" }}</p>
             </div>
+            <div class="ops-hero-metrics">
+                <div><span>Pontuacao</span><strong id="totalScore">{{ response.score|default:0 }}</strong></div>
+                <div><span>Status IA</span><strong>{% if ai_error %}Offline{% else %}Disponivel{% endif %}</strong></div>
+                <div><span>Acao</span><button class="ops-hero-action" id="saveScoreBtn" data-url="{% url 'score_avaliacao' response.id %}">Salvar parecer</button></div>
+            </div>
+        </section>
 
-            <!-- ==================== BLOCO DE IA DE BORDA & DIAGNÓSTICO (NOVO) ==================== -->
-            <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 30px; display: grid; gap: 25px;">
-                <!-- 1. Radar de Habilidades de Renzulli (IA de Borda) -->
-                <div class="chart-card" style="padding: 20px;">
-                    <div class="chart-header">
-                        <h3 class="chart-title">🧠 Perfil de Renzulli (Mapeamento de IA)</h3>
-                        <p style="font-size: 13px; color: var(--text-light); margin-top: 4px;">Percentual de afinidade em 5 macrodimensões cognitivas</p>
-                    </div>
-                    <div class="chart-container" style="height: 320px; position: relative;">
-                        {% if ai_error %}
-                            <div style="text-align: center; padding-top: 100px; color: var(--primary-color);">
-                                <p style="font-size: 40px;">️</p>
-                                <p style="font-weight: bold; margin-top: 10px;">Microsserviço de IA de Borda Offline</p>
-                                <p style="font-size: 13px; color: var(--text-medium); max-width: 300px; margin: 10px auto;">Certifique-se de que o container <code>sas_ai_service</code> esteja rodando na VPS.</p>
-                            </div>
-                        {% else %}
-                            <canvas id="renzulliRadarChart"></canvas>
-                        {% endif %}
-                    </div>
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Apoio analitico</span>
+                    <strong>Leitura da IA</strong>
                 </div>
-
-                <!-- 2. Insights Clínicos da IA de Borda & Marcos de Desenvolvimento -->
-                <div class="chart-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <div class="chart-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
-                            <h3 class="chart-title">💡 Parecer Sugerido pela IA de Borda</h3>
-                        </div>
-                        <div class="ai-insights-box" style="line-height: 1.6; font-size: 14.5px; color: var(--text-dark);">
+                <div class="ops-grid-2">
+                    <div class="ops-chart-box">
+                        <div class="ops-box-head">Perfil de Renzulli</div>
+                        <div class="ops-chart-area">{% if ai_error %}<p>IA indisponível no momento.</p>{% else %}<canvas id="renzulliRadarChart"></canvas>{% endif %}</div>
+                    </div>
+                    <div class="ops-content-box">
+                        <div class="ops-box-head">Insights sugeridos</div>
+                        <div class="ops-content-body">
                             {% if ai_data and ai_data.insights %}
                                 {% for insight in ai_data.insights %}
-                                    <p style="margin-bottom: 12px; background: rgba(139, 90, 60, 0.05); padding: 12px; border-left: 4px solid var(--primary-color); border-radius: 4px;">
-                                        {{ insight|safe }}
-                                    </p>
+                                    <p class="ai-insight">{{ insight }}</p>
                                 {% endfor %}
                             {% else %}
-                                <p style="color: var(--text-medium); font-style: italic;">
-                                    Preencha os dados de características observadas na ficha para a IA realizar o mapeamento heurístico.
-                                </p>
+                                <p>Sem insights disponíveis.</p>
                             {% endif %}
                         </div>
                     </div>
-
-                    <!-- Alertas de Marcos Precoces -->
-                    <div>
-                        {% if ai_data and ai_data.alerts %}
-                            <div style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                                <h4 style="font-size: 14px; font-weight: 700; color: #a94442; margin-bottom: 8px;">🚨 Marcos Precoces Detectados:</h4>
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
-                                    {% for alert in ai_data.alerts %}
-                                        <div style="background: #fdf2f2; border: 1px solid #f5c6cb; border-radius: 8px; padding: 10px; font-size: 13px; color: #721c24;">
-                                            <strong>{{ alert.title }}</strong>: {{ alert.description }}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
                 </div>
             </div>
 
-            <!-- ==================== CITAES SEMNTICAS DO DSM-5-TR (NOVO) ==================== -->
-            {% if ai_data and ai_data.dsm5_citations %}
-            <div class="table-card" style="margin-bottom: 30px; padding: 20px; border-left: 6px solid #D4A574; background: #faf9f6;">
-                <h3 style="color: #8B5A3C; font-size: 17px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                    📖 Fundamentação Científica (Palácio da Memória - DSM-5-TR)
-                </h3>
-                <p style="font-size: 13px; color: var(--text-medium); margin-bottom: 15px;">
-                    Fragmentos extraídos semanticamente do livro original do DSM-5-TR para embasar as decisões clínicas deste caso:
-                </p>
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    {% for cit in ai_data.dsm5_citations %}
-                        <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed var(--border-color); padding-bottom: 6px;">
-                                <span style="font-size: 12px; font-weight: bold; color: #D4A574; background: rgba(212,165,116,0.1); padding: 4px 8px; border-radius: 4px;">
-                                    Termo buscado: "{{ cit.term_searched }}"
-                                </span>
-                                <span style="font-size: 11px; color: var(--text-light);">
-                                    Relevncia Semntica: {{ cit.score|floatformat:2 }}
-                                </span>
-                            </div>
-                            <blockquote style="font-size: 13.5px; color: var(--text-dark); font-style: italic; line-height: 1.6; padding-left: 10px; border-left: 3px solid #D4A574;">
-                                "{{ cit.text }}"
-                            </blockquote>
-                        </div>
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Objetivo</span>
+                    <strong>Sintese clinica</strong>
+                    <p>Use os sinais da IA como apoio de leitura, mas feche o caso a partir do seu julgamento profissional.</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Parecer</span>
+                    <strong>Fechamento do caso</strong>
+                    <p>Ao salvar a pontuação e o parecer, o caso também alimenta o histórico de aprendizado clínico da plataforma.</p>
+                </div>
+            </aside>
+        </section>
+
+        <section class="ops-workbench" style="margin-top:18px;">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Formulario consolidado</span>
+                    <strong>Campos preenchidos</strong>
+                </div>
+                <div class="ops-content-body ops-content-body--grid">
+                    {% for label, value in fields_list %}
+                        {% if value %}
+                            <div><strong>{{ label }}</strong><p>{{ value }}</p></div>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
-            {% endif %}
 
-            <!-- Grid de respostas organizadas -->
-            <div class="table-card" style="margin-bottom: 30px;">
-                <div class="table-header">
-                    <h3 class="table-title">Respostas Completas do Questionário ({{ fields_list|length }} campos)</h3>
-                </div>
-                <div style="padding: 20px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        {% for label, value in fields_list %}
-                            {% if value %}
-                            <div style="border-bottom: 1px solid var(--border-color); padding: 12px 0;">
-                                <div style="font-size: 13px; color: var(--text-medium); font-weight: bold; margin-bottom: 4px;">{{ label }}</div>
-                                <div style="font-size: 14.5px; color: var(--text-dark); line-height: 1.5; font-weight: 500;">{{ value }}</div>
-                            </div>
-                            {% endif %}
-                        {% endfor %}
+            <aside class="ops-side-rail">
+                <div class="ops-panel">
+                    <div class="ops-section-head">
+                        <span>Parecer final</span>
+                        <strong>Sintese neuropsicopedagogica</strong>
+                    </div>
+                    <div class="ops-content-body">
+                        <textarea id="evaluationNotes" class="notes-textarea" rows="10" placeholder="Descreva sintese clínica, hipóteses e condutas.">{{ response.notes|default:'' }}</textarea>
                     </div>
                 </div>
-            </div>
-
-            <!-- Seção de Observações -->
-            <div class="notes-section">
-                <h3 class="notes-title"> Parecer Neuropsicopedagógico e Observações Clínicas</h3>
-                <textarea id="evaluationNotes" 
-                          class="notes-textarea" 
-                          placeholder="Digite aqui suas observações sobre a avaliação, padrões de Renzulli identificados, recomendações pedagógicas, etc."
-                          rows="6">{{ response.notes|default:'' }}</textarea>
-            </div>
-
-            <!-- Informações adicionais se já foi pontuado -->
-            {% if response.scored_at %}
-            <div class="scoring-info" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.02); border-radius: 8px; font-size: 13px; color: var(--text-medium); display: flex; gap: 20px;">
-                <p><strong>Pontuado por:</strong> {{ response.scored_by.first_name|default:response.scored_by.username }}</p>
-                <p><strong>Data da pontuação:</strong> {{ response.scored_at|date:"d/m/Y H:i" }}</p>
-            </div>
-            {% endif %}
-        </div>
+            </aside>
+        </section>
     </main>
 
-    <!-- Toast para notificações -->
     <div id="toast" class="toast"></div>
-
-    <!-- CSRF Token para AJAX -->
     {% csrf_token %}
 
-    <!-- Script de Inicialização do Radar Chart -->
     {% if ai_data %}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const ctx = document.getElementById('renzulliRadarChart').getContext('2d');
+            const el = document.getElementById('renzulliRadarChart');
+            if (!el) return;
+            const ctx = el.getContext('2d');
             const scores = {{ ai_scores_json|safe }};
-            
             new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: [
-                        'Capacidade Intelectual',
-                        'Pensamento Criativo',
-                        'Liderança',
-                        'Talento Artístico',
-                        'Psicomotricidade'
-                    ],
+                    labels: ['Capacidade intelectual','Criatividade','Liderança','Artes','Psicomotricidade'],
                     datasets: [{
                         label: 'Afinidade (%)',
-                        data: [
-                            scores.intelectual || 0,
-                            scores.criatividade || 0,
-                            scores.lideranca || 0,
-                            scores.artes || 0,
-                            scores.psicomotora || 0
-                        ],
-                        backgroundColor: 'rgba(139, 90, 60, 0.2)',
-                        borderColor: '#8B5A3C',
-                        pointBackgroundColor: '#8B5A3C',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: '#8B5A3C',
-                        borderWidth: 3
+                        data: [scores.intelectual||0,scores.criatividade||0,scores.lideranca||0,scores.artes||0,scores.psicomotora||0],
+                        backgroundColor: 'rgba(31,94,102,0.2)',
+                        borderColor: '#1f5e66',
+                        borderWidth: 2
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: 100,
-                            ticks: {
-                                stepSize: 20,
-                                font: {
-                                    size: 10
-                                }
-                            },
-                            pointLabels: {
-                                font: {
-                                    size: 11,
-                                    weight: 'bold',
-                                    family: 'Segoe UI'
-                                },
-                                color: '#4a5568'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
+                options: {responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}}, scales:{r:{suggestedMin:0,suggestedMax:100}}}
             });
         });
     </script>
     {% endif %}
-
-    <script>
-        document.querySelector('.user-btn')?.addEventListener('click', function(e) {
-            e.stopPropagation();
-            this.parentElement.classList.toggle('active');
-        });
-
-        document.addEventListener('click', function(e) {
-            const dropdown = document.querySelector('.user-dropdown');
-            if (dropdown && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-    </script>
 </body>
 </html>
-

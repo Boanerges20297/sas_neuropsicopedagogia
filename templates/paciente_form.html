@@ -4,113 +4,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Paciente</title>
+    <title>Novo paciente - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
+<body class="patient-intake-page">
     {% include 'includes/admin_navbar.html' %}
-<main class="form-main">
-        <div class="form-container">
-            <div class="form-header">
-                <a href="{% url 'pacientes_list' %}" class="btn-back">Voltar</a>
-                <h1 class="form-title">Novo paciente</h1>
-                <p class="form-subtitle">Dados iniciais para acompanhamento clínico.</p>
-            </div>
 
-            <form method="POST" class="modern-form">
+    <main class="patient-intake">
+        <section class="patient-intake-hero">
+            <div>
+                <a href="{% url 'pacientes_list' %}" class="intake-back-link">Voltar</a>
+                <span class="ai-eyebrow">Admissao clinica</span>
+                <h1>Cadastro de paciente</h1>
+                <p>Estruture a ficha inicial sem perder contexto clinico. A entrada foi dividida em blocos curtos para leitura rapida e cadastro mais fluido.</p>
+            </div>
+            <div class="patient-intake-status">
+                <div>
+                    <span>Etapa</span>
+                    <strong>Triagem inicial</strong>
+                </div>
+                <div>
+                    <span>Formato</span>
+                    <strong>Cadastro resumido</strong>
+                </div>
+                <div>
+                    <span>Data</span>
+                    <strong>{% now "d/m/Y" %}</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="patient-intake-workbench">
+            <form method="POST" class="patient-intake-form">
                 {% csrf_token %}
-                <div class="form-section">
-                    <div class="form-row">
+
+                <section class="patient-block">
+                    <div class="patient-block-head">
+                        <span>Identificacao</span>
+                        <strong>Dados basicos</strong>
+                    </div>
+                    <div class="patient-block-grid patient-block-grid--identity">
                         <div class="form-group">
                             <label class="form-label" for="nome">Nome completo *</label>
-                            <input class="form-input" id="nome" name="nome" required placeholder="Nome completo do paciente">
+                            <input class="form-input" id="nome" name="nome" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="data_nascimento">Data de nascimento</label>
-                            <input class="form-input" id="data_nascimento" name="data_nascimento" type="text" placeholder="DD/MM/AAAA" pattern="\d{2}/\d{2}/\d{4}">
+                            <input class="form-input" id="data_nascimento" name="data_nascimento" type="text" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}">
                         </div>
-                    </div>
-
-                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" for="cpf">CPF</label>
                             <input class="form-input" id="cpf" name="cpf" placeholder="000.000.000-00">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="identidade">Identidade (RG)</label>
-                            <input class="form-input" id="identidade" name="identidade" placeholder="RG">
+                            <label class="form-label" for="identidade">RG</label>
+                            <input class="form-input" id="identidade" name="identidade">
                         </div>
                     </div>
+                </section>
 
-                    <div class="form-row">
+                <section class="patient-block">
+                    <div class="patient-block-head">
+                        <span>Contato</span>
+                        <strong>Familia e localizacao</strong>
+                    </div>
+                    <div class="patient-block-grid patient-block-grid--contact">
                         <div class="form-group">
                             <label class="form-label" for="telefone">Telefone</label>
-                            <input class="form-input" id="telefone" name="telefone" placeholder="(DDD) 9XXXX-XXXX">
+                            <input class="form-input" id="telefone" name="telefone">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="email">E-mail</label>
-                            <input class="form-input" id="email" name="email" type="email" placeholder="exemplo@dominio.com">
+                            <input class="form-input" id="email" name="email" type="email">
                         </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 2">
-                            <label class="form-label" for="endereco">Endereço</label>
-                            <input class="form-input" id="endereco" name="endereco" placeholder="Rua, número, complemento">
+                        <div class="form-group patient-span-2">
+                            <label class="form-label" for="endereco">Endereco</label>
+                            <input class="form-input" id="endereco" name="endereco">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="bairro">Bairro</label>
-                            <input class="form-input" id="bairro" name="bairro" placeholder="Bairro">
+                            <input class="form-input" id="bairro" name="bairro">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="cep">CEP</label>
                             <input class="form-input" id="cep" name="cep" placeholder="00000-000">
                         </div>
                     </div>
+                </section>
 
-                    <div class="form-row">
+                <section class="patient-block">
+                    <div class="patient-block-head">
+                        <span>Contexto clinico</span>
+                        <strong>Escola e motivo do acompanhamento</strong>
+                    </div>
+                    <div class="patient-block-grid patient-block-grid--school">
                         <div class="form-group">
                             <label class="form-label" for="escola">Escola</label>
-                            <input class="form-input" id="escola" name="escola" placeholder="Nome da escola">
+                            <input class="form-input" id="escola" name="escola">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="serie">Série/turma</label>
-                            <input class="form-input" id="serie" name="serie" placeholder="Ex.: 3º ano - A">
+                            <label class="form-label" for="serie">Serie/turma</label>
+                            <input class="form-input" id="serie" name="serie">
+                        </div>
+                        <div class="form-group patient-span-2">
+                            <label class="form-label" for="queixa_principal">Queixa principal</label>
+                            <textarea class="form-textarea" id="queixa_principal" name="queixa_principal" rows="4" placeholder="Resumo da demanda, sinais observados e foco do atendimento."></textarea>
+                        </div>
+                        <div class="form-group patient-span-2">
+                            <label class="form-label" for="observacoes">Observacoes iniciais</label>
+                            <textarea class="form-textarea" id="observacoes" name="observacoes" rows="5" placeholder="Observacoes relevantes de triagem, contexto familiar e fatores de atencao."></textarea>
                         </div>
                     </div>
+                </section>
 
-                    <div class="form-group">
-                        <label class="form-label" for="queixa_principal">Queixa principal</label>
-                        <textarea class="form-textarea" id="queixa_principal" name="queixa_principal" rows="3" placeholder="Resumo da queixa clínica"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="observacoes">Observações iniciais</label>
-                        <textarea class="form-textarea" id="observacoes" name="observacoes" rows="4" placeholder="Observações adicionais"></textarea>
-                    </div>
-                </div>
-                <div class="form-actions">
+                <div class="patient-intake-actions">
                     <a href="{% url 'pacientes_list' %}" class="btn-secondary">Cancelar</a>
-                    <button class="btn-primary" type="submit">Salvar paciente</button>
+                    <button class="ai-primary-action" type="submit">Salvar paciente</button>
                 </div>
             </form>
-        </div>
+
+            <aside class="patient-intake-side">
+                <div class="patient-side-card">
+                    <span>Checklist de entrada</span>
+                    <strong>O que vale registrar</strong>
+                    <ul>
+                        <li>Identificacao correta da crianca/adolescente</li>
+                        <li>Contato principal da familia</li>
+                        <li>Vinculo escolar atual</li>
+                        <li>Motivo sintetico do encaminhamento</li>
+                    </ul>
+                </div>
+                <div class="patient-side-card is-highlight">
+                    <span>Uso clinico</span>
+                    <strong>Ficha de inicio</strong>
+                    <p>Este cadastro deve ser rapido. A anamnese completa e as anotacoes de sessao aprofundam o caso depois.</p>
+                </div>
+                <div class="patient-side-card">
+                    <span>Padrao de data</span>
+                    <strong>Brasil</strong>
+                    <p>Use sempre <code>dd/mm/aaaa</code> para manter consistencia no prontuario.</p>
+                </div>
+            </aside>
+        </section>
     </main>
-    <script>
-        // Pequeno auxílio UX: não altera valores do backend, apenas formata visualmente
-        function onlyDigits(s){return s.replace(/\D/g,'');}
-        document.getElementById('cpf')?.addEventListener('input', function(e){
-            let v = onlyDigits(this.value).slice(0,11);
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-            this.value = v;
-        });
-        document.getElementById('cep')?.addEventListener('input', function(e){
-            let v = onlyDigits(this.value).slice(0,8);
-            v = v.replace(/(\d{5})(\d{1,3})$/, '$1-$2');
-            this.value = v;
-        });
-    </script>
 </body>
 </html>
-

@@ -4,49 +4,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selecionar Teste</title>
+    <title>Selecionar avaliacao</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
-    <div class="select-test-page">
-        <div class="select-header">
-            <img src="{% static 'logo.jpg' %}" alt="Logo" class="logo-image">
-            <h1 class="page-title">Testes Cognitivos Disponíveis</h1>
-            <p class="page-subtitle">Selecione um teste para iniciar a avaliação</p>
-        </div>
-
-        {% if messages %}
-            <div class="alerts-container">
-                {% for message in messages %}
-                    <div class="alert-modern alert-{{ message.tags }}">
-                        <span class="alert-message">{{ message }}</span>
-                    </div>
-                {% endfor %}
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Aplicacao</span>
+                <h1>Avaliacoes disponiveis</h1>
+                <p>Escolha um instrumento para iniciar o atendimento com leitura mais clara de categoria e contexto de uso.</p>
             </div>
-        {% endif %}
+            <div class="ops-hero-metrics">
+                <div><span>Total</span><strong>{{ tests|length }}</strong></div>
+                <div><span>Modo</span><strong>Aplicacao guiada</strong></div>
+                <div><span>Fluxo</span><strong>Selecao de instrumento</strong></div>
+            </div>
+        </section>
 
-        <div class="tests-selection-grid">
-            {% if tests %}
-                {% for test in tests %}
-                    <a href="{% url 'take_test' test.id %}" class="test-selection-card">
-                        <div class="card-content">
-                            <div class="card-category">{{ test.category.nome|default:'Sem categoria' }}</div>
-                            <h2 class="card-title">{{ test.titulo }}</h2>
-                            <p class="card-description">{{ test.descricao|default:'Clique para iniciar a avaliação' }}</p>
-                            <div class="card-meta">
-                                <span class="meta-badge">{{ test.questoes.count }} questões</span>
-                                <span class="meta-badge">~{{ test.tempo_estimado }} min</span>
-                            </div>
-                        </div>
-                    </a>
-                {% endfor %}
-            {% else %}
-                <div class="empty-selection">
-                    <h2>Nenhum teste disponível</h2>
-                    <p>Entre em contato com a neuropsicopedagoga para mais informações</p>
+        <section class="ops-workbench">
+            <section class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Catalogo</span>
+                    <strong>Lista de instrumentos</strong>
                 </div>
-            {% endif %}
-        </div>
-    </div>
+                <div class="table-responsive">
+                    <table class="modern-table ops-table">
+                        <thead>
+                            <tr>
+                                <th>Titulo</th>
+                                <th>Categoria</th>
+                                <th>Acao</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for test in tests %}
+                            <tr>
+                                <td>{{ test.titulo }}</td>
+                                <td>{% if test.category %}{{ test.category.nome }}{% else %}Sem categoria{% endif %}</td>
+                                <td><a class="ops-hero-action" href="{% url 'take_test' test.id %}">Iniciar</a></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state">Nenhuma avaliacao disponivel.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Orientacao</span>
+                    <strong>Escolha objetiva</strong>
+                    <p>Use a categoria como filtro mental para selecionar o instrumento mais adequado ao momento do caso.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
 </body>
 </html>

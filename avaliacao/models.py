@@ -260,6 +260,66 @@ class AvaliacaoClinica(models.Model):
 
 # Removido modelo RespostaQuestao legado
 
+class ConsultaIAClinica(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True, blank=True, related_name='consultas_ia')
+    profissional = models.ForeignKey(PerfilUsuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='consultas_ia')
+    pergunta = models.TextField()
+    contexto = models.TextField(blank=True, null=True)
+    resultado_json = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    SENSITIVE_FIELDS = ['pergunta', 'contexto', 'resultado_json']
+
+    def save(self, *args, **kwargs):
+        for field in self.SENSITIVE_FIELDS:
+            val = getattr(self, field, '')
+            if val and not str(val).startswith('gAAAAA'):
+                setattr(self, field, encrypt_data(str(val)))
+        super().save(*args, **kwargs)
+
+    def decrypt_sensitive(self):
+        for field in self.SENSITIVE_FIELDS:
+            val = getattr(self, field, '')
+            if val and str(val).startswith('gAAAAA'):
+                setattr(self, field, decrypt_data(val))
+
+    def __str__(self):
+        return f"Consulta IA #{self.id}"
+
+
+class FeedbackConsultaIA(models.Model):
+    JULGAMENTO_CHOICES = (
+        ('acerto', 'Acerto clínico'),
+        ('parcial', 'Parcialmente útil'),
+        ('erro', 'Erro clínico'),
+    )
+
+    consulta = models.ForeignKey(ConsultaIAClinica, on_delete=models.CASCADE, related_name='feedbacks')
+    avaliador = models.ForeignKey(PerfilUsuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='feedbacks_ia')
+    julgamento = models.CharField(max_length=20, choices=JULGAMENTO_CHOICES)
+    peso = models.SmallIntegerField(default=0)
+    comentario = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    SENSITIVE_FIELDS = ['comentario']
+
+    def save(self, *args, **kwargs):
+        for field in self.SENSITIVE_FIELDS:
+            val = getattr(self, field, '')
+            if val and not str(val).startswith('gAAAAA'):
+                setattr(self, field, encrypt_data(str(val)))
+        super().save(*args, **kwargs)
+
+    def decrypt_sensitive(self):
+        for field in self.SENSITIVE_FIELDS:
+            val = getattr(self, field, '')
+            if val and str(val).startswith('gAAAAA'):
+                setattr(self, field, decrypt_data(val))
+
+    def __str__(self):
+        return f"Feedback IA #{self.id} ({self.julgamento})"
+
+
 # ==================== LOGS DE AUDITORIA (LGPD) ====================
 class LogAuditoria(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
