@@ -51,6 +51,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'neuro_diagnosis.context_processors.clinic_info.clinic_details',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
@@ -160,3 +161,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # URL do Microsserviço de IA de Borda
 AI_SERVICE_URL = os.getenv('AI_SERVICE_URL', 'http://localhost:5001')
 
+
+
+# Clinic Configuration
+CLINICA_NOME = os.getenv('CLINICA_NOME', 'Neuro-Diagnosis')
+PROFISSIONAL_NOME = os.getenv('PROFISSIONAL_NOME', 'Neuropsicopedagoga')

@@ -185,7 +185,7 @@ def admin_avaliacoes(request):
         responses.append(r)
         
     register_audit_log(request, "Acessou a lista de avaliações clínicas.")
-    return render(request, 'admin_responses.html', {'responses': responses})
+    return render(request, 'admin_avaliacoes.html', {'avaliacoes': responses})
 
 @login_required
 @admin_required
@@ -322,12 +322,14 @@ def paciente_detail(request, paciente_id):
     paciente.decrypt_sensitive()
 
     if request.method == 'POST':
+        data_consulta = request.POST.get('data_consulta')
         anotacao = AnotacaoAtendimento.objects.create(
             paciente=paciente,
             profissional=request.user,
             tipo=request.POST.get('tipo', 'sessao'),
             titulo=request.POST.get('titulo', '').strip(),
             conteudo=request.POST.get('conteudo', '').strip(),
+            data_consulta=data_consulta if data_consulta else None,
         )
         register_audit_log(request, f"Registrou anotação ID {anotacao.id} no paciente ID {paciente_id}.")
         messages.success(request, "Anotação registrada.")

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil - M.I. Joca de Sousa Teixeira</title>
+    <title>Meu Perfil - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
@@ -14,7 +14,7 @@
             <a href="{% url 'index' %}" class="navbar-brand">
                 <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
-                    <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
+                    <span class="brand-title">{{ CLINICA_NOME }}</span>
                     <span class="brand-subtitle">Neuropsicopedagoga</span>
                 </div>
             </a>

@@ -6,7 +6,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Questionário Altas Habilidades/Superdotação</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
+
+    <style>
+        .wizard-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .wizard-step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            color: #6c757d;
+            border-bottom: 3px solid #dee2e6;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: all 0.3s;
+            cursor: default;
+        }
+        .wizard-step.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .wizard-step.completed {
+            color: #28a745;
+            border-bottom-color: #28a745;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        .btn-prev {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            display: none;
+            transition: all 0.3s;
+        }
+        .btn-prev:hover {
+            background-color: #5a6268;
+        }
+        .btn-next {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-next:hover {
+            background-color: var(--primary-dark);
+        }
+        .btn-submit {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            display: none;
+            transition: all 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #448f61;
+        }
+
+    </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -15,10 +111,25 @@
             <p class="subtitle">Secretaria de Estado de Educação do Distrito Federal</p>
         </div>
 
-        <form method="post" action="{% url 'submit_test' %}">
+
+        <div class="wizard-steps">
+            <div class="wizard-step active" id="step-1">1. Identificação</div>
+            <div class="wizard-step" id="step-2">2. Família</div>
+            <div class="wizard-step" id="step-3">3. Desenvolvimento</div>
+            <div class="wizard-step" id="step-4">4. Vida Escolar</div>
+            <div class="wizard-step" id="step-5">5. Vida Social</div>
+            <div class="wizard-step" id="step-6">6. Biopsicossocial</div>
+            <div class="wizard-step" id="step-7">7. Adicionais</div>
+        </div>
+
+        <form method="post" action="{% url 'salvar_anamnese' %}" id="anamnese-form">
             {% csrf_token %}
+            {% if paciente %}
+            <input type="hidden" name="paciente_id" value="{{ paciente.id }}">
+            {% endif %}
             <!-- SEÇÃO I: IDENTIFICAÇÃO DO ESTUDANTE -->
-            <div class="section">
+            <div class="section active" id="section-1">
+
                 <h2 class="section-title">I - Identificação do Estudante</h2>
                 
                 <div class="inline-group">
@@ -184,7 +295,7 @@
             </div>
 
             <!-- SEÇÃO II: DADOS DA FAMÍLIA -->
-            <div class="section">
+            <div class="section" id="section-2">
                 <h2 class="section-title">II - Dados da Família</h2>
                 
                 <div class="form-group">
@@ -204,7 +315,7 @@
             </div>
 
             <!-- SEÇÃO III: DADOS DO DESENVOLVIMENTO -->
-            <div class="section">
+            <div class="section" id="section-3">
                 <h2 class="section-title">III - Dados do Desenvolvimento</h2>
                 
                 <h3 style="margin-bottom: 15px; color: #8B5A3C;">Gestação e Parto</h3>
@@ -336,7 +447,7 @@
             </div>
 
             <!-- SEÇÃO IV: VIDA ESCOLAR -->
-            <div class="section">
+            <div class="section" id="section-4">
                 <h2 class="section-title">IV - Vida Escolar</h2>
                 
                 <div class="inline-group">
@@ -581,7 +692,7 @@
             </div>
 
             <!-- SEÇÃO V: VIDA SOCIAL -->
-            <div class="section">
+            <div class="section" id="section-5">
                 <h2 class="section-title">V - Vida Social</h2>
                 
                 <div class="form-group">
@@ -773,7 +884,7 @@
             </div>
 
             <!-- SEÇÃO VI: DESCRIÇÃO BIOPSICOSSOCIAL -->
-            <div class="section">
+            <div class="section" id="section-6">
                 <h2 class="section-title">VI - Descrição Biopsicossocial do Estudante</h2>
                 
                 <div class="form-group">
@@ -795,7 +906,7 @@
             </div>
 
             <!-- SEÇÃO VII: INFORMAÇÕES ADICIONAIS -->
-            <div class="section">
+            <div class="section" id="section-7">
                 <h2 class="section-title">VII - Informações Adicionais</h2>
                 
                 <div class="form-group">
@@ -825,8 +936,82 @@
                 </div>
             </div>
 
-            <button type="submit" class="submit-btn">Enviar Questionário</button>
+
+
+            <div class="wizard-actions">
+                <button type="button" class="btn-prev" id="btn-prev" onclick="nextStep(-1)">Anterior</button>
+                <button type="button" class="btn-next" id="btn-next" onclick="nextStep(1)">Próximo</button>
+                <button type="submit" class="btn-submit" id="btn-submit">Enviar Questionário</button>
+            </div>
+
         </form>
     </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 7;
+
+        function updateWizard() {
+            // Update sections
+            document.querySelectorAll('.section').forEach((el, index) => {
+                if (index + 1 === currentStep) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            // Update steps indicator
+            document.querySelectorAll('.wizard-step').forEach((el, index) => {
+                el.classList.remove('active');
+                if (index + 1 < currentStep) {
+                    el.classList.add('completed');
+                } else {
+                    el.classList.remove('completed');
+                }
+                if (index + 1 === currentStep) {
+                    el.classList.add('active');
+                }
+            });
+
+            // Update buttons
+            document.getElementById('btn-prev').style.display = currentStep === 1 ? 'none' : 'block';
+            if (currentStep === totalSteps) {
+                document.getElementById('btn-next').style.display = 'none';
+                document.getElementById('btn-submit').style.display = 'block';
+            } else {
+                document.getElementById('btn-next').style.display = 'block';
+                document.getElementById('btn-submit').style.display = 'none';
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function nextStep(direction) {
+            // Validate required fields before moving next
+            if (direction > 0) {
+                const currentSection = document.getElementById('section-' + currentStep);
+                const inputs = currentSection.querySelectorAll('input, select, textarea');
+                let isValid = true;
+
+                for (let input of inputs) {
+                    if (!input.checkValidity()) {
+                        isValid = false;
+                        input.reportValidity();
+                        break;
+                    }
+                }
+
+                if (!isValid) {
+                    return;
+                }
+            }
+
+            currentStep += direction;
+            if (currentStep < 1) currentStep = 1;
+            if (currentStep > totalSteps) currentStep = totalSteps;
+            updateWizard();
+        }
+    </script>
 </body>
+
 </html>

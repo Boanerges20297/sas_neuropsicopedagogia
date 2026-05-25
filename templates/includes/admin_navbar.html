@@ -133,7 +133,7 @@
     <div class="admin-navbar-container">
         <a href="{% url 'dashboard' %}" class="admin-navbar-brand">
             <span class="admin-navbar-brand-icon">👩‍⚕️</span>
-            <span>Neuro-Diagnosis</span>
+            <span>{{ CLINICA_NOME }}</span>
         </a>
         <div class="admin-navbar-menu">
             <a href="{% url 'dashboard' %}" class="admin-navbar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">

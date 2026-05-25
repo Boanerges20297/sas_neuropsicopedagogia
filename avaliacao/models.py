@@ -77,6 +77,7 @@ class AnotacaoAtendimento(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='anotacoes')
     profissional = models.ForeignKey(PerfilUsuario, on_delete=models.SET_NULL, null=True, blank=True)
     tipo = models.CharField(max_length=30, choices=TIPO_CHOICES, default='sessao')
+    data_consulta = models.DateField(null=True, blank=True)
     titulo = models.CharField(max_length=160, blank=True, null=True)
     conteudo = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

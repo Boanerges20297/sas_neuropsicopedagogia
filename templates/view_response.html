@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prontuário - M.I. Joca de Sousa Teixeira</title>
+    <title>Prontuário - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="{% static 'scoring.js' %}" defer></script>
@@ -16,7 +16,7 @@
             <a href="{% url 'dashboard' %}" class="navbar-brand">
                 <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
-                    <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
+                    <span class="brand-title">{{ CLINICA_NOME }}</span>
                     <span class="brand-subtitle">Neuropsicopedagoga</span>
                 </div>
             </a>

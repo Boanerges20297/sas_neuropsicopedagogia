@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ test.titulo }} - M.I. Joca de Sousa Teixeira</title>
+    <title>{{ test.titulo }} - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <style>
         /* Modern Navbar Styling */
@@ -114,7 +114,7 @@
         <div class="navbar-container">
             <a href="{% url 'index' %}" class="navbar-brand">
                 <span class="navbar-brand-icon">👩‍⚕️</span>
-                <span>M.I. Joca de Sousa Teixeira</span>
+                <span>{{ CLINICA_NOME }}</span>
             </a>
             <div class="navbar-menu">
                 {% if request.user.is_authenticated %}

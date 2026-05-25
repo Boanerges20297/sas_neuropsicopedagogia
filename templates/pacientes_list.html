@@ -4,19 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pacientes - Neuro Diagnosis</title>
+    <title>Pacientes - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
+<body class="admin-body">
     {% include 'includes/admin_navbar.html' %}
-<main class="admin-main">
+
+    <main class="admin-main">
         <div class="admin-container">
-            <div class="admin-header">
+            <div class="admin-header flex-between" style="margin-bottom: 24px;">
                 <div class="header-content">
                     <h1>Pacientes</h1>
-                    <p>Cadastro, acompanhamento e anotações de atendimento.</p>
+                    <p>Gestão e prontuários de pacientes em acompanhamento</p>
                 </div>
-                <a href="{% url 'paciente_create' %}" class="btn-outline">Novo paciente</a>
+                <div class="header-actions">
+                    <a href="{% url 'paciente_create' %}" class="btn-primary">➕ Novo Paciente</a>
+                </div>
             </div>
 
             {% if messages %}
@@ -27,39 +30,55 @@
 
             <div class="table-card">
                 <div class="table-header">
-                    <h3 class="table-title">Pacientes cadastrados</h3>
+                    <h3 class="table-title">Lista de Pacientes</h3>
                 </div>
-                <table class="responses-table">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Nascimento</th>
-                            <th>CPF</th>
-                            <th>Telefone</th>
-                            <th>Bairro</th>
-                            <th>Atualizado em</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for paciente in pacientes %}
-                            <tr>
-                                <td>{{ paciente.nome }}</td>
-                                <td>{{ paciente.data_nascimento|default:"-" }}</td>
-                                <td>{{ paciente.cpf|default:"-" }}</td>
-                                <td>{{ paciente.telefone|default:"-" }}</td>
-                                <td>{{ paciente.bairro|default:"-" }}</td>
-                                <td>{{ paciente.updated_at|date:"d/m/Y H:i" }}</td>
-                                <td><a href="{% url 'paciente_detail' paciente.id %}" class="btn-table-action">Abrir</a></td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="5">Nenhum paciente cadastrado ainda.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+                {% if pacientes %}
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Data Nasc.</th>
+                                    <th>Telefone</th>
+                                    <th>Bairro</th>
+                                    <th>Escola / Série</th>
+                                    <th>Queixa Principal</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paciente in pacientes %}
+                                <tr>
+                                    <td><strong>{{ paciente.nome }}</strong></td>
+                                    <td>
+                                        {% if paciente.data_nascimento %}
+                                            {{ paciente.data_nascimento }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ paciente.telefone|default:'-' }}</td>
+                                    <td>{{ paciente.bairro|default:'-' }}</td>
+                                    <td>{{ paciente.escola|default:"-" }}{% if paciente.serie %} ({{ paciente.serie }}){% endif %}</td>
+                                    <td>{{ paciente.queixa_principal|default:"-"|truncatechars:50 }}</td>
+                                    <td>
+                                        <a href="{% url 'paciente_detail' paciente.id %}" class="btn-outline" style="padding: 6px 12px; font-size: 13px;">Ver Prontuário / Anotar</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3 class="empty-state-text">Nenhum paciente cadastrado</h3>
+                        <a href="{% url 'paciente_create' %}" class="btn-primary">Cadastrar o primeiro paciente</a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </main>
 </body>
 </html>
-

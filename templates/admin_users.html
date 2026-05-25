@@ -4,72 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuários - M.I. Joca de Sousa Teixeira</title>
+    <title>Usuários - Neuro-Diagnosis</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
-<body>
-    <!-- Navbar Moderna -->
-    <nav class="modern-navbar">
-        <div class="navbar-container">
-            <a href="{% url 'dashboard' %}" class="navbar-brand">
-                <img src="{% static 'logo.jpg' %}" alt="Logo" class="navbar-logo">
-                <div class="brand-text">
-                    <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
-                    <span class="brand-subtitle">Neuropsicopedagoga</span>
-                </div>
-            </a>
-            
-                        <div class="navbar-menu">
-                <a href="{% url 'dashboard' %}" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{% url 'pacientes_list' %}" class="nav-item">
-                    <span class="nav-icon">👥</span>
-                    <span>Pacientes</span>
-                </a>
-                <a href="{% url 'ia_consulta' %}" class="nav-item">
-                    <span class="nav-icon">🧠</span>
-                    <span>Consulta IA</span>
-                </a>
-                <a href="{% url 'admin_avaliacoes' %}" class="nav-item">
-                    <span class="nav-icon">📋</span>
-                    <span>Respostas</span>
-                </a>
-                <a href="{% url 'admin_users' %}" class="nav-item active">
-                    <span class="nav-icon">👤</span>
-                    <span>Usuários</span>
-                </a>
-            </div>
-            
-            <div class="navbar-user">
-                <div class="user-dropdown">
-                    <button class="user-btn">
-                        <div class="user-avatar">{{ request.user.first_name|slice:":1"|upper }}</div>
-                        <span class="user-name">{{ request.user.first_name|default:request.user.username }}</span>
-                        <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-content">
-                        <a href="{% url 'user_area' %}" class="dropdown-link">
-                            <span>👤</span> Meu Perfil
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="{% url 'logout' %}" class="dropdown-link logout">
-                            <span>🚪</span> Sair
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="admin-body">
+    {% include 'includes/admin_navbar.html' %}
 
-    <!-- Conteúdo Principal -->
-    <main class="dashboard-main">
-        <div class="dashboard-container">
-            <div class="dashboard-header">
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-header flex-between" style="margin-bottom: 24px;">
                 <div class="header-content">
-                    <h1 class="dashboard-title">Gerenciar Usuários</h1>
-                    <p class="dashboard-subtitle">Administre contas e permissões do sistema</p>
+                    <h1>Gerenciar Usuários</h1>
+                    <p>Administre contas e permissões do sistema</p>
                 </div>
             </div>
 
@@ -78,63 +24,48 @@
                 <div class="table-header">
                     <h3 class="table-title">Usuários Cadastrados ({{ users|length }})</h3>
                 </div>
-                <div class="table-responsive">
-                    <table class="modern-table">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>E-mail</th>
-                                <th>Tipo de Conta</th>
-                                <th>Escolaridade</th>
-                                <th>Telefone</th>
-                                <th>Data de Registro</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if users %}
+
+                {% if users %}
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>E-mail</th>
+                                    <th>Tipo de Conta</th>
+                                    <th>Escolaridade</th>
+                                    <th>Telefone</th>
+                                    <th>Data de Registro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 {% for u in users %}
                                 <tr>
-                                    <td><strong>{{ u.first_name }}</strong></td>
+                                    <td><strong>{{ u.first_name|default:u.username }}</strong></td>
                                     <td>{{ u.email }}</td>
                                     <td>
-                                        {% if u.is_admin %}
-                                            <span class="badge badge-success">Administrador</span>
+                                        {% if u.is_admin or u.is_superuser %}
+                                            <span class="badge badge-success" style="background: var(--success); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Administrador</span>
                                         {% else %}
-                                            <span class="badge badge-user">Usuário</span>
+                                            <span class="badge badge-user" style="background: var(--text-medium); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">Usuário</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ u.escolaridade|default:"Não informada" }}</td>
                                     <td>{{ u.telefone|default:"Não informado" }}</td>
-                                    <td>{{ u.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ u.date_joined|date:"d/m/Y H:i" }}</td>
                                 </tr>
                                 {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="6" class="empty-state">
-                                        <p>📭 Nenhum usuário encontrado</p>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <h3 class="empty-state-text">Nenhum usuário encontrado</h3>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </main>
-
-    <script>
-        document.querySelector('.user-btn')?.addEventListener('click', function(e) {
-            e.stopPropagation();
-            this.parentElement.classList.toggle('active');
-        });
-
-        document.addEventListener('click', function(e) {
-            const dropdown = document.querySelector('.user-dropdown');
-            if (dropdown && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-    </script>
 </body>
 </html>
-

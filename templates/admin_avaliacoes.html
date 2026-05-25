@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliações - Neuro-Diagnosis</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="admin-body">
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-header flex-between" style="margin-bottom: 24px;">
+                <div class="header-content">
+                    <h1>Avaliações Clínicas (Anamneses)</h1>
+                    <p>Histórico de todos os formulários preenchidos</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'export_excel' %}" class="btn-outline">📊 Exportar Excel</a>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-header">
+                    <h3 class="table-title">Últimas Avaliações</h3>
+                </div>
+
+                {% if avaliacoes %}
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Paciente Vinculado</th>
+                                    <th>Data de Preenchimento</th>
+                                    <th>Status / Score</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for resp in avaliacoes %}
+                                <tr>
+                                    <td>#{{ resp.id }}</td>
+                                    <td>
+                                        {% if resp.paciente %}
+                                            <a href="{% url 'paciente_detail' resp.paciente.id %}"><strong>{{ resp.paciente.nome }}</strong></a>
+                                        {% else %}
+                                            <span style="color: var(--text-light)">Não vinculado</span>
+                                            <br><small>{{ resp.nome|default:"-" }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if resp.score %}
+                                            <span class="badge badge-success">Pontuado ({{ resp.score }})</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">Pendente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'view_avaliacao' resp.id %}" class="btn-outline" style="padding: 6px 12px; font-size: 13px;">Ver Detalhes</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📄</div>
+                        <h3 class="empty-state-text">Nenhuma avaliação recebida ainda.</h3>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</body>
+</html>
