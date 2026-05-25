@@ -23,46 +23,69 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" for="nome">Nome completo *</label>
-                            <input class="form-input" id="nome" name="nome" required>
+                            <input class="form-input" id="nome" name="nome" required placeholder="Nome completo do paciente">
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="data_nascimento">Data de nascimento</label>
-                            <input class="form-input" id="data_nascimento" name="data_nascimento" type="date">
+                            <input class="form-input" id="data_nascimento" name="data_nascimento" type="text" placeholder="DD/MM/AAAA" pattern="\d{2}/\d{2}/\d{4}">
                         </div>
                     </div>
+
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label" for="responsavel">Responsável</label>
-                            <input class="form-input" id="responsavel" name="responsavel">
+                            <label class="form-label" for="cpf">CPF</label>
+                            <input class="form-input" id="cpf" name="cpf" placeholder="000.000.000-00">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" for="identidade">Identidade (RG)</label>
+                            <input class="form-input" id="identidade" name="identidade" placeholder="RG">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" for="telefone">Telefone</label>
-                            <input class="form-input" id="telefone" name="telefone">
+                            <input class="form-input" id="telefone" name="telefone" placeholder="(DDD) 9XXXX-XXXX">
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" for="email">E-mail</label>
-                            <input class="form-input" id="email" name="email" type="email">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="escola">Escola</label>
-                            <input class="form-input" id="escola" name="escola">
+                            <input class="form-input" id="email" name="email" type="email" placeholder="exemplo@dominio.com">
                         </div>
                     </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2">
+                            <label class="form-label" for="endereco">Endereço</label>
+                            <input class="form-input" id="endereco" name="endereco" placeholder="Rua, número, complemento">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="bairro">Bairro</label>
+                            <input class="form-input" id="bairro" name="bairro" placeholder="Bairro">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cep">CEP</label>
+                            <input class="form-input" id="cep" name="cep" placeholder="00000-000">
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
+                            <label class="form-label" for="escola">Escola</label>
+                            <input class="form-input" id="escola" name="escola" placeholder="Nome da escola">
+                        </div>
+                        <div class="form-group">
                             <label class="form-label" for="serie">Série/turma</label>
-                            <input class="form-input" id="serie" name="serie">
+                            <input class="form-input" id="serie" name="serie" placeholder="Ex.: 3º ano - A">
                         </div>
                     </div>
+
                     <div class="form-group">
                         <label class="form-label" for="queixa_principal">Queixa principal</label>
-                        <textarea class="form-textarea" id="queixa_principal" name="queixa_principal" rows="4"></textarea>
+                        <textarea class="form-textarea" id="queixa_principal" name="queixa_principal" rows="3" placeholder="Resumo da queixa clínica"></textarea>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="observacoes">Observações iniciais</label>
-                        <textarea class="form-textarea" id="observacoes" name="observacoes" rows="4"></textarea>
+                        <textarea class="form-textarea" id="observacoes" name="observacoes" rows="4" placeholder="Observações adicionais"></textarea>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -72,6 +95,22 @@
             </form>
         </div>
     </main>
+    <script>
+        // Pequeno auxílio UX: não altera valores do backend, apenas formata visualmente
+        function onlyDigits(s){return s.replace(/\D/g,'');}
+        document.getElementById('cpf')?.addEventListener('input', function(e){
+            let v = onlyDigits(this.value).slice(0,11);
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            this.value = v;
+        });
+        document.getElementById('cep')?.addEventListener('input', function(e){
+            let v = onlyDigits(this.value).slice(0,8);
+            v = v.replace(/(\d{5})(\d{1,3})$/, '$1-$2');
+            this.value = v;
+        });
+    </script>
 </body>
 </html>
 

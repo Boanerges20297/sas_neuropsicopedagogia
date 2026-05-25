@@ -32,7 +32,7 @@
                     <span class="nav-icon">🧠</span>
                     <span>Consulta IA</span>
                 </a>
-                <a href="{% url 'admin_responses' %}" class="nav-item active">
+                <a href="{% url 'admin_avaliacoes' %}" class="nav-item active">
                     <span class="nav-icon">📋</span>
                     <span>Respostas</span>
                 </a>
@@ -111,7 +111,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'view_response' r.id %}" 
+                                                     <a href="{% url 'view_avaliacao' r.id %}" 
                                            class="btn-table-action" 
                                            style="text-decoration: none;"
                                            title="{% if r.score %}Ver Pontuação{% else %}Pontuar{% endif %}">

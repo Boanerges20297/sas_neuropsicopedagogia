@@ -5,6 +5,43 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def _safely_drop_columns(apps, schema_editor):
+    conn = schema_editor.connection
+    with conn.cursor() as cursor:
+        table_map = [
+            ("avaliacao_teste", "category_id"),
+            ("avaliacao_questao", "test_id"),
+            ("avaliacao_respostaquestao", "question_id"),
+            ("avaliacao_resposta", "scored_by_id"),
+            ("avaliacao_resposta", "test_type_id"),
+            ("avaliacao_respostaquestao", "response_id"),
+            ("avaliacao_teste", "criado_por_id"),
+        ]
+        for table, col in table_map:
+            try:
+                cursor.execute(
+                    "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s AND REFERENCED_TABLE_NAME IS NOT NULL",
+                    (table, col),
+                )
+                row = cursor.fetchone()
+                if row:
+                    fk = row[0]
+                    try:
+                        cursor.execute(f"ALTER TABLE `{table}` DROP FOREIGN KEY `{fk}`")
+                    except Exception:
+                        pass
+                try:
+                    cursor.execute(f"ALTER TABLE `{table}` DROP COLUMN IF EXISTS `{col}`")
+                except Exception:
+                    try:
+                        cursor.execute(f"ALTER TABLE `{table}` DROP COLUMN `{col}`")
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,34 +49,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='teste',
-            name='category',
-        ),
-        migrations.RemoveField(
-            model_name='questao',
-            name='test',
-        ),
-        migrations.RemoveField(
-            model_name='respostaquestao',
-            name='question',
-        ),
-        migrations.RemoveField(
-            model_name='resposta',
-            name='scored_by',
-        ),
-        migrations.RemoveField(
-            model_name='resposta',
-            name='test_type',
-        ),
-        migrations.RemoveField(
-            model_name='respostaquestao',
-            name='response',
-        ),
-        migrations.RemoveField(
-            model_name='teste',
-            name='criado_por',
-        ),
+        migrations.RunPython(_safely_drop_columns, reverse_code=migrations.RunPython.noop),
         migrations.CreateModel(
             name='AvaliacaoClinica',
             fields=[

@@ -28,12 +28,24 @@
 
             <div class="table-card" style="margin-bottom: 24px;">
                 <div class="table-header"><h3 class="table-title">Dados do paciente</h3></div>
-                <div style="padding: 20px; display: grid; gap: 12px;">
-                    <p><strong>Responsável:</strong> {{ paciente.responsavel|default:"-" }}</p>
-                    <p><strong>Telefone:</strong> {{ paciente.telefone|default:"-" }}</p>
-                    <p><strong>E-mail:</strong> {{ paciente.email|default:"-" }}</p>
-                    <p><strong>Queixa principal:</strong> {{ paciente.queixa_principal|default:"-" }}</p>
-                    <p><strong>Observações:</strong> {{ paciente.observacoes|default:"-" }}</p>
+                <div style="padding: 20px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr;">
+                    <div>
+                        <p><strong>Data de nascimento:</strong> {{ paciente.data_nascimento|default:"-" }}</p>
+                        <p><strong>CPF:</strong> {{ paciente.cpf|default:"-" }}</p>
+                        <p><strong>RG:</strong> {{ paciente.identidade|default:"-" }}</p>
+                        <p><strong>Telefone:</strong> {{ paciente.telefone|default:"-" }}</p>
+                        <p><strong>E-mail:</strong> {{ paciente.email|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p><strong>Endereço:</strong> {{ paciente.endereco|default:"-" }}</p>
+                        <p><strong>Bairro:</strong> {{ paciente.bairro|default:"-" }}</p>
+                        <p><strong>CEP:</strong> {{ paciente.cep|default:"-" }}</p>
+                        <p><strong>Escola / Série:</strong> {{ paciente.escola|default:"-" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p>
+                        <p><strong>Queixa principal:</strong> {{ paciente.queixa_principal|default:"-" }}</p>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <p><strong>Observações:</strong> {{ paciente.observacoes|default:"-" }}</p>
+                    </div>
                 </div>
             </div>
 

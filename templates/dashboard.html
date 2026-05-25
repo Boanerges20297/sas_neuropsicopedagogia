@@ -33,7 +33,7 @@
                     <span class="nav-icon">🧠</span>
                     <span>Consulta IA</span>
                 </a>
-                <a href="{% url 'admin_responses' %}" class="nav-item">
+                <a href="{% url 'admin_avaliacoes' %}" class="nav-item">
                     <span class="nav-icon">📋</span>
                     <span>Respostas</span>
                 </a>
@@ -138,7 +138,7 @@
                     <h3 class="table-title">Respostas Recentes</h3>
                     <div style="display: flex; gap: 10px;">
                         <a href="{% url 'export_excel' %}" class="btn-outline" style="background: #52A675; color: white; border-color: #52A675;">📥 Exportar Excel</a>
-                        <a href="{% url 'admin_responses' %}" class="btn-outline">Ver todas</a>
+                        <a href="{% url 'admin_avaliacoes' %}" class="btn-outline">Ver todas</a>
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -161,7 +161,7 @@
                                     <td><strong>{{ resp.nome|default:"Anônimo" }}</strong></td>
                                     <td>{{ resp.unidade_escolar|default:"Não informada" }}</td>
                                     <td>
-                                        <a href="{% url 'view_response' resp.id %}" class="btn-table-action" title="Visualizar" style="text-decoration: none;">️</a>
+                                        <a href="{% url 'view_avaliacao' resp.id %}" class="btn-table-action" title="Visualizar" style="text-decoration: none;">️</a>
                                     </td>
                                 </tr>
                                 {% endfor %}

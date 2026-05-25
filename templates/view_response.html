@@ -34,7 +34,7 @@
                     <span class="nav-icon">🧠</span>
                     <span>Consulta IA</span>
                 </a>
-                <a href="{% url 'admin_responses' %}" class="nav-item active">
+                <a href="{% url 'admin_avaliacoes' %}" class="nav-item active">
                     <span class="nav-icon">📋</span>
                     <span>Respostas</span>
                 </a>
@@ -70,7 +70,7 @@
             <!-- Header com informações da resposta -->
             <div class="scoring-header">
                 <div class="header-left">
-                    <a href="{% url 'admin_responses' %}" class="btn-back" style="text-decoration: none;">
+                    <a href="{% url 'admin_avaliacoes' %}" class="btn-back" style="text-decoration: none;">
                         <span></span> Voltar para Respostas
                     </a>
                     <h1 class="scoring-title">Prontuário de Avaliação #{{ response.id }}</h1>
@@ -87,7 +87,7 @@
                         <span class="score-label">Pontuação do Caso</span>
                         <span class="score-value" id="totalScore">{{ response.score|default:0 }}</span>
                     </div>
-                    <button class="btn-save-score" id="saveScoreBtn" data-url="{% url 'score_response' response.id %}">
+                    <button class="btn-save-score" id="saveScoreBtn" data-url="{% url 'score_avaliacao' response.id %}">
                         <span>💾</span> Salvar Parecer
                     </button>
                 </div>

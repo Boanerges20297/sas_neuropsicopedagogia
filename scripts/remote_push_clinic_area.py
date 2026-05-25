@@ -1,18 +1,20 @@
 import pathlib
 import sys
 
-sys.path.insert(0, r"C:\tmp\codex_py312_ssh")
-
 import paramiko
 
 
 REMOTE_ROOT = "/home/neuro-diagnosis"
 
 FILES = [
+    "manage.py",
+    "requirements.txt",
     "avaliacao/models.py",
     "avaliacao/views.py",
     "avaliacao/urls.py",
+    "avaliacao/migrations/0001_initial.py",
     "avaliacao/migrations/0002_paciente_anotacaoatendimento.py",
+    "avaliacao/migrations/0003_remove_teste_category_remove_questao_test_and_more.py",
     "avaliacao/static/style.css",
     "templates/dashboard.html",
     "templates/admin_responses.html",
@@ -26,6 +28,7 @@ FILES = [
     "templates/paciente_form.html",
     "templates/paciente_detail.html",
     "templates/ia_consulta.html",
+    "neuro_diagnosis/__init__.py",
     "neuro_diagnosis/settings.py",
     "neuro_diagnosis/urls.py",
     "neuro_diagnosis/wsgi.py",

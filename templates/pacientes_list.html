@@ -33,8 +33,10 @@
                     <thead>
                         <tr>
                             <th>Nome</th>
-                            <th>Responsável</th>
-                            <th>Escola</th>
+                            <th>Nascimento</th>
+                            <th>CPF</th>
+                            <th>Telefone</th>
+                            <th>Bairro</th>
                             <th>Atualizado em</th>
                             <th>Ações</th>
                         </tr>
@@ -43,8 +45,10 @@
                         {% for paciente in pacientes %}
                             <tr>
                                 <td>{{ paciente.nome }}</td>
-                                <td>{{ paciente.responsavel|default:"-" }}</td>
-                                <td>{{ paciente.escola|default:"-" }}</td>
+                                <td>{{ paciente.data_nascimento|default:"-" }}</td>
+                                <td>{{ paciente.cpf|default:"-" }}</td>
+                                <td>{{ paciente.telefone|default:"-" }}</td>
+                                <td>{{ paciente.bairro|default:"-" }}</td>
                                 <td>{{ paciente.updated_at|date:"d/m/Y H:i" }}</td>
                                 <td><a href="{% url 'paciente_detail' paciente.id %}" class="btn-table-action">Abrir</a></td>
                             </tr>

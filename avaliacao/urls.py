@@ -26,6 +26,7 @@ urlpatterns = [
     path('admin/avaliacoes/', views.admin_avaliacoes, name='admin_avaliacoes'),
     path('admin/avaliacao/<int:avaliacao_id>/', views.view_avaliacao, name='view_avaliacao'),
     path('admin/avaliacao/<int:avaliacao_id>/pontuar/', views.score_avaliacao, name='score_avaliacao'),
+    path('admin/usuarios/', views.admin_users, name='admin_users'),
     
     # Consulta IA de Borda (Local)
     path('admin/ia/', views.ia_consulta, name='ia_consulta'),

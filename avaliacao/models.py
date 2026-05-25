@@ -31,6 +31,11 @@ class Paciente(models.Model):
     responsavel = models.TextField(blank=True, null=True)
     telefone = models.TextField(blank=True, null=True)
     email = models.TextField(blank=True, null=True)
+    cpf = models.CharField(max_length=20, blank=True, null=True)
+    identidade = models.CharField(max_length=50, blank=True, null=True)
+    endereco = models.TextField(blank=True, null=True)
+    bairro = models.CharField(max_length=150, blank=True, null=True)
+    cep = models.CharField(max_length=20, blank=True, null=True)
     escola = models.CharField(max_length=200, blank=True, null=True)
     serie = models.CharField(max_length=80, blank=True, null=True)
     queixa_principal = models.TextField(blank=True, null=True)
@@ -39,7 +44,8 @@ class Paciente(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     SENSITIVE_FIELDS = [
-        'nome', 'responsavel', 'telefone', 'email', 'queixa_principal', 'observacoes'
+        'nome', 'responsavel', 'telefone', 'email', 'queixa_principal', 'observacoes',
+        'cpf', 'identidade', 'endereco', 'bairro', 'cep'
     ]
 
     def save(self, *args, **kwargs):
