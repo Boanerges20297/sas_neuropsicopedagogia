@@ -1,0 +1,80 @@
+<div class="modal-shell" id="{% if paciente %}modal-cliente-{{ paciente.id }}{% else %}modal-cliente-novo{% endif %}" aria-hidden="true">
+    <div class="modal-backdrop" data-modal-close></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="{% if paciente %}cliente-title-{{ paciente.id }}{% else %}cliente-title-novo{% endif %}">
+        <div class="modal-head">
+            <div>
+                <span class="ai-eyebrow">Cadastro de cliente</span>
+                <strong id="{% if paciente %}cliente-title-{{ paciente.id }}{% else %}cliente-title-novo{% endif %}">{{ title }}</strong>
+            </div>
+            <button class="modal-close" type="button" data-modal-close aria-label="Fechar">×</button>
+        </div>
+
+        <form method="POST" action="{% if paciente %}{% url 'paciente_update' paciente.id %}{% else %}{% url 'paciente_create' %}{% endif %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="patient-block-grid patient-block-grid--identity">
+                    <div class="form-group">
+                        <label class="form-label">Nome completo *</label>
+                        <input class="form-input" name="nome" value="{{ paciente.nome|default:'' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data de nascimento</label>
+                        <input class="form-input" name="data_nascimento" value="{{ paciente.data_nascimento|default:'' }}" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CPF</label>
+                        <input class="form-input" name="cpf" value="{{ paciente.cpf|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">RG</label>
+                        <input class="form-input" name="identidade" value="{{ paciente.identidade|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Responsável</label>
+                        <input class="form-input" name="responsavel" value="{{ paciente.responsavel|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefone</label>
+                        <input class="form-input" name="telefone" value="{{ paciente.telefone|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" class="form-input" name="email" value="{{ paciente.email|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CEP</label>
+                        <input class="form-input" name="cep" value="{{ paciente.cep|default:'' }}">
+                    </div>
+                    <div class="form-group patient-span-2">
+                        <label class="form-label">Endereço</label>
+                        <input class="form-input" name="endereco" value="{{ paciente.endereco|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bairro</label>
+                        <input class="form-input" name="bairro" value="{{ paciente.bairro|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Escola</label>
+                        <input class="form-input" name="escola" value="{{ paciente.escola|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Série/turma</label>
+                        <input class="form-input" name="serie" value="{{ paciente.serie|default:'' }}">
+                    </div>
+                    <div class="form-group patient-span-2">
+                        <label class="form-label">Queixa principal</label>
+                        <textarea class="form-textarea" name="queixa_principal" rows="4">{{ paciente.queixa_principal|default:'' }}</textarea>
+                    </div>
+                    <div class="form-group patient-span-2">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-textarea" name="observacoes" rows="4">{{ paciente.observacoes|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="patients-open-link" type="button" data-modal-close>Cancelar</button>
+                <button class="ai-primary-action" type="submit">Salvar cliente</button>
+            </div>
+        </form>
+    </section>
+</div>

@@ -1,0 +1,95 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo usuário - {{ CLINICA_NOME }}</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <a href="{% url 'admin_users' %}" class="intake-back-link">Voltar</a>
+                <span class="ai-eyebrow">Controle de acesso</span>
+                <h1>Novo usuário</h1>
+                <p>Crie uma conta nominal para profissional, apoio ou administração da clínica.</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Entrada</span><strong>Cadastro interno</strong></div>
+                <div><span>Senha</span><strong>Forte</strong></div>
+                <div><span>Destino</span><a href="{% url 'admin_users' %}" class="ops-hero-action">Usuários</a></div>
+            </div>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Dados de acesso</span>
+                    <strong>Criar usuário</strong>
+                </div>
+                <div class="ops-content-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="patient-block-grid patient-block-grid--identity">
+                            <div class="form-group">
+                                <label class="form-label" for="nome">Nome</label>
+                                <input class="form-input" id="nome" name="nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="email">E-mail</label>
+                                <input type="email" class="form-input" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="senha">Senha inicial</label>
+                                <input type="password" class="form-input" id="senha" name="senha" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="role">Perfil</label>
+                                <select class="form-input" id="role" name="role">
+                                    <option value="user">Usuário</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="telefone">Telefone</label>
+                                <input class="form-input" id="telefone" name="telefone">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="escolaridade">Escolaridade / função</label>
+                                <input class="form-input" id="escolaridade" name="escolaridade">
+                            </div>
+                        </div>
+                        <div class="patient-intake-actions">
+                            <a href="{% url 'admin_users' %}" class="patients-open-link">Cancelar</a>
+                            <button class="ai-primary-action" type="submit">Criar usuário</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Senha</span>
+                    <strong>Regra minima</strong>
+                    <p>A senha precisa ter 8 caracteres, uma letra maiúscula e um número.</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Perfil</span>
+                    <strong>Administrador</strong>
+                    <p>Use apenas para quem pode acessar prontuários, avaliações, atendimentos e exportações.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

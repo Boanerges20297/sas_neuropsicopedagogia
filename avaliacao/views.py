@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as login_user, logout as logout_user
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 from django.utils import timezone
-from django.utils.dateparse import parse_date
+from django.utils.dateparse import parse_date, parse_datetime
 from django.db.models import Max, Sum
 from datetime import datetime, timedelta
 import requests
@@ -15,7 +16,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 from .models import (
     PerfilUsuario, LogAuditoria, Paciente, AnotacaoAtendimento, AvaliacaoClinica,
-    ConsultaIAClinica, FeedbackConsultaIA
+    ConsultaIAClinica, FeedbackConsultaIA, ConsultaAtendimento
 )
 from .security_utils import decrypt_data, encrypt_data
 
@@ -24,14 +25,26 @@ def admin_required(view_func):
     """Garante acesso exclusivo para a Neuropsicopedagoga (administradora)."""
     def _wrapped_view_func(request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.is_admin():
-            messages.error(request, 'VocÃª nÃ£o tem permissÃ£o para acessar esta Ã¡rea.')
+            messages.error(request, 'Você não tem permissão para acessar esta área.')
+            return redirect('index')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view_func
+
+
+def staff_required(view_func):
+    """Permite acesso operacional para administradores e usuários comuns."""
+    def _wrapped_view_func(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not (request.user.is_admin() or request.user.role == 'user'):
+            messages.error(request, 'Você não tem permissão para acessar esta área.')
             return redirect('index')
         return view_func(request, *args, **kwargs)
     return _wrapped_view_func
 
 # ==================== REGISTRO DE TRILHA DE AUDITORIA ====================
 def register_audit_log(request, action):
-    """Grava logs de auditoria automÃ¡ticos na tabela MySQL para LGPD."""
+    """Grava logs de auditoria automáticos na tabela MySQL para LGPD."""
     ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
     LogAuditoria.objects.create(
         user=request.user if request.user.is_authenticated else None,
@@ -68,11 +81,11 @@ def enviar_aprendizado_ia(content, context_domain="geral", clinical_category="ca
     except Exception:
         pass
 
-# ==================== ROTAS DE AUTENTICAÃ‡ÃƒO ====================
+# ==================== ROTAS DE AUTENTICAÇÃO ====================
 def login_view(request):
     """Login que preserva o layout original marrom/dourado e valida cookies seguros."""
     if request.user.is_authenticated:
-        return redirect('dashboard' if request.user.is_admin() else 'user_area')
+        return redirect('dashboard')
 
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -92,14 +105,14 @@ def login_view(request):
             
             register_audit_log(request, "Realizou login no sistema.")
             messages.success(request, f"Bem-vinda, {authenticated_user.first_name or authenticated_user.username}!")
-            return redirect('dashboard' if authenticated_user.is_admin() else 'user_area')
+            return redirect('dashboard')
         else:
             messages.error(request, "E-mail ou senha incorretos.")
 
     return render(request, 'login.html')
 
 def register_view(request):
-    """Cadastro de novos usuÃ¡rios com validaÃ§Ã£o forte de senhas."""
+    """Cadastro de novos usuários com validação forte de senhas."""
     if request.user.is_authenticated:
         return redirect('dashboard' if request.user.is_admin() else 'user_area')
 
@@ -112,11 +125,11 @@ def register_view(request):
         telefone = request.POST.get('telefone')
 
         if PerfilUsuario.objects.filter(email=email).exists():
-            messages.error(request, "Este e-mail jÃ¡ estÃ¡ cadastrado no sistema.")
+            messages.error(request, "Este e-mail já está cadastrado no sistema.")
             return render(request, 'register.html')
 
         if len(senha) < 8 or not any(c.isupper() for c in senha) or not any(c.isdigit() for c in senha):
-            messages.error(request, "A senha deve ter pelo menos 8 caracteres, contendo pelo menos uma letra maiÃºscula e um nÃºmero.")
+            messages.error(request, "A senha deve ter pelo menos 8 caracteres, contendo pelo menos uma letra maiúscula e um número.")
             return render(request, 'register.html')
 
         username = email.split('@')[0] + "_" + str(PerfilUsuario.objects.count() + 1)
@@ -131,39 +144,40 @@ def register_view(request):
             telefone=telefone
         )
         
-        register_audit_log(request, f"Novo usuÃ¡rio cadastrado: {email}")
-        messages.success(request, "Cadastro realizado com sucesso! FaÃ§a login para continuar.")
+        register_audit_log(request, f"Novo usuário cadastrado: {email}")
+        messages.success(request, "Cadastro realizado com sucesso! Faça login para continuar.")
         return redirect('login')
 
     return render(request, 'register.html')
 
 @login_required
 def logout_view(request):
-    """Logout seguro do usuÃ¡rio."""
+    """Logout seguro do usuário."""
     register_audit_log(request, "Realizou logout do sistema.")
     logout_user(request)
-    messages.info(request, "VocÃª saiu da sua conta.")
+    messages.info(request, "Você saiu da sua conta.")
     return redirect('login')
 
-# ==================== ROTAS PÃšBLICAS E REDIRECIONAMENTOS ====================
+# ==================== ROTAS PÚBLICAS E REDIRECIONAMENTOS ====================
 def index(request):
-    """PÃ¡gina inicial com redirecionamento contextual."""
+    """Página inicial com redirecionamento contextual."""
     if request.user.is_authenticated:
-        return redirect('dashboard' if request.user.is_admin() else 'user_area')
+        return redirect('dashboard')
     return redirect('login')
 
 @login_required
 def user_area(request):
-    """Ãrea exclusiva para usuÃ¡rios comuns cadastrados."""
-    return render(request, 'user_area.html')
+    """Área exclusiva para usuários comuns cadastrados."""
+    return redirect('dashboard')
 
 # ==================== CONTROLLER ADMINISTRATIVO (DASHBOARD) ====================
 @login_required
-@admin_required
+@staff_required
 def dashboard(request):
-    """Agrega estatÃ­sticas operacionais de alto nÃ­vel com Django ORM para o Chart.js."""
+    """Agrega estatísticas operacionais de alto nível com Django ORM para o Chart.js."""
     total_responses = AvaliacaoClinica.objects.count()
     total_pacientes = Paciente.objects.count()
+    consultas_ativas = ConsultaAtendimento.objects.filter(status__in=['agendada', 'em_atendimento']).count()
     
     today = timezone.now().date()
     new_today = AvaliacaoClinica.objects.filter(timestamp__date=today).count()
@@ -194,6 +208,7 @@ def dashboard(request):
         'new_today': new_today,
         'total_users': total_users,
         'total_pacientes': total_pacientes,
+        'consultas_ativas': consultas_ativas,
         'admin_count': admin_count,
         'last_response_date': last_response_date,
         'last_response_time': last_response_time,
@@ -208,24 +223,38 @@ def dashboard(request):
 @login_required
 @admin_required
 def admin_avaliacoes(request):
-    """Lista todas as avaliaÃ§Ãµes clÃ­nicas / anamneses preenchidas."""
+    """Lista todas as avaliações clínicas / anamneses preenchidas."""
+    status = request.GET.get('status', 'todas')
     responses_raw = AvaliacaoClinica.objects.all().order_by('-timestamp')
+    if status == 'pendentes':
+        responses_raw = responses_raw.filter(score=0)
+    elif status == 'pontuadas':
+        responses_raw = responses_raw.exclude(score=0)
+
     responses = []
     for r in responses_raw:
         r.decrypt_sensitive()
+        if r.paciente:
+            r.paciente.decrypt_sensitive()
         responses.append(r)
         
-    register_audit_log(request, "Acessou a lista de avaliaÃ§Ãµes clÃ­nicas.")
-    return render(request, 'admin_avaliacoes.html', {'avaliacoes': responses})
+    register_audit_log(request, "Acessou a lista de avaliações clínicas.")
+    return render(request, 'admin_avaliacoes.html', {
+        'avaliacoes': responses,
+        'status_filter': status,
+        'total_avaliacoes': AvaliacaoClinica.objects.count(),
+        'avaliacoes_pendentes': AvaliacaoClinica.objects.filter(score=0).count(),
+        'avaliacoes_pontuadas': AvaliacaoClinica.objects.exclude(score=0).count(),
+    })
 
 @login_required
 @admin_required
 def view_avaliacao(request, avaliacao_id):
-    """Detalhes clÃ­nicos do prontuÃ¡rio, consultando o microsserviÃ§o de IA de Borda."""
+    """Detalhes clínicos do prontuário, consultando o microsserviço de IA de Borda."""
     avaliacao = get_object_or_404(AvaliacaoClinica, id=avaliacao_id)
     avaliacao.decrypt_sensitive()
     
-    register_audit_log(request, f"Visualizou prontuÃ¡rio de avaliaÃ§Ã£o ID {avaliacao_id} ({avaliacao.nome}).")
+    register_audit_log(request, f"Visualizou prontuário de avaliação ID {avaliacao_id} ({avaliacao.nome}).")
 
     ai_data = None
     ai_error = False
@@ -258,7 +287,7 @@ def view_avaliacao(request, avaliacao_id):
         else:
             ai_error = True
     except Exception as e:
-        print(f"âš  Erro na comunicaÃ§Ã£o com MicrosserviÃ§o de IA: {e}")
+        print(f"⚠ Erro na comunicação com Microsserviço de IA: {e}")
         ai_error = True
 
     fields_list = []
@@ -282,7 +311,7 @@ def view_avaliacao(request, avaliacao_id):
 @login_required
 @admin_required
 def score_avaliacao(request, avaliacao_id):
-    """Salva a pontuaÃ§Ã£o atribuÃ­da e anotaÃ§Ãµes clÃ­nicas via AJAX."""
+    """Salva a pontuação atribuída e anotações clínicas via AJAX."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -296,39 +325,172 @@ def score_avaliacao(request, avaliacao_id):
             avaliacao.scored_at = timezone.now()
             avaliacao.save()
             enviar_aprendizado_ia(
-                content=f"AvaliaÃ§Ã£o pontuada com score {score}. Parecer clÃ­nico: {notes}",
+                content=f"Avaliação pontuada com score {score}. Parecer clínico: {notes}",
                 context_domain=f"paciente_{avaliacao.paciente_id}" if avaliacao.paciente_id else "geral",
                 clinical_category="pareceres_clinicos"
             )
 
-            register_audit_log(request, f"Pontuou prontuÃ¡rio de avaliaÃ§Ã£o ID {avaliacao_id} com {score} pontos.")
-            return JsonResponse({'success': True, 'message': 'Parecer e pontuaÃ§Ã£o salvos com sucesso!'})
+            register_audit_log(request, f"Pontuou prontuário de avaliação ID {avaliacao_id} com {score} pontos.")
+            return JsonResponse({'success': True, 'message': 'Parecer e pontuação salvos com sucesso!'})
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
-    return JsonResponse({'success': False, 'message': 'MÃ©todo invÃ¡lido'}, status=400)
+    return JsonResponse({'success': False, 'message': 'Método inválido'}, status=400)
 
 @login_required
 @admin_required
 def admin_users(request):
-    """Lista usuÃ¡rios cadastrados."""
+    """Lista usuários cadastrados."""
     users = PerfilUsuario.objects.all().order_by('-created_at')
-    register_audit_log(request, "Visualizou lista geral de usuÃ¡rios cadastrados.")
+    register_audit_log(request, "Visualizou lista geral de usuários cadastrados.")
     return render(request, 'admin_users.html', {'users': users})
+
+
+@login_required
+@admin_required
+def admin_user_create(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        email = request.POST.get('email', '').strip()
+        senha = request.POST.get('senha', '').strip()
+        role = request.POST.get('role', 'user').strip()
+        telefone = request.POST.get('telefone', '').strip()
+        escolaridade = request.POST.get('escolaridade', '').strip()
+
+        if not nome or not email or not senha:
+            messages.error(request, "Informe nome, e-mail e senha inicial.")
+            return redirect('admin_user_create')
+
+        if role not in dict(PerfilUsuario.ROLE_CHOICES):
+            messages.error(request, "Perfil informado é inválido.")
+            return redirect('admin_user_create')
+
+        if PerfilUsuario.objects.filter(email=email).exists():
+            messages.error(request, "Este e-mail já está cadastrado.")
+            return redirect('admin_user_create')
+
+        if len(senha) < 8 or not any(c.isupper() for c in senha) or not any(c.isdigit() for c in senha):
+            messages.error(request, "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número.")
+            return redirect('admin_user_create')
+
+        username_base = email.split('@')[0]
+        username = username_base
+        suffix = 1
+        while PerfilUsuario.objects.filter(username=username).exists():
+            suffix += 1
+            username = f"{username_base}_{suffix}"
+
+        user = PerfilUsuario.objects.create_user(
+            username=username,
+            email=email,
+            password=senha,
+            first_name=nome,
+            role=role,
+            telefone=telefone,
+            escolaridade=escolaridade,
+        )
+        register_audit_log(request, f"Criou usuário administrativo ID {user.id}.")
+        messages.success(request, "Usuário criado com sucesso.")
+        return redirect('admin_users')
+
+    return render(request, 'admin_user_form.html')
+
+
+@login_required
+@admin_required
+def admin_user_toggle_active(request, user_id):
+    if request.method != 'POST':
+        return redirect('admin_users')
+
+    target = get_object_or_404(PerfilUsuario, id=user_id)
+    if target.id == request.user.id:
+        messages.error(request, "Você não pode desativar o próprio acesso.")
+        return redirect('admin_users')
+
+    target.is_active = not target.is_active
+    target.save(update_fields=['is_active'])
+    status = "ativado" if target.is_active else "desativado"
+    register_audit_log(request, f"Usuário ID {target.id} {status}.")
+    messages.success(request, f"Usuário {status} com sucesso.")
+    return redirect('admin_users')
+
+
+@login_required
+@admin_required
+def admin_user_change_role(request, user_id):
+    if request.method != 'POST':
+        return redirect('admin_users')
+
+    target = get_object_or_404(PerfilUsuario, id=user_id)
+    new_role = request.POST.get('role', '').strip()
+    if new_role not in dict(PerfilUsuario.ROLE_CHOICES):
+        messages.error(request, "Perfil informado é inválido.")
+        return redirect('admin_users')
+
+    if target.id == request.user.id and new_role != 'admin':
+        messages.error(request, "Você não pode remover o próprio perfil administrativo.")
+        return redirect('admin_users')
+
+    target.role = new_role
+    target.save(update_fields=['role'])
+    register_audit_log(request, f"Alterou perfil do usuário ID {target.id} para {new_role}.")
+    messages.success(request, "Perfil do usuário atualizado.")
+    return redirect('admin_users')
+
+
+@login_required
+@staff_required
+def perfil_usuario(request):
+    if request.method == 'POST':
+        acao = request.POST.get('acao', '').strip()
+
+        if acao == 'dados':
+            request.user.first_name = request.POST.get('nome', '').strip()
+            request.user.email = request.POST.get('email', '').strip()
+            request.user.telefone = request.POST.get('telefone', '').strip()
+            request.user.escolaridade = request.POST.get('escolaridade', '').strip()
+            request.user.save(update_fields=['first_name', 'email', 'telefone', 'escolaridade'])
+            register_audit_log(request, "Atualizou os próprios dados de usuário.")
+            messages.success(request, "Seus dados foram atualizados.")
+            return redirect('perfil_usuario')
+
+        if acao == 'senha':
+            senha_atual = request.POST.get('senha_atual', '')
+            nova_senha = request.POST.get('nova_senha', '')
+            confirmar_senha = request.POST.get('confirmar_senha', '')
+
+            if not request.user.check_password(senha_atual):
+                messages.error(request, "Senha atual incorreta.")
+                return redirect('perfil_usuario')
+            if nova_senha != confirmar_senha:
+                messages.error(request, "A confirmação da senha não confere.")
+                return redirect('perfil_usuario')
+            if len(nova_senha) < 8 or not any(c.isupper() for c in nova_senha) or not any(c.isdigit() for c in nova_senha):
+                messages.error(request, "A nova senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número.")
+                return redirect('perfil_usuario')
+
+            request.user.set_password(nova_senha)
+            request.user.save(update_fields=['password'])
+            update_session_auth_hash(request, request.user)
+            register_audit_log(request, "Alterou a própria senha.")
+            messages.success(request, "Senha atualizada com sucesso.")
+            return redirect('perfil_usuario')
+
+    return render(request, 'perfil_usuario.html')
 
 # ==================== PACIENTES E ATENDIMENTOS ====================
 @login_required
-@admin_required
+@staff_required
 def pacientes_list(request):
     pacientes = []
     for paciente in Paciente.objects.all().order_by('-updated_at'):
         paciente.decrypt_sensitive()
         paciente.data_nascimento = normalizar_data_br(paciente.data_nascimento)
         pacientes.append(paciente)
-    register_audit_log(request, "Acessou a Ã¡rea de pacientes.")
+    register_audit_log(request, "Acessou a área de pacientes.")
     return render(request, 'pacientes_list.html', {'pacientes': pacientes})
 
 @login_required
-@admin_required
+@staff_required
 def paciente_create(request):
     if request.method == 'POST':
         data_nascimento = normalizar_data_br(request.POST.get('data_nascimento', '').strip())
@@ -350,8 +512,37 @@ def paciente_create(request):
         )
         register_audit_log(request, f"Cadastrou paciente ID {paciente.id}.")
         messages.success(request, "Paciente cadastrado com sucesso.")
-        return redirect('paciente_detail', paciente_id=paciente.id)
+        if request.user.is_admin():
+            return redirect('paciente_detail', paciente_id=paciente.id)
+        return redirect('pacientes_list')
     return render(request, 'paciente_form.html')
+
+
+@login_required
+@staff_required
+def paciente_update(request, paciente_id):
+    if request.method != 'POST':
+        return redirect('pacientes_list')
+
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    paciente.nome = request.POST.get('nome', '').strip()
+    paciente.data_nascimento = normalizar_data_br(request.POST.get('data_nascimento', '').strip())
+    paciente.responsavel = request.POST.get('responsavel', '').strip()
+    paciente.telefone = request.POST.get('telefone', '').strip()
+    paciente.email = request.POST.get('email', '').strip()
+    paciente.cpf = request.POST.get('cpf', '').strip()
+    paciente.identidade = request.POST.get('identidade', '').strip()
+    paciente.endereco = request.POST.get('endereco', '').strip()
+    paciente.bairro = request.POST.get('bairro', '').strip()
+    paciente.cep = request.POST.get('cep', '').strip()
+    paciente.escola = request.POST.get('escola', '').strip()
+    paciente.serie = request.POST.get('serie', '').strip()
+    paciente.queixa_principal = request.POST.get('queixa_principal', '').strip()
+    paciente.observacoes = request.POST.get('observacoes', '').strip()
+    paciente.save()
+    register_audit_log(request, f"Atualizou cadastro do cliente ID {paciente.id}.")
+    messages.success(request, "Cliente atualizado com sucesso.")
+    return redirect('pacientes_list')
 
 @login_required
 @admin_required
@@ -372,11 +563,11 @@ def paciente_detail(request, paciente_id):
             return redirect('paciente_detail', paciente_id=paciente.id)
 
         if tipo not in dict(AnotacaoAtendimento.TIPO_CHOICES):
-            messages.error(request, "Tipo de anotacao invalido.")
+            messages.error(request, "Tipo de anotação inválido.")
             return redirect('paciente_detail', paciente_id=paciente.id)
 
         if not conteudo:
-            messages.error(request, "Informe o conteudo da anotacao.")
+            messages.error(request, "Informe o conteúdo da anotação.")
             return redirect('paciente_detail', paciente_id=paciente.id)
 
         if len(titulo) > 160:
@@ -392,12 +583,12 @@ def paciente_detail(request, paciente_id):
             data_consulta=data_consulta,
         )
         enviar_aprendizado_ia(
-            content=f"AnotaÃ§Ã£o clÃ­nica ({tipo}). TÃ­tulo: {titulo or 'Sem tÃ­tulo'}. ConteÃºdo: {conteudo}",
+            content=f"Anotação clínica ({tipo}). Título: {titulo or 'Sem título'}. Conteúdo: {conteudo}",
             context_domain=f"paciente_{paciente.id}",
             clinical_category="anotacoes_clinicas"
         )
-        register_audit_log(request, f"Registrou anotaÃ§Ã£o ID {anotacao.id} no paciente ID {paciente_id}.")
-        messages.success(request, "AnotaÃ§Ã£o registrada.")
+        register_audit_log(request, f"Registrou anotação ID {anotacao.id} no paciente ID {paciente_id}.")
+        messages.success(request, "Anotação registrada.")
         return redirect('paciente_detail', paciente_id=paciente.id)
 
     anotacoes = []
@@ -405,7 +596,7 @@ def paciente_detail(request, paciente_id):
         item.decrypt_sensitive()
         anotacoes.append(item)
 
-    # Buscar avaliaÃ§Ãµes vinculadas
+    # Buscar avaliações vinculadas
     avaliacoes = paciente.avaliacoes.all().order_by('-timestamp')
     for av in avaliacoes:
         av.decrypt_sensitive()
@@ -419,8 +610,182 @@ def paciente_detail(request, paciente_id):
 @login_required
 @admin_required
 def paciente_nova_anamnese(request, paciente_id):
-    """Garante redirecionamento para ficha com ID do paciente prÃ©-configurado."""
+    """Garante redirecionamento para ficha com ID do paciente pré-configurado."""
     return redirect(f"/anamnese/nova/?paciente_id={paciente_id}")
+
+@login_required
+@staff_required
+def consultas_list(request):
+    pacientes = []
+    for paciente in Paciente.objects.all().order_by('-updated_at'):
+        paciente.decrypt_sensitive()
+        pacientes.append(paciente)
+
+    if request.method == 'POST':
+        paciente_id = request.POST.get('paciente_id', '').strip()
+        data_hora_raw = request.POST.get('data_hora', '').strip()
+        motivo = request.POST.get('motivo', '').strip()
+        observacoes = request.POST.get('observacoes_agendamento', '').strip()
+
+        paciente = Paciente.objects.filter(id=paciente_id).first() if paciente_id.isdigit() else None
+        data_hora = parse_datetime(data_hora_raw) if data_hora_raw else None
+        if data_hora and timezone.is_naive(data_hora):
+            data_hora = timezone.make_aware(data_hora)
+
+        if not paciente:
+            messages.error(request, "Selecione um cliente valido para marcar a consulta.")
+            return redirect('consultas_list')
+
+        if not data_hora:
+            messages.error(request, "Informe data e horário da consulta.")
+            return redirect('consultas_list')
+
+        consulta = ConsultaAtendimento.objects.create(
+            paciente=paciente,
+            profissional=request.user,
+            data_hora=data_hora,
+            motivo=motivo,
+            observacoes_agendamento=observacoes,
+        )
+        register_audit_log(request, f"Marcou consulta ID {consulta.id} para paciente ID {paciente.id}.")
+        messages.success(request, "Consulta marcada com sucesso.")
+        return redirect('consultas_list')
+
+    consultas = []
+    for consulta in ConsultaAtendimento.objects.select_related('paciente', 'profissional').order_by('data_hora'):
+        consulta.decrypt_sensitive()
+        consulta.paciente.decrypt_sensitive()
+        consultas.append(consulta)
+
+    register_audit_log(request, "Acessou a área de marcação de consultas.")
+    return render(request, 'consultas_list.html', {
+        'pacientes': pacientes,
+        'consultas': consultas,
+    })
+
+
+@login_required
+@staff_required
+def consulta_update(request, consulta_id):
+    if request.method != 'POST':
+        return redirect('consultas_list')
+
+    consulta = get_object_or_404(ConsultaAtendimento, id=consulta_id)
+    paciente_id = request.POST.get('paciente_id', '').strip()
+    data_hora_raw = request.POST.get('data_hora', '').strip()
+    motivo = request.POST.get('motivo', '').strip()
+    observacoes = request.POST.get('observacoes_agendamento', '').strip()
+    status = request.POST.get('status', consulta.status).strip()
+
+    paciente = Paciente.objects.filter(id=paciente_id).first() if paciente_id.isdigit() else None
+    data_hora = parse_datetime(data_hora_raw) if data_hora_raw else None
+    if data_hora and timezone.is_naive(data_hora):
+        data_hora = timezone.make_aware(data_hora)
+
+    if not paciente:
+        messages.error(request, "Selecione um cliente válido para a consulta.")
+        return redirect('consultas_list')
+    if not data_hora:
+        messages.error(request, "Informe data e horário da consulta.")
+        return redirect('consultas_list')
+    if status not in dict(ConsultaAtendimento.STATUS_CHOICES):
+        messages.error(request, "Status informado é inválido.")
+        return redirect('consultas_list')
+
+    consulta.paciente = paciente
+    consulta.data_hora = data_hora
+    consulta.motivo = motivo
+    consulta.observacoes_agendamento = observacoes
+    consulta.status = status
+    consulta.save()
+    register_audit_log(request, f"Atualizou consulta ID {consulta.id}.")
+    messages.success(request, "Consulta atualizada com sucesso.")
+    return redirect('consultas_list')
+
+
+@login_required
+@admin_required
+def atendimento_list(request):
+    consultas = []
+    qs = ConsultaAtendimento.objects.select_related('paciente', 'profissional').filter(
+        status__in=['agendada', 'em_atendimento']
+    ).order_by('data_hora')
+    for consulta in qs:
+        consulta.decrypt_sensitive()
+        consulta.paciente.decrypt_sensitive()
+        consultas.append(consulta)
+
+    register_audit_log(request, "Acessou a área de atendimento.")
+    return render(request, 'atendimento_list.html', {'consultas': consultas})
+
+
+@login_required
+@admin_required
+def atendimento_detail(request, consulta_id):
+    consulta = get_object_or_404(
+        ConsultaAtendimento.objects.select_related('paciente', 'profissional'),
+        id=consulta_id
+    )
+    consulta.decrypt_sensitive()
+    consulta.paciente.decrypt_sensitive()
+
+    if request.method == 'POST':
+        acao = request.POST.get('acao', '').strip()
+        anotacoes = request.POST.get('anotacoes_profissional', '').strip()
+
+        if acao == 'iniciar':
+            consulta.status = 'em_atendimento'
+            consulta.profissional = request.user
+            consulta.save()
+            register_audit_log(request, f"Iniciou consulta ID {consulta.id}.")
+            messages.success(request, "Consulta sinalizada como em atendimento.")
+            return redirect('atendimento_detail', consulta_id=consulta.id)
+
+        if acao == 'salvar':
+            consulta.anotacoes_profissional = anotacoes
+            consulta.save()
+            register_audit_log(request, f"Salvou anotações profissionais da consulta ID {consulta.id}.")
+            messages.success(request, "Anotações salvas.")
+            return redirect('atendimento_detail', consulta_id=consulta.id)
+
+        if acao == 'finalizar':
+            if not anotacoes:
+                messages.error(request, "Registre as anotações profissionais antes de finalizar a consulta.")
+                return redirect('atendimento_detail', consulta_id=consulta.id)
+
+            motivo_consulta = consulta.motivo or 'Consulta finalizada'
+            consulta.anotacoes_profissional = anotacoes
+            consulta.status = 'finalizada'
+            consulta.encerrada_em = timezone.now()
+            consulta.save()
+
+            AnotacaoAtendimento.objects.create(
+                paciente=consulta.paciente,
+                profissional=request.user,
+                tipo='sessao',
+                data_consulta=consulta.data_hora.date(),
+                titulo=motivo_consulta,
+                conteudo=anotacoes,
+            )
+            enviar_aprendizado_ia(
+                content=f"Consulta finalizada. Motivo: {motivo_consulta}. Anotações: {anotacoes}",
+                context_domain=f"paciente_{consulta.paciente_id}",
+                clinical_category="atendimentos_finalizados"
+            )
+            register_audit_log(request, f"Finalizou e baixou consulta ID {consulta.id}.")
+            messages.success(request, "Consulta finalizada e baixada do atendimento.")
+            return redirect('atendimento_list')
+
+    anotacoes = []
+    for item in consulta.paciente.anotacoes.all().order_by('-created_at')[:8]:
+        item.decrypt_sensitive()
+        anotacoes.append(item)
+
+    return render(request, 'atendimento_detail.html', {
+        'consulta': consulta,
+        'paciente': consulta.paciente,
+        'anotacoes': anotacoes,
+    })
 
 @login_required
 @admin_required
@@ -556,34 +921,34 @@ def feedback_consulta_ia(request, consulta_id):
     messages.success(request, "Feedback da IA registrado e incorporado ao aprendizado clínico.")
     return redirect('ia_consulta')
 
-# ==================== PREENCHIMENTO E SUBMISSÃƒO DA ANAMNESE ====================
+# ==================== PREENCHIMENTO E SUBMISSÃO DA ANAMNESE ====================
 def nova_anamnese(request):
-    """Renderiza a ficha clÃ­nica estruturada de 105 campos (Anamnese)."""
+    """Renderiza a ficha clínica estruturada de 105 campos (Anamnese)."""
     CHECKBOX_OPTIONS = [
-        "Facilidade em processar informaÃ§Ãµes, integrar experiÃªncias e emitir respostas apropriadas",
-        "Aprendizagem rÃ¡pida/fÃ¡cil e com pouca repetiÃ§Ã£o",
-        "Pensador crÃ­tico; lida com problemas abstraatos/complexos",
-        "Boa memÃ³ria e facilidade para acumular conhecimento",
-        "Habilidade de raciocÃ­nio lÃ³gico-matemÃ¡tico",
-        "VocabulÃ¡rio avanÃ§ado para a idade; verbalmente fluente",
+        "Facilidade em processar informações, integrar experiências e emitir respostas apropriadas",
+        "Aprendizagem rápida/fácil e com pouca repetição",
+        "Pensador crítico; gosta de lidar com problemas abstratos/complexos e propor novas soluções",
+        "Boa memória e facilidade para acumular conhecimento",
+        "Habilidade de raciocínio lógico-matemático",
+        "Vocabulário avançado para a idade; verbalmente fluente",
         "Capacidade de generalizar e transferir aprendizagem",
-        "PercepÃ§Ãµes incomuns na resoluÃ§Ã£o de problemas",
+        "Percepções incomuns na resolução de problemas",
         "Facilidade e agilidade para produzir ideias",
-        "Flexibilidade ou facilidade para pensar fora dos padrÃµes",
+        "Flexibilidade ou facilidade para pensar fora dos padrões",
         "Originalidade de pensamento",
         "Capacidade de resolver problemas de forma criativa e efetiva",
-        "Abertura a novas experiÃªncias e disposiÃ§Ã£o para correr riscos",
-        "VÃª relaÃ§Ãµes entre ideias diversas",
-        "IndependÃªncia e autonomia de pensamento",
+        "Abertura a novas experiências e disposição para correr riscos",
+        "Vê relações entre ideias diversas",
+        "Independência e autonomia de pensamento",
         "Apurado senso de humor",
-        "Interesse constante por certos tÃ³picos",
-        "TendÃªncia a iniciar suas prÃ³prias atividades",
-        "PersistÃªncia na realizaÃ§Ã£o de tarefas de interesse",
-        "Auto-imposiÃ§Ã£o para atingir a perfeiÃ§Ã£o",
+        "Interesse constante por certos tópicos",
+        "Tendência a iniciar suas próprias atividades",
+        "Persistência na realização de tarefas de interesse",
+        "Auto-imposição para atingir a perfeição",
         "Ocupa seu tempo de forma produtiva",
-        "Concentra-se por perÃ­odo prolongado sem aborrecer-se",
-        "PreferÃªncia por responsabilidade pessoal sobre sua produÃ§Ã£o",
-        "ObstinaÃ§Ã£o em procurar informaÃ§Ãµes sobre tÃ³picos de interesse"
+        "Concentra-se por período prolongado sem aborrecer-se",
+        "Preferência por responsabilidade pessoal sobre sua produção",
+        "Obstinação em procurar informações sobre tópicos de interesse"
     ]
     
     paciente_id = request.GET.get('paciente_id')
@@ -598,7 +963,7 @@ def nova_anamnese(request):
     })
 
 def salvar_anamnese(request):
-    """Processa e salva as submissÃµes da anamnese clÃ­nica no banco de dados MySQL de forma segura."""
+    """Processa e salva as submissões da anamnese clínica no banco de dados MySQL de forma segura."""
     if request.method == 'POST':
         data = {}
         for f in AvaliacaoClinica._meta.fields:
@@ -618,7 +983,7 @@ def salvar_anamnese(request):
         if paciente_id and paciente_id.isdigit():
             data['paciente_id'] = int(paciente_id)
 
-        # Se nÃ£o vier nome preenchido mas vier paciente_id, preencher com o nome do paciente
+        # Se não vier nome preenchido mas vier paciente_id, preencher com o nome do paciente
         if not data.get('nome') and paciente_id:
             p = Paciente.objects.filter(id=paciente_id).first()
             if p:
@@ -627,23 +992,23 @@ def salvar_anamnese(request):
 
         new_resp = AvaliacaoClinica.objects.create(**data)
         
-        # Dispara aprendizado silencioso no microsserviÃ§o de IA (se ativo) sobre este caso
+        # Dispara aprendizado silencioso no microsserviço de IA (se ativo) sobre este caso
         try:
             ai_learn_url = f"{settings.AI_SERVICE_URL}/api/v1/learn"
             payload = {
-                "content": f"Caso clÃ­nico com observaÃ§Ãµes: {data.get('observacoes')}. CaracterÃ­sticas notadas: {data.get('observed_characteristics')}",
+                "content": f"Caso clínico com observações: {data.get('observacoes')}. Características notadas: {data.get('observed_characteristics')}",
                 "context_domain": f"paciente_{new_resp.paciente_id}" if new_resp.paciente_id else "geral",
                 "clinical_category": "casos_clinicos",
                 "target_age": "infantil" if int(data.get('idade_anos') or 10) < 12 else "adolescente"
             }
             requests.post(ai_learn_url, json=payload, timeout=2.0)
         except Exception as e:
-            print(f"Sem conexÃ£o para aprendizado na IA: {e}")
+            print(f"Sem conexão para aprendizado na IA: {e}")
 
         ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '127.0.0.1'))
         LogAuditoria.objects.create(
             user=request.user if request.user.is_authenticated else None,
-            action=f"Nova avaliaÃ§Ã£o preenchida na internet e salva. ID do ProntuÃ¡rio: {new_resp.id}",
+            action=f"Nova avaliação preenchida na internet e salva. ID do Prontuário: {new_resp.id}",
             ip_address=ip
         )
 
@@ -651,16 +1016,16 @@ def salvar_anamnese(request):
 
     return redirect('nova_anamnese')
 
-# ==================== EXPORTAÃ‡ÃƒO COMPLETA PARA EXCEL ====================
+# ==================== EXPORTAÇÃO COMPLETA PARA EXCEL ====================
 @login_required
 @admin_required
 def export_excel(request):
-    """Gera planilha Excel profissional e estilizada contendo todos os prontuÃ¡rios e respostas."""
-    register_audit_log(request, "Exportou a base de dados de avaliaÃ§Ãµes para planilha Excel (.xlsx).")
+    """Gera planilha Excel profissional e estilizada contendo todos os prontuários e respostas."""
+    register_audit_log(request, "Exportou a base de dados de avaliações para planilha Excel (.xlsx).")
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "AvaliaÃ§Ãµes ClÃ­nicas"
+    ws.title = "Avaliações Clínicas"
 
     ws.views.sheetView[0].showGridLines = True
 
@@ -678,7 +1043,7 @@ def export_excel(request):
         bottom=Side(style='thin', color='E5E0D8')
     )
 
-    headers = ["ID AvaliaÃ§Ã£o", "Paciente Vinculado", "Data e Hora", "PontuaÃ§Ã£o AtribuÃ­da", "Parecer ClÃ­nico"]
+    headers = ["ID Avaliação", "Paciente Vinculado", "Data e Hora", "Pontuação Atribuída", "Parecer Clínico"]
     fields_to_export = []
     
     for f in AvaliacaoClinica._meta.fields:
@@ -702,7 +1067,7 @@ def export_excel(request):
     for resp in responses:
         resp.decrypt_sensitive()
         
-        paciente_nome = "NÃ£o Vinculado"
+        paciente_nome = "Não Vinculado"
         if resp.paciente:
             resp.paciente.decrypt_sensitive()
             paciente_nome = resp.paciente.nome
@@ -712,7 +1077,7 @@ def export_excel(request):
             paciente_nome,
             resp.timestamp.strftime('%d/%m/%Y %H:%M'),
             resp.score,
-            resp.notes or "Sem parecer atribuÃ­do"
+            resp.notes or "Sem parecer atribuído"
         ]
         
         for field_name in fields_to_export:

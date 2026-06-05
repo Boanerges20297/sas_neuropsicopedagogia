@@ -100,6 +100,43 @@ class AnotacaoAtendimento(models.Model):
     def __str__(self):
         return self.titulo or f"Atendimento #{self.id}"
 
+
+class ConsultaAtendimento(models.Model):
+    STATUS_CHOICES = (
+        ('agendada', 'Agendada'),
+        ('em_atendimento', 'Em atendimento'),
+        ('finalizada', 'Finalizada'),
+        ('cancelada', 'Cancelada'),
+    )
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='consultas')
+    profissional = models.ForeignKey(PerfilUsuario, on_delete=models.SET_NULL, null=True, blank=True, related_name='consultas_atendimento')
+    data_hora = models.DateTimeField()
+    motivo = models.CharField(max_length=180, blank=True, null=True)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='agendada')
+    observacoes_agendamento = models.TextField(blank=True, null=True)
+    anotacoes_profissional = models.TextField(blank=True, null=True)
+    encerrada_em = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    SENSITIVE_FIELDS = ['motivo', 'observacoes_agendamento', 'anotacoes_profissional']
+
+    def save(self, *args, **kwargs):
+        for field in self.SENSITIVE_FIELDS:
+            val = getattr(self, field, '')
+            if val and not str(val).startswith('gAAAAA'):
+                setattr(self, field, encrypt_data(str(val)))
+        super().save(*args, **kwargs)
+
+    def decrypt_sensitive(self):
+        for field in self.SENSITIVE_FIELDS:
+            val = getattr(self, field, '')
+            if val and str(val).startswith('gAAAAA'):
+                setattr(self, field, decrypt_data(val))
+
+    def __str__(self):
+        return f"Consulta #{self.id} - {self.get_status_display()}"
+
 # Removido modelo Questao legado
 
 # ==================== AVALIAÇÃO CLÍNICA / ANAMNESE (105 CAMPOS) ====================

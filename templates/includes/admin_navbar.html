@@ -86,16 +86,21 @@
             <img src="{% static 'logo.jpg' %}" alt="Logo {{ CLINICA_NOME }}" class="clinic-navbar__logo">
             <div>
                 <strong>{{ CLINICA_NOME }}</strong>
-                <small>Atendimento clinico</small>
+                <small>Atendimento clínico</small>
             </div>
         </a>
 
         <div class="clinic-navbar__links">
             <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}">Dashboard</a>
-            <a href="{% url 'pacientes_list' %}" class="{% if request.resolver_match.url_name == 'pacientes_list' or request.resolver_match.url_name == 'paciente_create' or request.resolver_match.url_name == 'paciente_detail' %}is-active{% endif %}">Pacientes</a>
-            <a href="{% url 'admin_avaliacoes' %}" class="{% if request.resolver_match.url_name == 'admin_avaliacoes' or request.resolver_match.url_name == 'view_avaliacao' %}is-active{% endif %}">Avaliacoes</a>
-            <a href="{% url 'ia_consulta' %}" class="{% if request.resolver_match.url_name == 'ia_consulta' %}is-active{% endif %}">Consulta IA</a>
-            <a href="{% url 'admin_users' %}" class="{% if request.resolver_match.url_name == 'admin_users' %}is-active{% endif %}">Usuarios</a>
+            <a href="{% url 'pacientes_list' %}" class="{% if request.resolver_match.url_name == 'pacientes_list' or request.resolver_match.url_name == 'paciente_create' or request.resolver_match.url_name == 'paciente_detail' %}is-active{% endif %}">Clientes</a>
+            <a href="{% url 'consultas_list' %}" class="{% if request.resolver_match.url_name == 'consultas_list' %}is-active{% endif %}">Consultas</a>
+            {% if request.user.is_admin %}
+                <a href="{% url 'atendimento_list' %}" class="{% if request.resolver_match.url_name == 'atendimento_list' or request.resolver_match.url_name == 'atendimento_detail' %}is-active{% endif %}">Atendimento</a>
+                <a href="{% url 'admin_avaliacoes' %}" class="{% if request.resolver_match.url_name == 'admin_avaliacoes' or request.resolver_match.url_name == 'view_avaliacao' %}is-active{% endif %}">Avaliações</a>
+                <a href="{% url 'ia_consulta' %}" class="{% if request.resolver_match.url_name == 'ia_consulta' %}is-active{% endif %}">Consulta IA</a>
+                <a href="{% url 'admin_users' %}" class="{% if request.resolver_match.url_name == 'admin_users' %}is-active{% endif %}">Usuários</a>
+            {% endif %}
+            <a href="{% url 'perfil_usuario' %}" class="{% if request.resolver_match.url_name == 'perfil_usuario' %}is-active{% endif %}">Meu perfil</a>
             <a href="{% url 'logout' %}">Sair</a>
         </div>
     </div>

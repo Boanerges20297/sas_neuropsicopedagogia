@@ -14,14 +14,14 @@
         <section class="ops-hero">
             <div>
                 <a href="{% url 'pacientes_list' %}" class="intake-back-link">Voltar</a>
-                <span class="ai-eyebrow">Prontuario ativo</span>
+                <span class="ai-eyebrow">Prontuário ativo</span>
                 <h1>{{ paciente.nome }}</h1>
                 <p>{{ paciente.escola|default:"Sem escola informada" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p>
             </div>
             <div class="ops-hero-metrics">
                 <div><span>Nascimento</span><strong>{{ paciente.data_nascimento|default:"-" }}</strong></div>
                 <div><span>Contato</span><strong>{{ paciente.telefone|default:"-" }}</strong></div>
-                <div><span>Acao</span><a href="{% url 'ia_consulta' %}?paciente={{ paciente.id }}" class="ops-hero-action">Consultar IA</a></div>
+                <div><span>Ação</span><a href="{% url 'ia_consulta' %}?paciente={{ paciente.id }}" class="ops-hero-action">Consultar IA</a></div>
             </div>
         </section>
 
@@ -34,7 +34,7 @@
         <section class="ops-workbench">
             <div class="ops-panel">
                 <div class="ops-section-head">
-                    <span>Resumo clinico</span>
+                    <span>Resumo clínico</span>
                     <strong>Dados do paciente</strong>
                 </div>
                 <div class="ops-content-body ops-content-body--grid">
@@ -46,7 +46,7 @@
                     <div><strong>CEP</strong><p>{{ paciente.cep|default:"-" }}</p></div>
                     <div><strong>Escola / Serie</strong><p>{{ paciente.escola|default:"-" }}{% if paciente.serie %} - {{ paciente.serie }}{% endif %}</p></div>
                     <div><strong>Queixa principal</strong><p>{{ paciente.queixa_principal|default:"-" }}</p></div>
-                    <div class="patient-span-2"><strong>Observacoes</strong><p>{{ paciente.observacoes|default:"-" }}</p></div>
+                    <div class="patient-span-2"><strong>Observações</strong><p>{{ paciente.observacoes|default:"-" }}</p></div>
                 </div>
             </div>
 
@@ -54,7 +54,11 @@
                 <div class="ops-side-card">
                     <span>Uso rapido</span>
                     <strong>Daqui voce avanca</strong>
-                    <p>Registre sessao, consulte a IA, abra avaliações vinculadas e aprofunde o caso sem sair do prontuário.</p>
+                    <p>Registre sessão, consulte a IA, abra avaliações vinculadas e aprofunde o caso sem sair do prontuário.</p>
+                    <div class="ops-card-actions">
+                        <a href="{% url 'consultas_list' %}" class="patients-open-link">Marcar consulta</a>
+                        <a href="{% url 'paciente_nova_anamnese' paciente.id %}" class="patients-open-link">Nova anamnese</a>
+                    </div>
                 </div>
                 <div class="ops-side-card is-highlight">
                     <span>Contexto</span>
@@ -81,7 +85,7 @@
                             <div class="form-group">
                                 <label class="form-label" for="tipo">Tipo</label>
                                 <select class="form-input" id="tipo" name="tipo">
-                                    <option value="sessao">Sessao</option>
+                                    <option value="sessao">Sessão</option>
                                     <option value="observacao">Observacao</option>
                                     <option value="orientacao">Orientacao familiar/escolar</option>
                                     <option value="encaminhamento">Encaminhamento</option>
@@ -89,7 +93,7 @@
                             </div>
                             <div class="form-group patient-span-2">
                                 <label class="form-label" for="titulo">Titulo</label>
-                                <input class="form-input" id="titulo" name="titulo" maxlength="160" placeholder="Resumo da sessao">
+                                <input class="form-input" id="titulo" name="titulo" maxlength="160" placeholder="Resumo da sessão">
                             </div>
                             <div class="form-group patient-span-2">
                                 <label class="form-label" for="conteudo">Conteudo</label>
@@ -98,7 +102,7 @@
                         </div>
                         <div class="patient-intake-actions">
                             <div></div>
-                            <button class="ai-primary-action" type="submit">Salvar anotacao</button>
+                            <button class="ai-primary-action" type="submit">Salvar anotação</button>
                         </div>
                     </form>
                 </div>
@@ -107,7 +111,7 @@
             <aside class="ops-side-rail">
                 <div class="ops-side-card">
                     <span>Qualidade do registro</span>
-                    <strong>Anotacao clinica</strong>
+                    <strong>Anotação clínica</strong>
                     <p>Prefira linguagem objetiva: comportamento observado, hipótese, conduta aplicada e próximos passos.</p>
                 </div>
             </aside>
@@ -127,7 +131,7 @@
                             <p class="notes-item-content">{{ anotacao.conteudo }}</p>
                         </article>
                     {% empty %}
-                        <p class="empty-state">Nenhuma anotacao registrada ainda.</p>
+                        <p class="empty-state">Nenhuma anotação registrada ainda.</p>
                     {% endfor %}
                 </div>
             </div>
@@ -136,7 +140,7 @@
                 <div class="ops-panel">
                     <div class="ops-section-head">
                         <span>Relacionados</span>
-                        <strong>Avaliacoes vinculadas</strong>
+                        <strong>Avaliações vinculadas</strong>
                     </div>
                     <div class="table-responsive">
                         <table class="modern-table ops-table">

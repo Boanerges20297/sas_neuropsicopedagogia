@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcação de consultas - {{ CLINICA_NOME }}</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Agenda clínica</span>
+                <h1>Marcação de Consultas</h1>
+                <p>Lista operacional para marcar, revisar e ajustar consultas antes do atendimento.</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Consultas</span><strong>{{ consultas|length }}</strong></div>
+                <div><span>Entrada</span><strong>Agenda</strong></div>
+                <div><span>Ação</span><button class="ops-hero-action" type="button" data-modal-open="modal-consulta-nova">Nova consulta</button></div>
+            </div>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Lista inicial</span>
+                    <strong>Consultas marcadas</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table ops-table">
+                        <thead>
+                            <tr><th>Data</th><th>Cliente</th><th>Motivo</th><th>Status</th><th>Ações</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for consulta in consultas %}
+                                <tr>
+                                    <td>{{ consulta.data_hora|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ consulta.paciente.nome }}</td>
+                                    <td>{{ consulta.motivo|default:"-" }}</td>
+                                    <td><span class="ops-pill {% if consulta.status == 'em_atendimento' %}is-warn{% elif consulta.status == 'finalizada' %}is-ok{% endif %}">{{ consulta.get_status_display }}</span></td>
+                                    <td>
+                                        <div class="ops-row-actions">
+                                            <button class="patients-open-link" type="button" data-modal-open="modal-consulta-{{ consulta.id }}">Editar</button>
+                                            {% if request.user.is_admin %}
+                                                <a href="{% url 'atendimento_detail' consulta.id %}" class="patients-open-link">Atender</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="empty-state">Nenhuma consulta marcada.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Objetivo</span>
+                    <strong>Agenda primeiro</strong>
+                    <p>Use esta área para marcar e ajustar consultas, sem misturar com o prontuário clínico.</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Clientes</span>
+                    <strong>Cadastro necessário</strong>
+                    <p>Se o cliente ainda não existir, cadastre em Clientes e volte para marcar a consulta.</p>
+                    <a href="{% url 'pacientes_list' %}" class="patients-open-link">Ir para clientes</a>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    {% include 'includes/consulta_modal.html' with title='Nova consulta' pacientes=pacientes %}
+
+    {% for consulta in consultas %}
+        {% include 'includes/consulta_modal.html' with title='Editar consulta' consulta=consulta pacientes=pacientes %}
+    {% endfor %}
+
+    <script src="{% static 'modal-actions.js' %}" defer></script>
+</body>
+</html>

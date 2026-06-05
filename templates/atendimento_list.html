@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimento - {{ CLINICA_NOME }}</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <span class="ai-eyebrow">Fila operacional</span>
+                <h1>Atendimento</h1>
+                <p>Área para dar vazão às consultas marcadas, registrar anotações profissionais e baixar a consulta ao término.</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Na fila</span><strong>{{ consultas|length }}</strong></div>
+                <div><span>Status</span><strong>Aberta</strong></div>
+                <div><span>Agenda</span><a href="{% url 'consultas_list' %}" class="ops-hero-action">Marcar</a></div>
+            </div>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Consultas ativas</span>
+                    <strong>Fila de atendimento</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="modern-table ops-table">
+                        <thead>
+                            <tr><th>Horario</th><th>Cliente</th><th>Motivo</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            {% for consulta in consultas %}
+                                <tr>
+                                    <td>{{ consulta.data_hora|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <div class="patients-name-cell">
+                                            <strong>{{ consulta.paciente.nome }}</strong>
+                                            <small>{{ consulta.paciente.telefone|default:"Sem telefone" }}</small>
+                                        </div>
+                                    </td>
+                                    <td>{{ consulta.motivo|default:"-" }}</td>
+                                    <td><span class="ops-pill {% if consulta.status == 'em_atendimento' %}is-warn{% endif %}">{{ consulta.get_status_display }}</span></td>
+                                    <td><a href="{% url 'atendimento_detail' consulta.id %}" class="patients-open-link">Abrir</a></td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="empty-state">Nenhuma consulta aguardando atendimento.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Baixa</span>
+                    <strong>Fim da consulta</strong>
+                    <p>Ao finalizar, a consulta sai desta fila e as anotações entram no histórico clínico do cliente.</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Anotacoes</span>
+                    <strong>Registro profissional</strong>
+                    <p>Use a tela de atendimento para salvar condutas, observações e encaminhamentos antes de encerrar.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

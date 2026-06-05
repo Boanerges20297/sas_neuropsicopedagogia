@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Clínico - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="{% static 'dashboard.js' %}" defer></script>
+    {% if request.user.is_admin %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script src="{% static 'dashboard.js' %}" defer></script>
+    {% endif %}
 </head>
 <body class="ops-page">
     {% include 'includes/admin_navbar.html' %}
@@ -17,12 +19,12 @@
             <div>
                 <span class="ai-eyebrow">Controle operacional</span>
                 <h1>Painel Clínico</h1>
-                <p>Visão rápida do atendimento neuropsicopedagógico, prontuários recentes e ritmo de avaliações da clínica.</p>
+                <p>{% if request.user.is_admin %}Visão rápida do atendimento neuropsicopedagógico, prontuários recentes e ritmo de avaliações da clínica.{% else %}Acesso rápido às rotinas permitidas para cadastro de clientes, marcação de consultas e dados do seu usuário.{% endif %}</p>
             </div>
             <div class="ops-hero-metrics">
-                <div><span>Pacientes</span><strong>{{ stats.total_pacientes }}</strong></div>
-                <div><span>Avaliações</span><strong>{{ stats.total_responses }}</strong></div>
-                <div><span>Hoje</span><strong>+{{ stats.new_today }}</strong></div>
+                <div><span>Clientes</span><strong>{{ stats.total_pacientes }}</strong></div>
+                <div><span>Consultas</span><strong>{{ stats.consultas_ativas }}</strong></div>
+                <div><span>Perfil</span><strong>{{ request.user.get_role_display }}</strong></div>
             </div>
         </section>
 
@@ -32,74 +34,105 @@
             {% endfor %}
         {% endif %}
 
-        <section class="ops-workbench">
-            <div class="ops-panel">
-                <div class="ops-section-head">
-                    <span>Monitoramento</span>
-                    <strong>Indicadores da clínica</strong>
-                </div>
-
-                <div class="ops-metric-grid">
-                    <article class="ops-metric"><span>Pacientes ativos</span><strong>{{ stats.total_pacientes }}</strong><small>Base em acompanhamento</small></article>
-                    <article class="ops-metric"><span>Usuários</span><strong>{{ stats.total_users }}</strong><small>{{ stats.admin_count }} administradores</small></article>
-                    <article class="ops-metric"><span>Último registro</span><strong>{{ stats.last_response_date }}</strong><small>{{ stats.last_response_time|default:"Sem horário" }}</small></article>
-                </div>
-
-                <div class="ops-grid-2">
-                    <div class="ops-chart-box">
-                        <div class="ops-box-head">Distribuição de avaliações</div>
-                        <div class="ops-chart-area"><canvas id="testTypesChart"></canvas></div>
+        {% if request.user.is_admin %}
+            <section class="ops-workbench">
+                <div class="ops-panel">
+                    <div class="ops-section-head">
+                        <span>Monitoramento</span>
+                        <strong>Indicadores da clínica</strong>
                     </div>
-                    <div class="ops-chart-box">
-                        <div class="ops-box-head">Últimos 7 dias</div>
-                        <div class="ops-chart-area"><canvas id="dailyResponsesChart"></canvas></div>
+
+                    <div class="ops-metric-grid">
+                        <article class="ops-metric"><span>Clientes ativos</span><strong>{{ stats.total_pacientes }}</strong><small>Base em acompanhamento</small></article>
+                        <article class="ops-metric"><span>Consultas ativas</span><strong>{{ stats.consultas_ativas }}</strong><small>Agendadas ou em atendimento</small></article>
+                        <article class="ops-metric"><span>Último registro</span><strong>{{ stats.last_response_date }}</strong><small>{{ stats.last_response_time|default:"Sem horário" }}</small></article>
+                    </div>
+
+                    <div class="ops-grid-2">
+                        <div class="ops-chart-box">
+                            <div class="ops-box-head">Distribuição de avaliações</div>
+                            <div class="ops-chart-area"><canvas id="testTypesChart"></canvas></div>
+                        </div>
+                        <div class="ops-chart-box">
+                            <div class="ops-box-head">Últimos 7 dias</div>
+                            <div class="ops-chart-area"><canvas id="dailyResponsesChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="modern-table ops-table">
+                            <thead><tr><th>ID</th><th>Data</th><th>Paciente</th><th>Escola</th><th></th></tr></thead>
+                            <tbody>
+                                {% if stats.recent_responses %}
+                                    {% for resp in stats.recent_responses %}
+                                        <tr>
+                                            <td>#{{ resp.id }}</td>
+                                            <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ resp.nome|default:"Não informado" }}</td>
+                                            <td>{{ resp.unidade_escolar|default:"Não informada" }}</td>
+                                            <td><a href="{% url 'view_avaliacao' resp.id %}" class="patients-open-link">Abrir</a></td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="5" class="empty-state">Nenhum prontuário recente.</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="modern-table ops-table">
-                        <thead>
-                            <tr><th>ID</th><th>Data</th><th>Paciente</th><th>Escola</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                            {% if stats.recent_responses %}
-                                {% for resp in stats.recent_responses %}
-                                <tr>
-                                    <td>#{{ resp.id }}</td>
-                                    <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
-                                    <td>{{ resp.nome|default:"Não informado" }}</td>
-                                    <td>{{ resp.unidade_escolar|default:"Não informada" }}</td>
-                                    <td><a href="{% url 'view_avaliacao' resp.id %}" class="patients-open-link">Abrir</a></td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr><td colspan="5" class="empty-state">Nenhum prontuário recente.</td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                <aside class="ops-side-rail">
+                    <div class="ops-side-card">
+                        <span>Exportação</span>
+                        <strong>Base consolidada</strong>
+                        <p>Use a exportação em Excel para revisão externa, relatórios e fechamento operacional da clínica.</p>
+                        <a href="{% url 'export_excel' %}" class="ops-hero-action">Exportar Excel</a>
+                    </div>
+                    <div class="ops-side-card is-highlight">
+                        <span>Leitura rápida</span>
+                        <strong>O que olhar primeiro</strong>
+                        <ul>
+                            <li>Clientes novos do dia</li>
+                            <li>Avaliações pendentes de parecer</li>
+                            <li>Volume recente de atendimento</li>
+                        </ul>
+                    </div>
+                </aside>
+            </section>
+        {% else %}
+            <section class="ops-workbench">
+                <div class="ops-panel">
+                    <div class="ops-section-head">
+                        <span>Suas ações</span>
+                        <strong>Rotinas disponíveis</strong>
+                    </div>
+                    <div class="ops-metric-grid">
+                        <article class="ops-metric"><span>Clientes</span><strong>Cadastro</strong><small>Inserir e editar dados cadastrais.</small></article>
+                        <article class="ops-metric"><span>Consultas</span><strong>Agenda</strong><small>Marcar e editar consultas.</small></article>
+                        <article class="ops-metric"><span>Perfil</span><strong>Conta</strong><small>Atualizar dados e senha.</small></article>
+                    </div>
+                    <div class="ops-content-body">
+                        <div class="ops-toolbar">
+                            <a href="{% url 'pacientes_list' %}" class="ai-primary-action">Abrir clientes</a>
+                            <a href="{% url 'consultas_list' %}" class="ai-primary-action">Abrir consultas</a>
+                            <a href="{% url 'perfil_usuario' %}" class="patients-open-link">Meu perfil</a>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <aside class="ops-side-rail">
-                <div class="ops-side-card">
-                    <span>Exportação</span>
-                    <strong>Base consolidada</strong>
-                    <p>Use a exportação em Excel para revisão externa, relatórios e fechamento operacional da clínica.</p>
-                    <a href="{% url 'export_excel' %}" class="ops-hero-action">Exportar Excel</a>
-                </div>
-                <div class="ops-side-card is-highlight">
-                    <span>Leitura rápida</span>
-                    <strong>O que olhar primeiro</strong>
-                    <ul>
-                        <li>Pacientes novos do dia</li>
-                        <li>Avaliações pendentes de parecer</li>
-                        <li>Volume recente de atendimento</li>
-                    </ul>
-                </div>
-            </aside>
-        </section>
+                <aside class="ops-side-rail">
+                    <div class="ops-side-card is-highlight">
+                        <span>Permissões</span>
+                        <strong>Perfil Usuário</strong>
+                        <p>Seu acesso está limitado ao dashboard, clientes, consultas e edição dos seus próprios dados.</p>
+                    </div>
+                </aside>
+            </section>
+        {% endif %}
     </main>
 
-    <div id="chartData" data-test-types='{"labels":["Atendimentos"],"values":[{{ stats.total_responses }}]}' data-daily-responses='{"labels":{{ stats.daily_labels|safe }},"values":{{ stats.daily_values|safe }}}' style="display:none;"></div>
+    {% if request.user.is_admin %}
+        <div id="chartData" data-test-types='{"labels":["Atendimentos"],"values":[{{ stats.total_responses }}]}' data-daily-responses='{"labels":{{ stats.daily_labels|safe }},"values":{{ stats.daily_values|safe }}}' style="display:none;"></div>
+    {% endif %}
 </body>
 </html>

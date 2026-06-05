@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliações clínicas - {{ CLINICA_NOME }}</title>
+    <title>Avaliações - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body class="ops-page">
@@ -13,37 +13,66 @@
     <main class="ops-shell">
         <section class="ops-hero">
             <div>
-                <span class="ai-eyebrow">Historico de prontuarios</span>
-                <h1>Avaliações clínicas</h1>
-                <p>Acompanhe anamneses preenchidas, pareceres pendentes e prontuários que já receberam síntese clínica.</p>
+                <span class="ai-eyebrow">Fila de revisão clínica</span>
+                <h1>Avaliações</h1>
+                <p>Revise anamneses, abra pendências, registre parecer e exporte a base quando o lote estiver fechado.</p>
             </div>
             <div class="ops-hero-metrics">
-                <div><span>Total</span><strong>{{ avaliacoes|length }}</strong></div>
-                <div><span>Tipo</span><strong>Anamnese + parecer</strong></div>
-                <div><span>Acao</span><a href="{% url 'export_excel' %}" class="ops-hero-action">Exportar Excel</a></div>
+                <div><span>Total</span><strong>{{ total_avaliacoes }}</strong></div>
+                <div><span>Pendentes</span><strong>{{ avaliacoes_pendentes }}</strong></div>
+                <div><span>Nova ficha</span><a href="{% url 'nova_anamnese' %}" class="ops-hero-action">Iniciar avaliação</a></div>
             </div>
         </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
         <section class="ops-workbench">
             <div class="ops-panel">
                 <div class="ops-section-head">
-                    <span>Fila clinica</span>
-                    <strong>Registros da avaliação</strong>
+                    <span>Trabalho de hoje</span>
+                    <strong>Fila de avaliações</strong>
+                </div>
+                <div class="ops-content-body">
+                    <div class="ops-toolbar">
+                        <a href="{% url 'admin_avaliacoes' %}" class="patients-open-link {% if status_filter == 'todas' %}is-active{% endif %}">Todas</a>
+                        <a href="{% url 'admin_avaliacoes' %}?status=pendentes" class="patients-open-link {% if status_filter == 'pendentes' %}is-active{% endif %}">Pendentes</a>
+                        <a href="{% url 'admin_avaliacoes' %}?status=pontuadas" class="patients-open-link {% if status_filter == 'pontuadas' %}is-active{% endif %}">Pontuadas</a>
+                        <a href="{% url 'export_excel' %}" class="ai-primary-action">Exportar Excel</a>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="modern-table ops-table">
-                        <thead><tr><th>ID</th><th>Paciente</th><th>Data</th><th>Status</th><th></th></tr></thead>
+                        <thead>
+                            <tr><th>ID</th><th>Paciente</th><th>Data</th><th>Status</th><th>Ações</th></tr>
+                        </thead>
                         <tbody>
                             {% for resp in avaliacoes %}
-                            <tr>
-                                <td>#{{ resp.id }}</td>
-                                <td>{% if resp.paciente %}<a href="{% url 'paciente_detail' resp.paciente.id %}">{{ resp.paciente.nome }}</a>{% else %}Não vinculado{% endif %}</td>
-                                <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
-                                <td>{% if resp.score %}<span class="ops-pill is-ok">Pontuado ({{ resp.score }})</span>{% else %}<span class="ops-pill is-warn">Pendente</span>{% endif %}</td>
-                                <td><a href="{% url 'view_avaliacao' resp.id %}" class="patients-open-link">Abrir</a></td>
-                            </tr>
+                                <tr>
+                                    <td>#{{ resp.id }}</td>
+                                    <td>
+                                        {% if resp.paciente %}
+                                            <a href="{% url 'paciente_detail' resp.paciente.id %}">{{ resp.paciente.nome }}</a>
+                                        {% else %}
+                                            {{ resp.nome|default:"Não vinculado" }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ resp.timestamp|date:"d/m/Y H:i" }}</td>
+                                    <td>{% if resp.score %}<span class="ops-pill is-ok">Pontuado ({{ resp.score }})</span>{% else %}<span class="ops-pill is-warn">Pendente</span>{% endif %}</td>
+                                    <td>
+                                        <div class="ops-row-actions">
+                                            <a href="{% url 'view_avaliacao' resp.id %}" class="patients-open-link">Revisar e pontuar</a>
+                                            {% if resp.paciente %}
+                                                <a href="{% url 'paciente_detail' resp.paciente.id %}" class="patients-open-link">Prontuário</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
                             {% empty %}
-                            <tr><td colspan="5" class="empty-state">Sem avaliações registradas.</td></tr>
+                                <tr><td colspan="5" class="empty-state">Nenhuma avaliação encontrada para este filtro.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -52,14 +81,20 @@
 
             <aside class="ops-side-rail">
                 <div class="ops-side-card">
-                    <span>Fluxo</span>
-                    <strong>Avaliar e pontuar</strong>
-                    <p>Abra o prontuário para revisar a leitura da IA, registrar o parecer e fechar a pontuação do caso.</p>
+                    <span>Objetivo da aba</span>
+                    <strong>Fechar pareceres</strong>
+                    <p>Esta tela existe para transformar anamnese preenchida em decisão clínica: revisar, pontuar e registrar parecer.</p>
                 </div>
                 <div class="ops-side-card is-highlight">
-                    <span>Prioridade</span>
-                    <strong>Casos pendentes</strong>
-                    <p>Os registros sem score ainda estão aguardando síntese clínica e decisão final da profissional.</p>
+                    <span>Próxima ação</span>
+                    <strong>{{ avaliacoes_pendentes }} pendentes</strong>
+                    <p>Use o filtro Pendentes para limpar a fila. Depois exporte o lote ou encaminhe o cliente para consulta.</p>
+                </div>
+                <div class="ops-side-card">
+                    <span>Entrada</span>
+                    <strong>Nova avaliação</strong>
+                    <p>Inicie uma anamnese avulsa ou abra um cliente para gerar uma ficha já vinculada ao prontuário.</p>
+                    <a href="{% url 'nova_anamnese' %}" class="patients-open-link">Abrir ficha</a>
                 </div>
             </aside>
         </section>

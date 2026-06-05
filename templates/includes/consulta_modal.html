@@ -1,0 +1,56 @@
+<div class="modal-shell" id="{% if consulta %}modal-consulta-{{ consulta.id }}{% else %}modal-consulta-nova{% endif %}" aria-hidden="true">
+    <div class="modal-backdrop" data-modal-close></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="{% if consulta %}consulta-title-{{ consulta.id }}{% else %}consulta-title-nova{% endif %}">
+        <div class="modal-head">
+            <div>
+                <span class="ai-eyebrow">Agenda clínica</span>
+                <strong id="{% if consulta %}consulta-title-{{ consulta.id }}{% else %}consulta-title-nova{% endif %}">{{ title }}</strong>
+            </div>
+            <button class="modal-close" type="button" data-modal-close aria-label="Fechar">×</button>
+        </div>
+
+        <form method="POST" action="{% if consulta %}{% url 'consulta_update' consulta.id %}{% else %}{% url 'consultas_list' %}{% endif %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="patient-block-grid patient-block-grid--identity">
+                    <div class="form-group">
+                        <label class="form-label">Cliente</label>
+                        <select class="form-input" name="paciente_id" required>
+                            <option value="">Selecione</option>
+                            {% for paciente in pacientes %}
+                                <option value="{{ paciente.id }}" {% if consulta and consulta.paciente_id == paciente.id %}selected{% endif %}>{{ paciente.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data e horário</label>
+                        <input type="datetime-local" class="form-input" name="data_hora" value="{% if consulta %}{{ consulta.data_hora|date:'Y-m-d\TH:i' }}{% endif %}" required>
+                    </div>
+                    {% if consulta %}
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-input" name="status">
+                            <option value="agendada" {% if consulta.status == 'agendada' %}selected{% endif %}>Agendada</option>
+                            <option value="em_atendimento" {% if consulta.status == 'em_atendimento' %}selected{% endif %}>Em atendimento</option>
+                            <option value="finalizada" {% if consulta.status == 'finalizada' %}selected{% endif %}>Finalizada</option>
+                            <option value="cancelada" {% if consulta.status == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                    <div class="form-group {% if not consulta %}patient-span-2{% endif %}">
+                        <label class="form-label">Motivo</label>
+                        <input class="form-input" name="motivo" maxlength="180" value="{{ consulta.motivo|default:'' }}">
+                    </div>
+                    <div class="form-group patient-span-2">
+                        <label class="form-label">Observações do agendamento</label>
+                        <textarea class="form-textarea" name="observacoes_agendamento" rows="4">{{ consulta.observacoes_agendamento|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="patients-open-link" type="button" data-modal-close>Cancelar</button>
+                <button class="ai-primary-action" type="submit">Salvar consulta</button>
+            </div>
+        </form>
+    </section>
+</div>

@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimento - {{ paciente.nome }}</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="ops-page">
+    {% include 'includes/admin_navbar.html' %}
+
+    <main class="ops-shell">
+        <section class="ops-hero">
+            <div>
+                <a href="{% url 'atendimento_list' %}" class="intake-back-link">Voltar</a>
+                <span class="ai-eyebrow">Consulta em atendimento</span>
+                <h1>{{ paciente.nome }}</h1>
+                <p>{{ consulta.data_hora|date:"d/m/Y H:i" }}{% if consulta.motivo %} - {{ consulta.motivo }}{% endif %}</p>
+            </div>
+            <div class="ops-hero-metrics">
+                <div><span>Status</span><strong>{{ consulta.get_status_display }}</strong></div>
+                <div><span>Contato</span><strong>{{ paciente.telefone|default:"-" }}</strong></div>
+                <div><span>Prontuário</span><a href="{% url 'paciente_detail' paciente.id %}" class="ops-hero-action">Abrir</a></div>
+            </div>
+        </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <section class="ops-workbench">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Anotações profissionais</span>
+                    <strong>Registro da consulta</strong>
+                </div>
+                <div class="ops-content-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="patient-block-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="anotacoes_profissional">Anotações do profissional</label>
+                                <textarea class="form-textarea" id="anotacoes_profissional" name="anotacoes_profissional" rows="12" placeholder="Observações, intervenções, condutas, resposta do cliente e próximos passos.">{{ consulta.anotacoes_profissional|default:"" }}</textarea>
+                            </div>
+                        </div>
+                        <div class="ops-inline-actions">
+                            {% if consulta.status == 'agendada' %}
+                                <button class="patients-open-link" type="submit" name="acao" value="iniciar">Sinalizar início</button>
+                            {% endif %}
+                            <button class="patients-open-link" type="submit" name="acao" value="salvar">Salvar anotações</button>
+                            <button class="ai-primary-action" type="submit" name="acao" value="finalizar">Finalizar e baixar consulta</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <aside class="ops-side-rail">
+                <div class="ops-side-card">
+                    <span>Cliente</span>
+                    <strong>{{ paciente.nome }}</strong>
+                    <p>{{ paciente.queixa_principal|default:"Sem queixa principal informada." }}</p>
+                </div>
+                <div class="ops-side-card is-highlight">
+                    <span>Termino</span>
+                    <strong>Baixar do sistema</strong>
+                    <p>Finalizar a consulta remove o item da fila de atendimento e grava as anotações no histórico do cliente.</p>
+                </div>
+            </aside>
+        </section>
+
+        <section class="ops-workbench" style="margin-top:18px;">
+            <div class="ops-panel">
+                <div class="ops-section-head">
+                    <span>Historico recente</span>
+                    <strong>Anotações do cliente</strong>
+                </div>
+                <div class="notes-history-list">
+                    {% for anotacao in anotacoes %}
+                        <article class="notes-item">
+                            <div class="notes-item-head"><strong>{{ anotacao.titulo|default:anotacao.get_tipo_display }}</strong><span class="notes-type-chip">{{ anotacao.get_tipo_display }}</span></div>
+                            <p class="notes-item-meta">{% if anotacao.data_consulta %}Consulta: {{ anotacao.data_consulta|date:"d/m/Y" }}{% else %}Sem data da consulta{% endif %} - Registro: {{ anotacao.created_at|date:"d/m/Y H:i" }}</p>
+                            <p class="notes-item-content">{{ anotacao.conteudo }}</p>
+                        </article>
+                    {% empty %}
+                        <p class="empty-state">Nenhuma anotação anterior registrada.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <aside class="ops-side-rail"></aside>
+        </section>
+    </main>
+</body>
+</html>

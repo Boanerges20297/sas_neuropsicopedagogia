@@ -13,38 +13,70 @@
     <main class="ops-shell">
         <section class="ops-hero">
             <div>
-                <span class="ai-eyebrow">Acesso e equipe</span>
-                <h1>Usuários do sistema</h1>
-                <p>Controle de acesso da clínica, perfis administrativos e dados básicos de quem usa a plataforma.</p>
+                <span class="ai-eyebrow">Controle de acesso</span>
+                <h1>Usuários</h1>
+                <p>Ative, suspenda e ajuste perfis para manter a trilha de auditoria e o acesso clínico sob controle.</p>
             </div>
             <div class="ops-hero-metrics">
                 <div><span>Total</span><strong>{{ users|length }}</strong></div>
-                <div><span>Escopo</span><strong>Uso interno</strong></div>
-                <div><span>Perfil</span><strong>Administrativo e apoio</strong></div>
+                <div><span>Ação</span><a href="{% url 'admin_user_create' %}" class="ops-hero-action">Novo usuário</a></div>
+                <div><span>Escopo</span><strong>Acesso interno</strong></div>
             </div>
         </section>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-modern alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 
         <section class="ops-workbench">
             <div class="ops-panel">
                 <div class="ops-section-head">
-                    <span>Controle de acesso</span>
+                    <span>Permissões</span>
                     <strong>Usuários cadastrados</strong>
                 </div>
                 <div class="table-responsive">
                     <table class="modern-table ops-table">
-                        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Escolaridade</th><th>Telefone</th><th>Cadastro</th></tr></thead>
+                        <thead>
+                            <tr><th>Usuário</th><th>Contato</th><th>Perfil</th><th>Status</th><th>Cadastro</th><th>Ações</th></tr>
+                        </thead>
                         <tbody>
                             {% for u in users %}
-                            <tr>
-                                <td>{{ u.first_name|default:u.username }}</td>
-                                <td>{{ u.email }}</td>
-                                <td>{% if u.is_admin or u.is_superuser %}<span class="ops-pill is-ok">Administrador</span>{% else %}<span class="ops-pill">Usuário</span>{% endif %}</td>
-                                <td>{{ u.escolaridade|default:'Não informada' }}</td>
-                                <td>{{ u.telefone|default:'Não informado' }}</td>
-                                <td>{{ u.date_joined|date:"d/m/Y H:i" }}</td>
-                            </tr>
+                                <tr>
+                                    <td>
+                                        <div class="patients-name-cell">
+                                            <strong>{{ u.first_name|default:u.username }}</strong>
+                                            <small>{{ u.username }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="patients-contact-cell">
+                                            <span>{{ u.email }}</span>
+                                            <small>{{ u.telefone|default:"Sem telefone" }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="{% url 'admin_user_change_role' u.id %}" class="ops-inline-form">
+                                            {% csrf_token %}
+                                            <select class="form-input compact-input" name="role">
+                                                <option value="user" {% if u.role == 'user' %}selected{% endif %}>Usuário</option>
+                                                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Administrador</option>
+                                            </select>
+                                            <button class="patients-open-link" type="submit">Salvar</button>
+                                        </form>
+                                    </td>
+                                    <td>{% if u.is_active %}<span class="ops-pill is-ok">Ativo</span>{% else %}<span class="ops-pill is-warn">Suspenso</span>{% endif %}</td>
+                                    <td>{{ u.date_joined|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <form method="POST" action="{% url 'admin_user_toggle_active' u.id %}">
+                                            {% csrf_token %}
+                                            <button class="patients-open-link" type="submit">{% if u.is_active %}Suspender{% else %}Ativar{% endif %}</button>
+                                        </form>
+                                    </td>
+                                </tr>
                             {% empty %}
-                            <tr><td colspan="6" class="empty-state">Nenhum usuário encontrado.</td></tr>
+                                <tr><td colspan="6" class="empty-state">Nenhum usuário encontrado.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -53,14 +85,19 @@
 
             <aside class="ops-side-rail">
                 <div class="ops-side-card">
-                    <span>Governança</span>
-                    <strong>Perfis administrativos</strong>
-                    <p>Contas com perfil administrador acessam prontuários, IA clínica, avaliações e exportação da base.</p>
+                    <span>Objetivo da aba</span>
+                    <strong>Permitir ou bloquear acesso</strong>
+                    <p>Esta tela agora executa tarefas reais: cria usuário, altera perfil e suspende acesso quando necessário.</p>
                 </div>
                 <div class="ops-side-card is-highlight">
-                    <span>Boas práticas</span>
+                    <span>Regra operacional</span>
                     <strong>Acesso nominal</strong>
-                    <p>Evite compartilhamento de conta para manter trilha de auditoria confiável e histórico por profissional.</p>
+                    <p>Cada profissional deve usar sua própria conta para preservar auditoria de prontuários, IA e exportações.</p>
+                </div>
+                <div class="ops-side-card">
+                    <span>Cuidado</span>
+                    <strong>Perfil administrador</strong>
+                    <p>Administrador acessa clientes, avaliações, atendimentos e base exportável da clínica.</p>
                 </div>
             </aside>
         </section>

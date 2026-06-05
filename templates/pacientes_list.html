@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pacientes - {{ CLINICA_NOME }}</title>
+    <title>Clientes - {{ CLINICA_NOME }}</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body class="patients-hub-page">
@@ -13,23 +13,14 @@
     <main class="patients-hub">
         <section class="patients-hero">
             <div>
-                <span class="ai-eyebrow">Prontuarios em acompanhamento</span>
-                <h1>Pacientes</h1>
-                <p>Visualize rapidamente quem esta em seguimento, o contexto escolar e a demanda principal antes de abrir o prontuario completo.</p>
+                <span class="ai-eyebrow">Cadastro de clientes</span>
+                <h1>Clientes</h1>
+                <p>Lista operacional para cadastrar, editar e localizar clientes antes da marcação de consultas.</p>
             </div>
             <div class="patients-hero-metrics">
-                <div>
-                    <span>Total</span>
-                    <strong>{{ pacientes|length }}</strong>
-                </div>
-                <div>
-                    <span>Foco</span>
-                    <strong>Triagem e seguimento</strong>
-                </div>
-                <div>
-                    <span>Acao</span>
-                    <a href="{% url 'paciente_create' %}" class="patients-hero-action">Novo paciente</a>
-                </div>
+                <div><span>Total</span><strong>{{ pacientes|length }}</strong></div>
+                <div><span>Fluxo</span><strong>Cadastro e agenda</strong></div>
+                <div><span>Ação</span><button class="patients-hero-action" type="button" data-modal-open="modal-cliente-novo">Novo cliente</button></div>
             </div>
         </section>
 
@@ -42,20 +33,20 @@
         <section class="patients-workbench">
             <div class="patients-table-panel">
                 <div class="patients-section-head">
-                    <span>Lista operacional</span>
-                    <strong>Pacientes ativos</strong>
+                    <span>Lista inicial</span>
+                    <strong>Clientes cadastrados</strong>
                 </div>
 
                 <div class="table-responsive">
                     <table class="modern-table patients-table">
                         <thead>
                             <tr>
-                                <th>Paciente</th>
+                                <th>Cliente</th>
                                 <th>Nascimento</th>
                                 <th>Contato</th>
                                 <th>Escola</th>
                                 <th>Queixa</th>
-                                <th></th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,12 +67,17 @@
                                 </td>
                                 <td>{{ paciente.escola|default:"-" }}{% if paciente.serie %}<br><small>{{ paciente.serie }}</small>{% endif %}</td>
                                 <td class="patients-complaint">{{ paciente.queixa_principal|default:"-"|truncatechars:90 }}</td>
-                                <td class="patients-action-cell"><a href="{% url 'paciente_detail' paciente.id %}" class="patients-open-link">Abrir</a></td>
+                                <td class="patients-action-cell">
+                                    <div class="ops-row-actions">
+                                        <button class="patients-open-link" type="button" data-modal-open="modal-cliente-{{ paciente.id }}">Editar</button>
+                                        {% if request.user.is_admin %}
+                                            <a href="{% url 'paciente_detail' paciente.id %}" class="patients-open-link">Prontuário</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
                             </tr>
                             {% empty %}
-                            <tr>
-                                <td colspan="6" class="empty-state">Nenhum paciente cadastrado.</td>
-                            </tr>
+                            <tr><td colspan="6" class="empty-state">Nenhum cliente cadastrado.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -90,22 +86,26 @@
 
             <aside class="patients-side-rail">
                 <div class="patients-side-card">
-                    <span>Leitura rapida</span>
-                    <strong>Como usar a lista</strong>
-                    <p>Abra o prontuario quando precisar registrar sessao, consultar a IA ou revisar historico e avaliacoes do caso.</p>
+                    <span>Objetivo</span>
+                    <strong>Cadastro rápido</strong>
+                    <p>Use esta área para inserir e editar os dados cadastrais do cliente sem abrir o prontuário clínico.</p>
                 </div>
                 <div class="patients-side-card is-highlight">
-                    <span>Entrada ideal</span>
-                    <strong>Cadastro enxuto</strong>
-                    <p>Nome, contato, escola e queixa principal bastam para iniciar. O restante amadurece nas anotacoes e na anamnese.</p>
-                </div>
-                <div class="patients-side-card">
-                    <span>Fluxo clinico</span>
-                    <strong>Paciente &rarr; Prontuario &rarr; IA</strong>
-                    <p>A lista funciona como porta de entrada para o acompanhamento e para o aprendizado supervisionado da IA.</p>
+                    <span>Próximo passo</span>
+                    <strong>Marcação de consulta</strong>
+                    <p>Depois do cadastro, siga para Consultas e marque data, horário e motivo do atendimento.</p>
+                    <a href="{% url 'consultas_list' %}" class="patients-open-link">Ir para consultas</a>
                 </div>
             </aside>
         </section>
     </main>
+
+    {% include 'includes/paciente_modal.html' with title='Novo cliente' %}
+
+    {% for paciente in pacientes %}
+        {% include 'includes/paciente_modal.html' with title='Editar cliente' paciente=paciente %}
+    {% endfor %}
+
+    <script src="{% static 'modal-actions.js' %}" defer></script>
 </body>
 </html>

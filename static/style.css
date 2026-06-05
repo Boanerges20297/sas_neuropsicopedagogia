@@ -3974,6 +3974,9 @@ select:focus {
 }
 
 .ai-primary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 44px;
     padding: 0 26px;
     border: 0;
@@ -4821,6 +4824,130 @@ select:focus {
     flex-wrap: wrap;
     gap: 12px;
     margin-top: 20px;
+}
+
+.ops-toolbar,
+.ops-row-actions,
+.ops-card-actions,
+.ops-inline-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ops-toolbar {
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.ops-row-actions {
+    min-width: 220px;
+}
+
+.ops-card-actions {
+    margin-top: 14px;
+}
+
+.ops-inline-form {
+    align-items: stretch;
+}
+
+.compact-input {
+    width: auto;
+    min-width: 150px;
+    min-height: 36px;
+    padding: 8px 10px;
+}
+
+.patients-open-link.is-active {
+    background: #173f46;
+    border-color: #173f46;
+    color: #fff;
+}
+
+.modal-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-shell.is-open {
+    display: flex;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(12, 34, 39, .58);
+}
+
+.modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(920px, 100%);
+    max-height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #d8e2e5;
+    border-radius: 8px;
+    box-shadow: 0 28px 70px rgba(13, 43, 49, .28);
+}
+
+.modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+    border-bottom: 1px solid #e1e8ea;
+    background: #fbfcfc;
+}
+
+.modal-head strong {
+    display: block;
+    margin-top: 6px;
+    color: #142f3a;
+    font-size: 20px;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #c8d9dd;
+    border-radius: 7px;
+    background: #fff;
+    color: #173f46;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.modal-body {
+    overflow: auto;
+    padding: 20px 22px 4px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 22px 20px;
+    border-top: 1px solid #e1e8ea;
+    background: #fbfcfc;
+}
+
+button.patients-open-link,
+button.patients-hero-action,
+button.ops-hero-action {
+    font-family: inherit;
+    cursor: pointer;
 }
 
 .ops-split-fields {
