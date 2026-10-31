@@ -6,6 +6,7 @@ import sqlite3
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+from schema import ensure_dynamic_test_schema
 
 # Carrega variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -14,7 +15,10 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(APP_ROOT, os.getenv('DATABASE_NAME', 'app_database.db'))
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'chave-padrao-insegura-mude-isso')
+secret_key = os.getenv('SECRET_KEY')
+if not secret_key or len(secret_key) < 32 or secret_key == 'sua-chave-secreta-super-segura-aqui':
+    raise RuntimeError('Configure SECRET_KEY segura no ambiente (minimo 32 caracteres)')
+app.config['SECRET_KEY'] = secret_key
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # type: ignore
@@ -159,7 +163,7 @@ CHECKBOX_OPTIONS = [
 
 # ==================== MODELO DE USUÁRIO ====================
 class User(UserMixin):
-    def __init__(self, id, email, nome, role, data_nascimento=None, escolaridade=None, telefone=None):
+    def __init__(self, id, email, nome, role, data_nascimento=None, escolaridade=None, telefone=None, must_change_password=False):
         self.id = id
         self.email = email
         self.nome = nome
@@ -167,9 +171,10 @@ class User(UserMixin):
         self.data_nascimento = data_nascimento
         self.escolaridade = escolaridade
         self.telefone = telefone
+        self.must_change_password = bool(must_change_password)
     
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role in ('admin', 'superadmin')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -188,7 +193,8 @@ def load_user(user_id):
             role=user_data['role'],
             data_nascimento=user_data['data_nascimento'],
             escolaridade=user_data['escolaridade'],
-            telefone=user_data['telefone']
+            telefone=user_data['telefone'],
+            must_change_password=user_data['must_change_password']
         )
     return None
 
@@ -258,20 +264,32 @@ def init_db():
     ''')
     
     # Cria usuário admin padrão se não existir (usando variáveis de ambiente)
-    admin_email = os.getenv('ADMIN_EMAIL', 'admin@admin.com')
-    admin_password_plain = os.getenv('ADMIN_PASSWORD', 'admin123')
+    ensure_dynamic_test_schema(conn)
+    # Initial administrators are opt-in; no hardcoded fallback credentials.
+    admin_email = os.getenv('ADMIN_EMAIL')
+    admin_password_plain = os.getenv('ADMIN_PASSWORD')
     admin_name = os.getenv('ADMIN_NAME', 'Administrador')
-    
-    cursor.execute('SELECT COUNT(*) FROM users WHERE email = ?', (admin_email,))
-    if cursor.fetchone()[0] == 0:
-        admin_password = bcrypt.generate_password_hash(admin_password_plain).decode('utf-8')
-        cursor.execute('''
-            INSERT INTO users (nome, email, senha_hash, role)
-            VALUES (?, ?, ?, ?)
-        ''', (admin_name, admin_email, admin_password, 'admin'))
-        print(f"✓ Usuário admin criado: {admin_email} / {admin_password_plain}")
-        print("⚠ IMPORTANTE: Altere a senha padrão no arquivo .env!")
-    
+    if admin_email or admin_password_plain:
+        if not admin_email or not admin_password_plain or len(admin_password_plain) < 12:
+            raise RuntimeError('Configure ADMIN_EMAIL e ADMIN_PASSWORD (minimo 12 caracteres)')
+        cursor.execute('SELECT 1 FROM users WHERE email = ?', (admin_email,))
+        if cursor.fetchone() is None:
+            password_hash = bcrypt.generate_password_hash(admin_password_plain).decode('utf-8')
+            cursor.execute('INSERT INTO users (nome, email, senha_hash, role) VALUES (?, ?, ?, ?)',
+                           (admin_name, admin_email, password_hash, 'admin'))
+            print('Administrador inicial criado')
+    super_email = os.getenv('SUPERADMIN_EMAIL')
+    super_password = os.getenv('SUPERADMIN_PASSWORD')
+    if super_email or super_password:
+        if not super_email or not super_password or len(super_password) < 16:
+            raise RuntimeError('Configure SUPERADMIN_EMAIL e SUPERADMIN_PASSWORD (minimo 16 caracteres)')
+        cursor.execute('SELECT 1 FROM users WHERE email = ?', (super_email,))
+        if cursor.fetchone() is None:
+            password_hash = bcrypt.generate_password_hash(super_password).decode('utf-8')
+            cursor.execute(
+                'INSERT INTO users (nome, email, senha_hash, role, must_change_password) VALUES (?, ?, ?, ?, 1)',
+                ('Superadministrador', super_email, password_hash, 'superadmin'))
+            print('Superadministrador inicial criado com troca obrigatoria de senha')
     conn.commit()
     conn.close()
 
@@ -421,7 +439,7 @@ def index():
     """Página inicial - Login para não autenticados, Dashboard para autenticados"""
     # Se estiver autenticado, redireciona para dashboard
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('dashboard' if current_user.is_admin() else 'user_area'))
     
     # Se não estiver autenticado, redireciona para login
     return redirect(url_for('login'))
@@ -586,11 +604,14 @@ def login():
                 role=user_data['role'],
                 data_nascimento=user_data['data_nascimento'],
                 escolaridade=user_data['escolaridade'],
-                telefone=user_data['telefone']
+                telefone=user_data['telefone'],
+                must_change_password=user_data['must_change_password']
             )
             # Converte o valor do checkbox para booleano
             remember_me = request.form.get('remember') == 'on'
             login_user(user, remember=remember_me)
+            if user.must_change_password:
+                return redirect(url_for('change_password'))
             flash(f'Bem-vindo, {user.nome}!', 'success')
             
             next_page = request.args.get('next')
@@ -601,6 +622,46 @@ def login():
             flash('Email ou senha incorretos.', 'danger')
     
     return render_template('login.html')
+
+
+@app.before_request
+def require_password_rotation():
+    if (current_user.is_authenticated and current_user.must_change_password
+            and request.endpoint not in ('change_password', 'logout', 'static')):
+        return redirect(url_for('change_password'))
+
+
+@app.route('/alterar-senha', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current = request.form.get('senha_atual', '')
+        new = request.form.get('nova_senha', '')
+        confirm = request.form.get('confirmar_senha', '')
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            row = conn.execute('SELECT senha_hash FROM users WHERE id = ?', (current_user.id,)).fetchone()
+            if not row or not bcrypt.check_password_hash(row[0], current):
+                flash('Senha atual incorreta.', 'danger')
+            elif len(new) < 12:
+                flash('A nova senha deve ter pelo menos 12 caracteres.', 'danger')
+            elif new != confirm:
+                flash('As novas senhas nao conferem.', 'danger')
+            elif bcrypt.check_password_hash(row[0], new):
+                flash('A nova senha deve ser diferente da atual.', 'danger')
+            else:
+                password_hash = bcrypt.generate_password_hash(new).decode('utf-8')
+                conn.execute(
+                    'UPDATE users SET senha_hash = ?, must_change_password = 0 WHERE id = ?',
+                    (password_hash, current_user.id)
+                )
+                conn.commit()
+                flash('Senha alterada com sucesso.', 'success')
+                return redirect(url_for('dashboard' if current_user.is_admin() else 'user_area'))
+        finally:
+            conn.close()
+    return render_template('change_password.html', forced=current_user.must_change_password)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -1014,10 +1075,9 @@ def edit_test_questions(test_id):
 @app.route('/admin/testes/<int:test_id>/questoes/adicionar', methods=['POST'])
 @login_required
 @admin_required
-def add_question():
+def add_question(test_id):
     """Adiciona questão ao teste"""
     try:
-        test_id = request.form.get('test_id')
         enunciado = request.form.get('enunciado')
         tipo = request.form.get('tipo', 'text')
         opcoes = request.form.get('opcoes', '')
@@ -1121,16 +1181,15 @@ if __name__ == '__main__':
     init_db()
     
     # Configurações de ambiente
-    debug_mode = os.getenv('DEBUG_MODE', 'True').lower() == 'true'
+    debug_mode = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
     host = os.getenv('HOST', '127.0.0.1')
     port = int(os.getenv('PORT', 5000))
     
-    print("\n" + "="*60)
-    print("🚀 Servidor Flask Iniciado!")
-    print("="*60)
-    print(f"📍 URL: http://{host}:{port}/")
-    print(f"🔧 Debug Mode: {debug_mode}")
-    print(f"🔐 SECRET_KEY: {'Configurada via .env' if os.getenv('SECRET_KEY') else '⚠ Usando padrão (inseguro!)'}")
-    print("="*60 + "\n")
-    
+    print('\n' + '=' * 60)
+    print('Servidor Flask iniciado')
+    print('=' * 60)
+    print(f'URL: http://{host}:{port}/')
+    print(f'Debug mode: {debug_mode}')
+    print('SECRET_KEY: configurada')
+    print('=' * 60 + '\n')
     app.run(debug=debug_mode, host=host, port=port)

@@ -187,3 +187,22 @@ Este projeto foi desenvolvido para uso educacional e assistencial no contexto do
 ## 📞 Suporte
 
 Para questões sobre o formulário original ou o processo de identificação de Altas Habilidades/Superdotação, entre em contato com a Diretoria de Educação Inclusiva e Atendimentos Educacionais Especializados da SEEDF.
+
+## Inicializacao segura e testes (STI / 2026)
+
+- A aplicacao requer `SECRET_KEY` no `.env` (minimo de 32 caracteres).
+- `ADMIN_EMAIL` e `ADMIN_PASSWORD` sao opcionais para criar um administrador inicial; nao existem mais credenciais de administrador fixas no codigo.
+- `SUPERADMIN_EMAIL` e `SUPERADMIN_PASSWORD` (minimo 16 caracteres) habilitam a criacao de uma conta `superadmin`, com os privilegios administrativos existentes e troca de senha obrigatoria no primeiro acesso.
+- Uma conta ja existente nao e redefinida nem elevada pelo bootstrap; depois da primeira troca, remova **ambas** as variaveis `SUPERADMIN_*` do seu `.env`.
+- A inicializacao SQLite adiciona as tabelas de testes dinamicos e os campos que faltavam de forma repetivel, preservando respostas legadas. Nao execute migracoes diretamente em producao sem backup e teste.
+- O arquivo `.env` e o banco `.db` devem continuar fora do Git.
+
+Rodar os testes automaticos no ambiente do STI:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
+```
+
+Os testes usam bases temporarias e credenciais artificiais; nao usam respostas de pacientes reais.
+
+**Privacidade:** o repositorio continua incluindo `responses.xlsx`. Confirme que os dados nele sao ficticios antes de utilizar um repositorio publico.
