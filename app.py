@@ -1212,6 +1212,22 @@ def isolate_saas_sessions_from_legacy_sqlite():
             and request.endpoint not in ('static', 'logout', 'health_live', 'health_ready')):
         return ('Acesso exclusivo ao espaço SaaS.', 403)
 
+@app.before_request
+def restrict_legacy_routes_in_saas_primary_mode():
+    """Do not expose legacy SQLite application routes on the SaaS hostname.
+
+    Keep legacy code available for isolated rollback and local regression tests.
+    """
+    if os.getenv("SAAS_PRIMARY", "false").lower() != "true":
+        return None
+    if (request.path in ("/health/live", "/health/ready")
+            or request.path.startswith(("/saas/", "/static/"))):
+        return None
+    if request.method in ("GET", "HEAD"):
+        return redirect(url_for("saas.login"))
+    return ("Rota desativada no modo SaaS.", 404)
+
+
 # ==================== INICIALIZAÇÃO ====================
 if __name__ == '__main__':
     init_db()
