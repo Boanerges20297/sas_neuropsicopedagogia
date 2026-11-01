@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - M.I. Joca de Sousa Teixeira</title>
+    <title>Painel | Neuro-Diagnosis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard-v2.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
 </head>
-<body>
+<body class="neuro-dashboard">
     <nav class="modern-navbar">
         <div class="navbar-container">
             <a href="{{ url_for('dashboard') }}" class="navbar-brand">
                 <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo" class="navbar-logo">
                 <div class="brand-text">
                     <span class="brand-title">M.I. Joca de Sousa Teixeira</span>
-                    <span class="brand-subtitle">Neuropsicopedagoga</span>
+                    <span class="brand-subtitle">Neuro-Diagnosis · Neuropsicopedagogia</span>
                 </div>
             </a>
             <div class="navbar-menu">
@@ -62,15 +63,21 @@
     </nav>
     <main class="dashboard-main">
         <div class="dashboard-container">
-            <div class="dashboard-header">
+            <header class="dashboard-header">
                 <div class="header-content">
-                    <h1 class="dashboard-title">Dashboard Administrativo</h1>
-                    <p class="dashboard-subtitle">Visão geral do sistema de avaliações</p>
+                    <span class="dashboard-kicker">Painel de acompanhamento</span>
+                    <h1 class="dashboard-title">Cada trajetória merece <em>atenção.</em></h1>
+                    <p class="dashboard-subtitle">Bem-vindo(a) ao seu espaço de trabalho. Informações claras, ferramentas à mão e mais tempo para cuidar do que importa.</p>
+                    <div class="dashboard-hero-actions">
+                        <a href="{{ url_for('select_test') }}" class="dashboard-cta dashboard-cta--primary">✦ Iniciar avaliação <span aria-hidden="true">↗</span></a>
+                        <a href="{{ url_for('admin_responses') }}" class="dashboard-cta dashboard-cta--secondary">Ver respostas <span aria-hidden="true">→</span></a>
+                    </div>
                 </div>
+                <div class="dashboard-hero-art" aria-hidden="true"><img src="{{ url_for('static', filename='neuro-hero.svg') }}" alt=""></div>
                 <div class="header-actions">
-                    <button class="btn-icon" title="Atualizar" onclick="location.reload()"><span>🔄</span></button>
+                    <button type="button" class="btn-icon" title="Atualizar indicadores" aria-label="Atualizar indicadores" onclick="location.reload()">↻</button>
                 </div>
-            </div>
+            </header>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -81,9 +88,10 @@
                     {% endfor %}
                 {% endif %}
             {% endwith %}
+            <div class="dashboard-section-intro"><div><p class="dashboard-section-eyebrow">Visão geral</p><h2 class="dashboard-section-title">Indicadores em destaque</h2></div><p class="dashboard-section-note">Um retrato do seu acompanhamento</p></div>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">📊</div>
+                    <div class="stat-icon stat-icon--teal">📊</div>
                     <div class="stat-content">
                         <p class="stat-label">Total de Respostas</p>
                         <h2 class="stat-value">{{ stats.total_responses }}</h2>
@@ -91,7 +99,7 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">👥</div>
+                    <div class="stat-icon stat-icon--gold">👥</div>
                     <div class="stat-content">
                         <p class="stat-label">Usuários Cadastrados</p>
                         <h2 class="stat-value">{{ stats.total_users }}</h2>
@@ -99,7 +107,7 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">📋</div>
+                    <div class="stat-icon stat-icon--blue">📋</div>
                     <div class="stat-content">
                         <p class="stat-label">Tipos de Testes</p>
                         <h2 class="stat-value">{{ stats.test_types|length }}</h2>
@@ -107,35 +115,41 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">⏱️</div>
+                    <div class="stat-icon stat-icon--violet">⏱️</div>
                     <div class="stat-content">
                         <p class="stat-label">Última Resposta</p>
-                        <h2 class="stat-value" style="font-size: 18px;">{{ stats.last_response_date }}</h2>
+                        <h2 class="stat-value stat-value--date">{{ stats.last_response_date }}</h2>
                         <p class="stat-change">{{ stats.last_response_time }}</p>
                     </div>
                 </div>
             </div>
+            <div class="dashboard-section-intro"><div><p class="dashboard-section-eyebrow">Tendências</p><h2 class="dashboard-section-title">Os dados contam histórias</h2></div><p class="dashboard-section-note">Acompanhe o movimento das avaliações</p></div>
             <div class="charts-grid">
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3 class="chart-title">Distribuição por Tipo de Teste</h3>
+                        <div><h3 class="chart-title">Distribuição por tipo de teste</h3><p class="chart-caption">Como as respostas estão distribuídas</p></div>
                     </div>
                     <div class="chart-container">
-                        <canvas id="testTypesChart"></canvas>
+                        {% if stats.total_responses > 0 %}<canvas id="testTypesChart" aria-label="Distribuição das respostas por tipo de teste" role="img"></canvas>{% else %}
+                        <div class="chart-empty"><span class="chart-empty__icon" aria-hidden="true">✳</span><strong>Os primeiros dados começam aqui</strong><p>Assim que houver avaliações respondidas, a distribuição aparecerá neste espaço.</p><a href="{{ url_for('select_test') }}">Iniciar avaliação</a></div>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3 class="chart-title">Respostas nos Últimos 7 Dias</h3>
+                        <div><h3 class="chart-title">Atividade dos últimos 7 dias</h3><p class="chart-caption">Evolução dos registros recentes</p></div>
                     </div>
                     <div class="chart-container">
-                        <canvas id="dailyResponsesChart"></canvas>
+                        {% if stats.total_responses > 0 %}<canvas id="dailyResponsesChart" aria-label="Respostas dos últimos sete dias" role="img"></canvas>{% else %}
+                        <div class="chart-empty"><span class="chart-empty__icon" aria-hidden="true">✦</span><strong>Uma trajetória de cada vez</strong><p>A evolução semanal será exibida quando novas respostas forem registradas.</p></div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+            <div class="dashboard-section-intro"><div><p class="dashboard-section-eyebrow">Últimas atividades</p><h2 class="dashboard-section-title">Acompanhamento recente</h2></div></div>
             <div class="table-card">
                 <div class="table-header">
-                    <h3 class="table-title">Respostas Recentes</h3>
+                    <div><h3 class="table-title">Respostas recentes</h3><p class="table-caption">Últimos registros disponíveis para consulta</p></div>
                     <a href="{{ url_for('admin_responses') }}" class="btn-outline">Ver todas</a>
                 </div>
                 <div class="table-responsive">
@@ -158,14 +172,13 @@
                                     <td>{{ response.test_type }}</td>
                                     <td><span class="badge badge-success">Completo</span></td>
                                     <td>
-                                        <button class="btn-table-action" title="Visualizar">👁️</button>
-                                        <button class="btn-table-action" title="Exportar">📥</button>
+                                        <a class="btn-table-action" href="{{ url_for('view_response', response_id=response.id) }}" title="Abrir resposta">Ver detalhes <span aria-hidden="true">↗</span></a>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="empty-state"><p>📭 Nenhuma resposta encontrada</p></td>
+                                    <td colspan="5" class="empty-state"><p>✦ Nenhuma resposta ainda. As avaliações concluídas aparecerão aqui.</p></td>
                                 </tr>
                             {% endif %}
                         </tbody>

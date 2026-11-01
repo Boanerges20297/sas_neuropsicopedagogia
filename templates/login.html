@@ -62,7 +62,8 @@
                         <div role="alert" class="neuro-alert neuro-alert--{{ category if category in ['success','danger','info','warning'] else 'info' }}">{{ message }}</div>
                     {% endfor %}
                 {% endwith %}
-                <form class="neuro-access__form" method="POST" action="{{ url_for('login') }}">
+                <form class="neuro-access__form" method="POST" action="{{ url_for('saas.login') if saas_mode|default(false) else url_for('login') }}">
+                    {% if saas_mode|default(false) %}<input type="hidden" name="csrf_token" value="{{csrf_token}}">{% endif %}
                     <div class="neuro-field">
                         <label for="email">
                             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 7 8.5 7 8.5-7"/></svg>
@@ -90,7 +91,7 @@
                 </form>
                 <div class="neuro-access__bottom">
                     <div class="neuro-access__trust"><span aria-hidden="true">♢</span> Privacidade e cuidado em cada acesso</div>
-                    <p class="neuro-access__register">Não tem conta? <a href="{{ url_for('register') }}">Criar cadastro</a></p>
+                    <p class="neuro-access__register">Não tem conta? <a href="{{ url_for('saas.register') if saas_mode|default(false) else url_for('register') }}">{{ 'Cadastro profissional' if saas_mode|default(false) else 'Criar cadastro' }}</a></p>
                 </div>
                 <div class="neuro-access__help" id="neuro-ajuda" tabindex="-1">
                     <strong>Precisa recuperar o acesso?</strong>

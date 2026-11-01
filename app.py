@@ -178,6 +178,9 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
+    if isinstance(user_id, str) and user_id.startswith("saas:"):
+        from saas_store import get_user
+        return get_user(user_id[5:])
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -1194,6 +1197,20 @@ def delete_question(test_id, question_id):
 def user_area():
     """Área do usuário comum"""
     return render_template('user_area.html')
+
+# SaaS MySQL routes remain separate from existing SQLite paths during migration.
+from saas_routes import bp as saas_blueprint
+app.register_blueprint(saas_blueprint)
+
+@app.before_request
+def isolate_saas_sessions_from_legacy_sqlite():
+    """Never allow MySQL identities to authorize legacy SQLite routes."""
+    from saas_store import SaaSUser
+    if (current_user.is_authenticated
+            and isinstance(current_user._get_current_object(), SaaSUser)
+            and request.blueprint != 'saas'
+            and request.endpoint not in ('static', 'logout', 'health_live', 'health_ready')):
+        return ('Acesso exclusivo ao espaço SaaS.', 403)
 
 # ==================== INICIALIZAÇÃO ====================
 if __name__ == '__main__':

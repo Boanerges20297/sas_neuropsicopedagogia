@@ -1,0 +1,204 @@
+/* Neuro-Diagnosis — dashboard visual system. Scoped: no changes to other administrative screens. */
+body.neuro-dashboard, body.neuro-dashboard * { box-sizing: border-box; }
+body.neuro-dashboard {
+    margin: 0;
+    color: #16414a;
+    background: #eef8f7;
+    font-family: 'Segoe UI', Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.neuro-dashboard .modern-navbar {
+    background: #fff;
+    border-bottom: 1px solid #dcece9;
+    box-shadow: 0 3px 18px rgba(8,83,88,.06);
+}
+.neuro-dashboard .navbar-container { max-width: 1500px; min-height: 78px; gap: 18px; }
+.neuro-dashboard .navbar-brand { color: #0b5157; }
+.neuro-dashboard .navbar-brand:hover { color: #087f7c; transform: none; }
+.neuro-dashboard .navbar-logo { border: 2px solid #e4f7f2; border-radius: 15px; box-shadow: none; }
+.neuro-dashboard .brand-title { color: #0c575c; font-size: 15px; }
+.neuro-dashboard .brand-subtitle { color: #76908e; font-size: 11px; }
+.neuro-dashboard .navbar-menu { gap: 4px; }
+.neuro-dashboard .nav-item { color: #56737b; font-size: 12.5px; padding: 10px 11px; border-radius: 11px; }
+.neuro-dashboard .nav-item:hover { background: #e8f8f5; color: #086f71; transform: none; }
+.neuro-dashboard .nav-item.active { background: #dff5ef; color: #056d71; box-shadow: none; }
+.neuro-dashboard .nav-item.active::after { background: #10a996; bottom: -1px; height: 2px; }
+.neuro-dashboard .nav-icon { font-size: 16px; }
+.neuro-dashboard .user-btn { background: #f1faf8; color: #15535a; border: 1px solid #d6eae8; padding: 6px 10px; }
+.neuro-dashboard .user-btn:hover { background: #e8f7f4; transform: none; border-color: #9bd6cc; }
+.neuro-dashboard .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #097f7d, #18b6a2); box-shadow: none; }
+.neuro-dashboard .user-name { color: #28555b; font-size: 12px; max-width: 105px; }
+.neuro-dashboard .dropdown-arrow { color: #527c7d; }
+.neuro-dashboard .dashboard-main {
+    min-height: calc(100dvh - 78px);
+    padding: clamp(20px, 3vw, 38px) 20px 68px;
+    background:
+        radial-gradient(circle at 3% 2%, rgba(133,226,211,.21), transparent 35%),
+        linear-gradient(180deg, #f1faf8 0%, #f7fbfa 48%, #eef8f6 100%);
+}
+.neuro-dashboard .dashboard-container { max-width: 1400px; }
+.neuro-dashboard .dashboard-header {
+    isolation: isolate;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 254px;
+    margin-bottom: 29px;
+    border-radius: 29px;
+    padding: clamp(25px, 3.2vw, 48px);
+    background:
+        radial-gradient(circle at 83% 15%, rgba(87,246,209,.29), transparent 30%),
+        linear-gradient(118deg, #075762 0%, #07767b 53%, #149a96 100%);
+    box-shadow: 0 18px 46px rgba(0,85,90,.14);
+}
+.neuro-dashboard .dashboard-header::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    right: -8%; top: -55%;
+    width: 50%; aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(215,255,249,.16);
+    box-shadow: 0 0 0 50px rgba(231,255,247,.04), 0 0 0 100px rgba(231,255,247,.035);
+    pointer-events: none;
+}
+.neuro-dashboard .header-content { max-width: 690px; position: relative; z-index: 2; }
+.neuro-dashboard .dashboard-kicker {
+    display: inline-flex; align-items: center; gap: 9px;
+    margin-bottom: 13px; color: #d6fff1; font-size: 12px;
+    text-transform: uppercase; letter-spacing: .1em; font-weight: 800;
+}
+.neuro-dashboard .dashboard-kicker::before {
+    content: ''; width: 23px; height: 3px; background: #ffdc77; border-radius: 4px;
+}
+.neuro-dashboard .dashboard-title {
+    margin: 0 0 12px; color: white; font-size: clamp(28px, 3.1vw, 45px);
+    line-height: 1.1; font-weight: 800; letter-spacing: -.042em;
+}
+.neuro-dashboard .dashboard-title em { color: #ffda82; font-style: normal; }
+.neuro-dashboard .dashboard-subtitle { color: #e1faf6; font-size: 15px; line-height: 1.6; max-width: 550px; margin: 0; }
+.neuro-dashboard .dashboard-hero-actions { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 23px; }
+.neuro-dashboard .dashboard-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    text-decoration: none; font-size: 13px; font-weight: 750; padding: 12px 18px;
+    border-radius: 12px; transition: transform .18s, background .18s;
+}
+.neuro-dashboard .dashboard-cta:hover { transform: translateY(-2px); }
+.neuro-dashboard .dashboard-cta--primary { color: #075b62; background: #fff; box-shadow: 0 8px 20px rgba(0,43,50,.12); }
+.neuro-dashboard .dashboard-cta--secondary { color: #fff; background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.35); }
+.neuro-dashboard .dashboard-hero-art {
+    position: absolute; width: min(29%, 330px); right: 7%; bottom: -32%;
+    pointer-events: none; opacity: .92;
+}
+.neuro-dashboard .dashboard-hero-art img { width: 100%; display: block; filter: drop-shadow(0 12px 25px rgba(1,48,51,.20)); }
+.neuro-dashboard .header-actions { position: absolute; z-index: 3; right: 19px; top: 18px; }
+.neuro-dashboard .btn-icon { width: 40px; height: 40px; background: rgba(255,255,255,.13); color: #fff; border: 1px solid rgba(255,255,255,.28); border-radius: 12px; }
+.neuro-dashboard .btn-icon:hover { background: rgba(255,255,255,.24); border-color: rgba(255,255,255,.5); transform: none; }
+.neuro-dashboard .dashboard-section-intro { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin: 0 0 18px; }
+.neuro-dashboard .dashboard-section-eyebrow { color: #0e9a8b; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; margin: 0 0 6px; }
+.neuro-dashboard .dashboard-section-title { margin: 0; color: #114f56; font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.025em; }
+.neuro-dashboard .dashboard-section-note { color: #67838a; font-size: 13px; margin: 0; }
+.neuro-dashboard .stats-grid { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 17px; margin-bottom: 36px; }
+.neuro-dashboard .stat-card {
+    min-width: 0; min-height: 182px; display: flex; flex-direction: column;
+    align-items: flex-start; justify-content: space-between; gap: 15px;
+    padding: 23px; background: #fff; border: 1px solid #e3f1ee;
+    border-radius: 21px; box-shadow: 0 8px 25px rgba(21,85,87,.045);
+}
+.neuro-dashboard .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(4,88,89,.09); }
+.neuro-dashboard .stat-icon { width: 47px; height: 47px; font-size: 23px; border-radius: 14px; }
+.neuro-dashboard .stat-icon--teal { background: #e3f8f3; color: #06877f; }
+.neuro-dashboard .stat-icon--gold { background: #fff4d9; color: #ac7428; }
+.neuro-dashboard .stat-icon--blue { background: #e5f4fd; color: #337ba9; }
+.neuro-dashboard .stat-icon--violet { background: #f0ecff; color: #7564a8; }
+.neuro-dashboard .stat-content { width: 100%; }
+.neuro-dashboard .stat-label { margin-bottom: 5px; font-weight: 650; font-size: 12px; color: #637e86; }
+.neuro-dashboard .stat-value { font-size: clamp(25px, 2.4vw, 34px); line-height: 1.15; font-weight: 800; color: #0e4d55; letter-spacing: -.045em; }
+.neuro-dashboard .stat-value--date { font-size: clamp(17px, 1.45vw, 22px); letter-spacing: -.02em; }
+.neuro-dashboard .stat-change { font-size: 12px; color: #769197; margin: 0; }
+.neuro-dashboard .stat-change.positive { color: #14876f; }
+.neuro-dashboard .charts-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; margin-bottom: 28px; }
+.neuro-dashboard .chart-card, .neuro-dashboard .table-card {
+    min-width: 0; border: 1px solid #e3f0ed; background: #fff;
+    border-radius: 23px; box-shadow: 0 8px 30px rgba(21,85,87,.045);
+    padding: clamp(20px, 2.5vw, 29px);
+}
+.neuro-dashboard .chart-header { align-items: flex-start; margin-bottom: 20px; }
+.neuro-dashboard .chart-title, .neuro-dashboard .table-title { color: #104e55; font-size: 19px; font-weight: 800; letter-spacing: -.025em; margin: 0; }
+.neuro-dashboard .chart-caption, .neuro-dashboard .table-caption { font-size: 12px; margin: 6px 0 0; color: #7a9297; line-height: 1.5; }
+.neuro-dashboard .chart-container { height: 285px; }
+.neuro-dashboard .chart-empty {
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    gap: 11px; text-align: center; height: 100%;
+    background: linear-gradient(160deg, #f0faf8, #fbfefd); border: 1px dashed #c5e6dc;
+    border-radius: 17px; padding: 22px; color: #617c82;
+}
+.neuro-dashboard .chart-empty__icon { font-size: 29px; }
+.neuro-dashboard .chart-empty strong { color: #0d5b61; font-size: 15px; }
+.neuro-dashboard .chart-empty p { margin: 0; font-size: 12px; line-height: 1.5; max-width: 290px; }
+.neuro-dashboard .chart-empty a { color: #087f7a; font-size: 13px; font-weight: 700; text-underline-offset: 3px; }
+.neuro-dashboard .table-card { padding: 0; overflow: hidden; }
+.neuro-dashboard .table-header { padding: 26px 28px 19px; margin: 0; }
+.neuro-dashboard .btn-outline { border: 1px solid #b5e1d7; color: #087f78; background: #edfaf6; padding: 10px 15px; }
+.neuro-dashboard .btn-outline:hover { color: #fff; background: #087e78; border-color: #087e78; }
+.neuro-dashboard .modern-table thead th { background: #f2faf8; color: #617d82; padding: 15px 20px; font-size: 11px; }
+.neuro-dashboard .modern-table tbody td { border-color: #eaf2f0; padding: 15px 20px; color: #294c54; }
+.neuro-dashboard .modern-table tbody tr:hover { background: #f7fbfa; }
+.neuro-dashboard .badge-id { background: #e9f5f1; color: #147c74; }
+.neuro-dashboard .badge-success { color: #1b856c; background: #e8f7ef; }
+.neuro-dashboard .btn-table-action {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 11px; border-radius: 9px; background: #e9f8f4;
+    text-decoration: none; font-size: 12px; font-weight: 750; color: #087f79;
+}
+.neuro-dashboard .btn-table-action:hover { color: #065d60; background: #d2f2e9; transform: none; }
+.neuro-dashboard .empty-state { padding: 36px 18px; }
+.neuro-dashboard .empty-state p { color: #66838a; font-size: 14px; }
+.neuro-dashboard a:focus-visible, .neuro-dashboard button:focus-visible { outline: 3px solid #f3be59; outline-offset: 3px; }
+@media (max-width: 1250px) {
+    .neuro-dashboard .navbar-container { flex-wrap: wrap; justify-content: space-between; padding-block: 12px; }
+    .neuro-dashboard .navbar-menu { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+    .neuro-dashboard .dashboard-hero-art { right: 2%; width: 27%; opacity: .7; }
+}
+@media (max-width: 960px) {
+    .neuro-dashboard .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .neuro-dashboard .charts-grid { grid-template-columns: 1fr; }
+    .neuro-dashboard .dashboard-hero-art { opacity: .3; right: -2%; width: 34%; }
+    .neuro-dashboard .header-content { max-width: 90%; }
+}
+@media (max-width: 640px) {
+    .neuro-dashboard .navbar-container { padding: 11px 15px; gap: 10px; min-height: 0; height: auto; }
+    .neuro-dashboard .navbar-menu { overflow-x: auto; flex-wrap: nowrap; width: 100%; justify-content: flex-start; padding: 4px 0; scrollbar-width: thin; }
+    .neuro-dashboard .nav-item { padding: 9px 10px; font-size: 12px; }
+    .neuro-dashboard .user-name { display: none; }
+    .neuro-dashboard .dashboard-main { padding: 15px 12px 44px; }
+    .neuro-dashboard .dashboard-header { min-height: 250px; border-radius: 21px; padding: 24px 20px; }
+    .neuro-dashboard .dashboard-title { font-size: 29px; }
+    .neuro-dashboard .dashboard-subtitle { font-size: 13px; }
+    .neuro-dashboard .dashboard-hero-art { width: 49%; opacity: .13; right: -5%; }
+    .neuro-dashboard .header-content { max-width: 100%; }
+    .neuro-dashboard .header-actions { top: 10px; right: 10px; }
+    .neuro-dashboard .btn-icon { width: 32px; height: 32px; font-size: 14px; }
+    .neuro-dashboard .dashboard-kicker { padding-right: 38px; }
+    .neuro-dashboard .dashboard-hero-actions { gap: 8px; }
+    .neuro-dashboard .dashboard-cta { padding: 10px 12px; font-size: 12px; }
+    .neuro-dashboard .stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+    .neuro-dashboard .stat-card { min-height: 156px; padding: 15px; border-radius: 17px; }
+    .neuro-dashboard .stat-icon { width: 39px; height: 39px; font-size: 18px; }
+    .neuro-dashboard .stat-value { font-size: 27px; }
+    .neuro-dashboard .stat-value--date { font-size: 17px; overflow-wrap: anywhere; }
+    .neuro-dashboard .chart-card, .neuro-dashboard .table-card { border-radius: 19px; }
+    .neuro-dashboard .table-header { padding: 20px 18px 15px; }
+    .neuro-dashboard .modern-table thead th, .neuro-dashboard .modern-table tbody td { padding: 13px 14px; }
+    .neuro-dashboard .dashboard-section-intro { align-items: flex-start; flex-direction: column; gap: 6px; }
+    .neuro-dashboard .dashboard-section-title { font-size: 20px; }
+}
+@media (max-width: 370px) {
+    .neuro-dashboard .stats-grid { grid-template-columns: 1fr; }
+    .neuro-dashboard .stat-card { min-height: 130px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .neuro-dashboard *, .neuro-dashboard *::before, .neuro-dashboard *::after { animation: none !important; transition: none !important; }
+}

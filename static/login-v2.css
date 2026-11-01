@@ -419,3 +419,72 @@ body.neuro-login {
 @media (prefers-reduced-motion: reduce) {
     .neuro-login *, .neuro-login *::before, .neuro-login *::after { animation: none !important; transition: none !important; }
 }
+
+
+/* Viewport-fit: preserve the approved look without forcing a second screen. */
+@media (min-width: 861px) {
+    body.neuro-login { height: 100vh; height: 100dvh; overflow: hidden; }
+    .neuro-login-shell { height: 100vh; height: 100dvh; min-height: 0; }
+    .neuro-brand { min-height: 0; padding: clamp(19px, 3vh, 38px) clamp(25px, 3vw, 58px); }
+    .neuro-brand__mark { width: clamp(48px, 7vh, 63px); height: clamp(48px, 7vh, 63px); border-radius: 18px; }
+    .neuro-brand__mark svg { width: 78%; height: 78%; }
+    .neuro-brand__name { font-size: clamp(25px, 2.3vw, 37px); }
+    .neuro-brand__story { width: min(61%, 550px); margin-top: clamp(20px, 4.6vh, 62px); }
+    .neuro-brand__story h1 { font-size: clamp(29px, 3vw, 49px); }
+    .neuro-brand__description { margin-top: clamp(12px, 2vh, 22px); font-size: clamp(13px, 1.1vw, 17px); line-height: 1.5; }
+    .neuro-brand__illustration { width: min(43%, 390px); top: 23%; }
+    .neuro-brand__benefits { padding-top: clamp(8px, 1.8vh, 25px); margin-bottom: clamp(24px, 4vh, 52px); gap: 10px; }
+    .neuro-benefit { min-height: clamp(82px, 13vh, 122px); padding: 10px 8px; gap: 5px; border-radius: 18px; font-size: clamp(11px, 1vw, 14px); }
+    .neuro-benefit__icon { width: 42px; height: 40px; font-size: 23px; }
+    .neuro-access { min-height: 0; padding: clamp(12px, 2.5vh, 36px) clamp(18px, 2.8vw, 48px); }
+    .neuro-access__card { max-width: 530px; padding: clamp(20px, 3vh, 38px); border-radius: 28px; }
+    .neuro-access__welcome { margin-bottom: clamp(16px, 2.5vh, 28px); }
+    .neuro-access__welcome-tag { margin-bottom: 9px; }
+    .neuro-access__welcome h2 { font-size: clamp(29px, 2.6vw, 40px); margin-bottom: 6px; }
+    .neuro-access__form { gap: clamp(12px, 2vh, 18px); }
+    .neuro-field { gap: 7px; }
+    .neuro-field > input, .neuro-password > input { height: clamp(44px, 6.4vh, 56px); }
+    .neuro-submit { height: clamp(46px, 6.6vh, 56px); font-size: 18px; }
+    .neuro-access__bottom { margin-top: clamp(11px, 2vh, 23px); }
+    .neuro-access__register { margin-top: 8px; }
+}
+@media (min-width: 861px) and (max-height: 720px) {
+    .neuro-brand__story { margin-top: 16px; }
+    .neuro-brand__story h1 { font-size: clamp(27px, 2.55vw, 41px); }
+    .neuro-brand__description { margin-top: 9px; line-height: 1.35; }
+    .neuro-brand__benefits { margin-bottom: 20px; padding-top: 8px; }
+    .neuro-benefit { min-height: 76px; }
+    .neuro-benefit__icon { width: 33px; height: 32px; font-size: 19px; }
+    .neuro-access__card { padding: 18px 25px; }
+    .neuro-access__welcome { margin-bottom: 12px; }
+    .neuro-access__options { margin-bottom: 0; }
+}
+@media (min-width: 861px) and (max-height: 560px) {
+    body.neuro-login { height: auto; overflow-y: auto; }
+    .neuro-login-shell { height: auto; min-height: 560px; }
+}
+@media (max-width: 860px) {
+    .neuro-login-shell { min-height: 100dvh; grid-template-rows: auto 1fr; }
+    .neuro-brand { min-height: 0; height: clamp(86px, 14dvh, 114px); padding: 15px 23px 24px; justify-content: center; }
+    .neuro-brand__mark { width: 48px; height: 48px; border-radius: 14px; }
+    .neuro-brand__mark svg { width: 39px; height: 39px; }
+    .neuro-brand__story, .neuro-brand__illustration, .neuro-brand__benefits { display: none; }
+    .neuro-brand::after { height: 26px; bottom: -14px; }
+    .neuro-access { min-height: 0; margin-top: -9px; padding: 12px 16px 20px; background: linear-gradient(145deg, #ddf8f3, #f4fefd); }
+    .neuro-access__card { max-width: 530px; padding: clamp(20px, 3vh, 30px); }
+    .neuro-access__welcome { margin-bottom: 19px; }
+    .neuro-access__form { gap: 15px; }
+    .neuro-access__bottom { margin-top: 17px; }
+    .neuro-access__register { margin-top: 9px; }
+}
+@media (max-width: 520px) {
+    .neuro-brand__name { font-size: 23px; }
+    .neuro-access__card { padding: 20px 19px; }
+    .neuro-access__welcome h2 { font-size: 27px; }
+    .neuro-field > input, .neuro-password > input { height: 49px; }
+    .neuro-submit { height: 50px; font-size: 18px; }
+    .neuro-access__form { gap: 13px; }
+}
+@media (max-width: 370px) {
+    .neuro-access__options { gap: 8px; }
+}

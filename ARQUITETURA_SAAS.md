@@ -45,5 +45,12 @@ Documentos/anexos devem possuir tenant_id, acesso autenticado e regra de retenç
 **Fase D — aprovação:** fila administrativa, status, justificativas e trilhas de auditoria. Separação rigorosa de superadmin e admin.
 **Fase E — privacidade/produção:** revisão de questionários públicos, dados sensíveis no repositório, backups e adequação jurídica/profissional; homologação e só então publicação por pipeline autorizado.
 ### Estado atual confirmado em código
-A aplicação Flask atual usa `users.role` para `user`, `admin` e `superadmin`. O método `is_admin()` trata `admin` e `superadmin` de forma equivalente; não existem tenants, clientes/profissionais isolados ou uma fila de aprovação. Rotas administrativas globais acessam `responses` sem tenant. A fundação SaaS **ainda não está implementada**.
-Este documento representa um **contrato de direção**, não a afirmação de que o SaaS já possui isolamento efetivo.
+A aplicação Flask atual usa `users.role` para `user`, `admin` e `superadmin`. O método `is_admin()` trata `admin` e `superadmin` de forma equivalente; não existem tenants, clientes/profissionais isolados ou uma fila de aprovação. Rotas administrativas globais acessam `responses` sem tenant. A fundação SaaS MySQL está implementada em `saas_routes.py` / `saas_store.py` (cadastro pendente, aprovação administrativa e isolamento básico por tenant). As rotas clínicas legadas em SQLite ainda precisam de migração e validação.
+Este documento representa um **contrato de direção**. O isolamento clínico completo permanece dependente da migração das rotas legadas.
+
+## 7. Acesso administrativo permanente (decisão de 01/11/2026)
+- Contas `admin` e `superadmin` **ativas e autenticadas no MySQL** possuem acesso permanente, independente de licença, trial, expiração ou disponibilidade da BTA.
+- A exceção dispensa somente o licenciamento; não dispensa autenticação, controle de papel, escopo de tenant e auditoria.
+- Profissionais comuns continuam sujeitos à licença BTA e nunca recebem a exceção.
+- O painel deve identificar o acesso como **administrativo permanente**, sem representar licença BTA fictícia.
+- Regra implementada e testada no notebook; publicar e validar separadamente na VPS.

@@ -41,3 +41,6 @@ backup_*/
 # Never commit production credentials or environment-specific secrets.
 .env.*
 !.env.production.example
+
+# Private S2S signing keys - never commit
+.secrets/
