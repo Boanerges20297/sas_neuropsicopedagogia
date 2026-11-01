@@ -23,6 +23,7 @@ services:
       BTA_PRIVATE_KEY_PATH: /run/neuro-keys/neuro-prod-v2-private.pem
       BTA_TRIAL_PACKAGE_CODE: experimentar-14-dias
       DEBUG_MODE: "false"
+      HOME: /tmp
     volumes:
       - neuro_data:/var/lib/neuro-diagnosis
       - /etc/neuro-diagnosis/keys:/run/neuro-keys:ro
