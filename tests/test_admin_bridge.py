@@ -1,6 +1,6 @@
 """Offline checks for encrypted admin transport, without production credentials."""
 import base64
-from contextlib import redirect_stdout
+from contextlib import closing, redirect_stdout
 from io import StringIO
 import json
 import sqlite3
@@ -54,7 +54,7 @@ class AdminBridgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             db = root / "local.sqlite"
-            with sqlite3.connect(str(db)) as conn:
+            with closing(sqlite3.connect(str(db))) as conn:
                 conn.execute("CREATE TABLE users(nome TEXT,email TEXT,senha_hash TEXT,role TEXT,must_change_password INTEGER)")
             with self.assertRaises(SystemExit):
                 export_admin(db, root / "nonexistent.pem")
