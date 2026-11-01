@@ -1,7 +1,7 @@
 # Neuro-Diagnosis: pipeline canonico (fase de construcao)
 ## Fonte da verdade
 - Repositorio: Boanerges20297/sas_neuropsicopedagogia
-- Branch publicavel: main (historico Django preservado; nao aplicar o Flask sem integracao aprovada).
+- Branch canonica: main, com a aplicacao Flask como unica base de desenvolvimento.
 - Alteracoes funcionais ficam em branches; a main so recebe codigo validado.
 - Nao usar GitHub Actions.
 - Nao usar acesso direto a VPS para publicacao normal.
@@ -26,7 +26,7 @@ O watcher nao deve reagir a um push comum.
 - Qualquer ausencia de chave, token ou arquivo de autorizacao
   deve bloquear o runner.
 ## Ambiente Flask
-- Branch nao publica. Nenhuma instalacao da infraestrutura ocorreu ainda.
+- Codigo Flask na main. Nenhuma instalacao da infraestrutura de publicacao foi confirmada.
 - App executado por Gunicorn; /health/live e /health/ready sem dados clinicos.
 - Dados ficam em volume persistente Docker; imagens nao incluem bancos,
   planilhas, PDFs, .env ou outros arquivos pessoais.
@@ -65,6 +65,6 @@ O watcher nao deve reagir a um push comum.
 - Inspecao estrutural impede Docker socket e GitHub Actions.
 - Teste real de forced-command, smoke e rollback apenas em homologacao.
 ## Situacao do trabalho
-Esta branch e um conjunto de arquivos em preparacao e NAO significa que
-existe runner instalado, gateway habilitado ou deploy publicado.
-Revisar codigo e permissoes antes de mergear na main.
+O codigo Flask esta na main canonica. Isso NAO significa que existe
+runner instalado, gateway habilitado ou deploy publicado.
+Antes da primeira publicacao, validar infraestrutura, testes e permissoes.
