@@ -38,3 +38,6 @@ Thumbs.db
 # Backups
 backup_*/
 *.bak
+# Never commit production credentials or environment-specific secrets.
+.env.*
+!.env.production.example

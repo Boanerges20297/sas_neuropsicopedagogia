@@ -1,0 +1,84 @@
+name: neuro-diagnosis
+x-app-env: &app-env
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+  DATABASE_NAME: /var/lib/neuro-diagnosis/app_database.db
+  DEBUG_MODE: "false"
+services:
+  web:
+    build: .
+    image: neuro-diagnosis:local
+    container_name: neuro-diagnosis-web
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=64m
+    environment: *app-env
+    volumes:
+      - neuro_data:/var/lib/neuro-diagnosis
+    ports:
+      - "127.0.0.1:8781:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [neuro_internal]
+  migrate:
+    profiles: [ops]
+    image: neuro-diagnosis:local
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=32m
+    environment:
+      <<: *app-env
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-}
+    volumes:
+      - neuro_data:/var/lib/neuro-diagnosis
+    command: ["python", "-c", "from app import init_db; init_db()"]
+    networks: [neuro_internal]
+  runner:
+    profiles: [workbench]
+    build:
+      context: ./infra/runner
+    image: neuro-diagnosis-runner:1
+    container_name: neuro-diagnosis-runner
+    restart: unless-stopped
+    user: "10001:10001"
+    working_dir: /work
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    cpus: 1
+    mem_limit: 1g
+    memswap_limit: 1536m
+    environment:
+      NEURO_PIPELINE_EXECUTOR: neuro-diagnosis-runner
+      NEURO_PIPELINE_POLL_SECONDS: "60"
+      NEURO_STATUS_ISSUE: "${NEURO_STATUS_ISSUE:-}"
+    volumes:
+      - neuro_runner_work:/work
+      - neuro_runner_home:/home/runner
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [neuro_runner_egress]
+networks:
+  neuro_internal:
+    internal: true
+  neuro_runner_egress:
+volumes:
+  neuro_data:
+  neuro_runner_work:
+  neuro_runner_home:

@@ -580,6 +580,25 @@ def submit_test_response(test_id):
         return redirect(url_for('take_test', test_id=test_id))
 
 # ==================== ROTAS DE AUTENTICAÇÃO ====================
+@app.route('/health/live', methods=['GET'])
+def health_live():
+    # No patient information or database queries in liveness.
+    return jsonify({"status": "live"})
+@app.route('/health/ready', methods=['GET'])
+def health_ready():
+    # SQLite schema readiness, read-only. No auto-migration on incoming traffic.
+    try:
+        with sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=3) as conn:
+            present = {
+                row[0] for row in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+        if {"users", "responses", "tests", "test_categories", "questions", "question_responses"}.issubset(present):
+            return jsonify({"status": "ready"})
+    except (sqlite3.Error, OSError, ValueError):
+        pass
+    return jsonify({"status": "unavailable"}), 503
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:

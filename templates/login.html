@@ -2,114 +2,116 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - M.I. Joca de Sousa Teixeira Neuropsicopedagoga</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#046a71">
+    <meta name="description" content="Neuro-Diagnosis: avaliações, aprendizagem e acompanhamento neuropsicopedagógico.">
+    <title>Entrar | Neuro-Diagnosis</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login-v2.css') }}">
 </head>
-<body class="login-page">
-    <div class="login-container">
-        <div class="login-box">
-            <!-- Lado Esquerdo - Showcase da Logo -->
-            <div class="login-left">
-                <div class="login-logo-large">
-                    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="M.I. Joca de Sousa Teixeira Neuropsicopedagoga">
-                </div>
-                <div class="login-welcome">
-                    <h2>Bem-vindo!</h2>
-                    <p>Sistema de Avaliações Cognitivas e Aprendizado</p>
-                    <p>M.I. Joca de Sousa Teixeira Neuropsicopedagoga</p>
-                </div>
-                <div class="login-features">
-                    <div class="feature-item">
-                        <div class="feature-icon">🔒</div>
-                        <span>Acesso seguro e criptografado</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">📊</div>
-                        <span>Dashboard com estatísticas completas</span>
-                    </div>
-                    <div class="feature-item">
-                        <div class="feature-icon">👥</div>
-                        <span>Gestão de pacientes e respostas</span>
-                    </div>
+<body class="neuro-login">
+    <main class="neuro-login-shell">
+        <section class="neuro-brand" aria-labelledby="neuro-brand-title">
+            <div class="neuro-brand__glow" aria-hidden="true"></div>
+            <div class="neuro-brand__identity">
+                <span class="neuro-brand__mark" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" fill="none" focusable="false">
+                        <path d="M23.5 8.5c-4.4-5-12-1.3-12 3.9-5.8 0-7.5 6.1-4.7 9.8-4.5 4.4-1.2 10.6 4.5 10.5.4 5.4 7.9 8 11.2 3.9l4 4 4-4c3.6 3.4 10.8 1.5 11.2-4 6 .1 9.1-6.3 4.4-10.5 3-4-1-10.2-6.1-9.8.1-5.6-8.3-9-12-3.9Z" stroke="#e6ffef" stroke-width="2.5" stroke-linejoin="round"/>
+                        <path d="M24 9v15M11 22h9m7 0h10M24 24v11" stroke="#e6ffef" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M24 22c-2.3-4-8.3-.9-6.2 3 1.3 2.5 6.2 5.9 6.2 5.9s4.9-3.4 6.2-5.9c2.1-3.9-3.9-7-6.2-3Z" fill="#ffd264"/>
+                    </svg>
+                </span>
+                <div>
+                    <span class="neuro-brand__name">Neuro-Diagnosis</span>
+                    <span class="neuro-brand__eyebrow">Neuropsicopedagogia</span>
                 </div>
             </div>
-
-            <!-- Lado Direito - Formulário de Login -->
-            <div class="login-right">
-                <div class="login-header">
-                    <h1>Entrar</h1>
+            <div class="neuro-brand__story">
+                <p class="neuro-brand__kicker"><span></span> Um espaço para cuidar e aprender</p>
+                <h1 id="neuro-brand-title">Avaliação, análise e acompanhamento do <em>aprendizado.</em></h1>
+                <p class="neuro-brand__description">Uma plataforma para profissionais acompanharem cada trajetória com sensibilidade, organização e segurança.</p>
+            </div>
+            <div class="neuro-brand__illustration">
+                <img src="{{ url_for('static', filename='neuro-hero.svg') }}" alt="Ilustração de um cérebro colorido com coração, apoiado sobre livros" width="600" height="530">
+            </div>
+            <div class="neuro-brand__benefits" aria-label="Recursos da plataforma">
+                <div class="neuro-benefit">
+                    <span class="neuro-benefit__icon" aria-hidden="true">🔐</span>
+                    <span>Acesso seguro e protegido</span>
+                </div>
+                <div class="neuro-benefit">
+                    <span class="neuro-benefit__icon" aria-hidden="true">📊</span>
+                    <span>Indicadores para acompanhar</span>
+                </div>
+                <div class="neuro-benefit">
+                    <span class="neuro-benefit__icon" aria-hidden="true">🤝</span>
+                    <span>Cuidado individualizado</span>
+                </div>
+            </div>
+            <div class="neuro-brand__wave" aria-hidden="true"></div>
+        </section>
+        <section class="neuro-access" aria-labelledby="neuro-access-title">
+            <div class="neuro-access__card">
+                <div class="neuro-access__welcome">
+                    <span class="neuro-access__welcome-tag">Seu espaço está aqui <span aria-hidden="true">✦</span></span>
+                    <h2 id="neuro-access-title">Bem-vindo(a)! <span aria-hidden="true">👋</span></h2>
                     <p>Acesse sua conta para continuar</p>
                 </div>
-
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="login-alert alert-{{ category }}">
-                                {% if category == 'success' %}
-                                    <span>✓</span>
-                                {% elif category == 'danger' %}
-                                    <span>⚠</span>
-                                {% else %}
-                                    <span>ℹ</span>
-                                {% endif %}
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
+                    {% for category, message in messages %}
+                        <div role="alert" class="neuro-alert neuro-alert--{{ category if category in ['success','danger','info','warning'] else 'info' }}">{{ message }}</div>
+                    {% endfor %}
                 {% endwith %}
-
-                <form method="POST" action="{{ url_for('login') }}" class="login-form">
-                    <div class="form-group">
-                        <label for="email">E-mail</label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            placeholder="seu.email@exemplo.com"
-                            required 
-                            autocomplete="email"
-                            autofocus
-                        >
+                <form class="neuro-access__form" method="POST" action="{{ url_for('login') }}">
+                    <div class="neuro-field">
+                        <label for="email">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 7 8.5 7 8.5-7"/></svg>
+                            E-mail
+                        </label>
+                        <input id="email" name="email" type="email" placeholder="seu.email@exemplo.com" required autocomplete="email" autocapitalize="none" spellcheck="false" autofocus>
                     </div>
-
-                    <div class="form-group">
-                        <label for="senha">Senha</label>
-                        <input 
-                            type="password" 
-                            id="senha" 
-                            name="senha" 
-                            placeholder="••••••••"
-                            required 
-                            autocomplete="current-password"
-                        >
-                    </div>
-
-                    <div class="remember-row">
-                        <div class="remember-checkbox">
-                            <input type="checkbox" id="remember" name="remember">
-                            <label for="remember">Lembrar de mim</label>
+                    <div class="neuro-field">
+                        <label for="senha">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                            Senha
+                        </label>
+                        <div class="neuro-password">
+                            <input id="senha" name="senha" type="password" placeholder="Sua senha" required autocomplete="current-password">
+                            <button type="button" id="neuro-toggle-password" class="neuro-password__toggle" aria-label="Mostrar senha" aria-pressed="false" aria-controls="senha">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
                         </div>
-                        <a href="#" class="forgot-link">Esqueceu a senha?</a>
                     </div>
-
-                    <button type="submit" class="login-button">Entrar</button>
+                    <div class="neuro-access__options">
+                        <label class="neuro-remember"><input type="checkbox" name="remember"><span>Lembrar meu acesso</span></label>
+                        <a href="#neuro-ajuda" class="neuro-forgot">Esqueci minha senha</a>
+                    </div>
+                    <button class="neuro-submit" type="submit"><span>Entrar</span><span aria-hidden="true">→</span></button>
                 </form>
-
-                <div class="divider">
-                    <span>OU</span>
+                <div class="neuro-access__bottom">
+                    <div class="neuro-access__trust"><span aria-hidden="true">♢</span> Privacidade e cuidado em cada acesso</div>
+                    <p class="neuro-access__register">Não tem conta? <a href="{{ url_for('register') }}">Criar cadastro</a></p>
                 </div>
-
-                <div class="register-prompt">
-                    Não tem uma conta? 
-                    <a href="{{ url_for('register') }}">Cadastre-se gratuitamente</a>
-                </div>
-
-                <div class="back-to-home">
-                    <a href="{{ url_for('index') }}">← Voltar ao formulário</a>
+                <div class="neuro-access__help" id="neuro-ajuda" tabindex="-1">
+                    <strong>Precisa recuperar o acesso?</strong>
+                    <p>Por segurança, solicite a redefinição da senha à administração da plataforma.</p>
+                    <a href="#neuro-access-title">Voltar ao login</a>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
+    <script>
+    (function () {
+        const button = document.getElementById('neuro-toggle-password');
+        const field = document.getElementById('senha');
+        if (!button || !field) return;
+        button.addEventListener('click', function () {
+            const willShow = field.type === 'password';
+            field.type = willShow ? 'text' : 'password';
+            button.setAttribute('aria-pressed', String(willShow));
+            button.setAttribute('aria-label', willShow ? 'Ocultar senha' : 'Mostrar senha');
+        });
+    }());
+    </script>
 </body>
 </html>

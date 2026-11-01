@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 530" role="img" aria-labelledby="title description">
+<title id="title">Cérebro colorido apoiado em livros</title>
+<desc id="description">Uma ilustração de aprendizagem e cuidado representada por um cérebro luminoso, livros e lápis.</desc>
+<defs>
+<linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#42f5e5"/><stop offset="1" stop-color="#087f95"/></linearGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe88d"/><stop offset="1" stop-color="#ffb32e"/></linearGradient>
+<linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffa5ca"/><stop offset="1" stop-color="#f277aa"/></linearGradient>
+<linearGradient id="violet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c2a6ff"/><stop offset="1" stop-color="#8970ce"/></linearGradient>
+<linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#32d3cb"/><stop offset="1" stop-color="#075f77"/></linearGradient>
+<filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="11"/></filter>
+<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="brain">
+<path d="M290 95c-30-28-84-17-98 14-31-13-68 7-73 43-39 5-59 44-43 77-27 33-13 71 22 87-1 41 41 64 73 46 32 28 75 20 94-12 26 25 66 15 82-13 35 11 72-15 70-51 35-13 52-54 32-84 17-36-8-74-43-78-17-37-71-46-102-20l-14-9Z"/>
+</clipPath>
+</defs>
+<ellipse cx="287" cy="486" rx="230" ry="28" fill="#003c4a" opacity=".38" filter="url(#shadow)"/>
+<g transform="rotate(-4 285 428)">
+<path d="M119 402h324c18 0 25 11 24 23l-5 40c-2 12-10 17-25 17H122c-17 0-24-12-23-25v-34c0-14 8-21 20-21Z" fill="#0e556a"/>
+<path d="M127 410h324c14 0 16 8 11 16H127v40h323v9H126c-13 0-19-7-19-20v-28c0-10 5-17 20-17Z" fill="#15939a"/>
+<path d="M136 428h319v36H135c-8-10-8-27 1-36Z" fill="#f7e8bf"/>
+<path d="M146 440h305m-304 11h304" stroke="#dfcfad" stroke-width="3"/>
+<path d="M126 409h317" stroke="#64f2d4" stroke-width="8" stroke-linecap="round"/>
+</g>
+<g transform="rotate(4 285 376)">
+<path d="M103 363h341c16 0 23 12 23 23v38c0 17-10 23-25 23H103c-15 0-22-8-22-22v-40c0-15 8-22 22-22Z" fill="#bd6588"/>
+<path d="M110 370h330c14 0 20 6 19 15H113v41h335v11H111c-13 0-20-6-20-19v-26c0-15 5-22 19-22Z" fill="#f18cae"/>
+<path d="M118 387h331v36H120c-10-12-11-27-2-36Z" fill="#fff1d3"/>
+<path d="M123 395h320m-320 10h319m-317 10h318" stroke="#e6d6b7" stroke-width="2"/>
+</g>
+<g>
+<path d="m392 357 2-85 15-1-3 85Z" fill="#fedc6e"/>
+<path d="m394 273 8-25 7 24Z" fill="#fff0c6"/><path d="m399 254 3-7 3 7Z" fill="#775444"/>
+<path d="m417 359 12-87 15 3-12 86Z" fill="#54e5e2"/>
+<path d="m429 273 11-23 4 25Z" fill="#fff0c6"/><path d="m436 256 4-7 2 9Z" fill="#775444"/>
+<path d="m445 357-7-84 16-1 8 83Z" fill="#f6abc9"/>
+<path d="m438 273 5-26 11 24Z" fill="#fff0c6"/><path d="m443 255 3-9 4 8Z" fill="#775444"/>
+<path d="M380 337q1-23 23-23h61q22 0 22 23l-10 72h-85Z" fill="#f3aa78"/>
+<path d="M434 365c-8-17-27-6-24 6 3 15 24 27 24 27s22-14 25-27c3-13-15-22-25-6Z" fill="none" stroke="#ffe8b6" stroke-width="5"/>
+</g>
+<g clip-path="url(#brain)">
+<rect x="64" y="85" width="230" height="188" fill="url(#cyan)"/>
+<rect x="293" y="75" width="180" height="190" fill="url(#gold)"/>
+<rect x="66" y="262" width="227" height="163" fill="url(#violet)"/>
+<rect x="293" y="258" width="177" height="159" fill="url(#pink)"/>
+<path d="M290 93v74q40-25 55 8c15 30-20 51-55 32v52m0 1v106m-207-109h85q-14-31 17-42c30-10 50 20 31 42h78m0 0h78q-14-31 18-44c28-9 45 21 28 44h58" fill="none" stroke="#e8fff2" stroke-width="7" opacity=".84"/>
+<g fill="none" stroke="#d5fff8" opacity=".55" stroke-width="4" stroke-linecap="round"><path d="M123 148q-24 16-17 41m74-61q-14 7-15 22m185-40q25-7 39 18m-286 167q11 18 29 14m68 40q19 10 31-5m100-5q24 6 35-15"/></g>
+</g>
+<path d="M290 95c-30-28-84-17-98 14-31-13-68 7-73 43-39 5-59 44-43 77-27 33-13 71 22 87-1 41 41 64 73 46 32 28 75 20 94-12 26 25 66 15 82-13 35 11 72-15 70-51 35-13 52-54 32-84 17-36-8-74-43-78-17-37-71-46-102-20l-14-9Z" fill="none" stroke="#d3fff1" stroke-width="8" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>
+<path d="M276 225c-22-31-53-9-49 17 4 24 30 43 49 57 21-17 45-34 49-57 4-27-28-48-49-17Z" fill="#fff1b3" filter="url(#glow)"/>
+<path d="M276 237c-11-16-28-6-25 8 2 12 15 23 25 31 11-9 23-19 25-31 3-14-14-24-25-8Z" fill="#0b6875"/>
+<path d="m410 72 10-27m12 44 24-20m-8 42 28-1" fill="none" stroke="#ffe18a" stroke-width="7" stroke-linecap="round"/>
+<circle cx="69" cy="122" r="4" fill="#7cfbeb"/><circle cx="460" cy="188" r="3" fill="#ffda7f"/><circle cx="50" cy="328" r="4" fill="#a3e7e8"/>
+</svg>

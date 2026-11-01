@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+SHA="${1:-}"
+ROOT=/opt/neuro-diagnosis
+ENV=/etc/neuro-diagnosis/production.env
+APPROVAL=/etc/neuro-diagnosis/host-approved
+STATE=/var/lib/neuro-diagnosis/deployed-sha
+COMPOSE=docker-compose.production.yml
+[[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || exit 64
+[[ -f "$APPROVAL" && -f "$ENV" && -d "$ROOT/.git" ]] || {
+  echo NEURO_HOST_NOT_BOOTSTRAPPED >&2
+  exit 73
+}
+cd "$ROOT"
+[[ "$(git remote get-url origin)" == git@github.com:Boanerges20297/sas_neuropsicopedagogia.git ]] || exit 70
+[[ -z "$(git status --porcelain)" ]] || exit 70
+git fetch --quiet origin main
+git cat-file -e "${SHA}^{commit}"
+git merge-base --is-ancestor "$SHA" origin/main
+PREVIOUS="$(git rev-parse HEAD)"
+ROLLBACK=1
+restore_code() {
+  [[ "$ROLLBACK" == 1 ]] || return 0
+  echo "NEURO_ROLLBACK_CODE=$PREVIOUS" >&2
+  git checkout -f "$PREVIOUS" || true
+  docker compose --env-file "$ENV" -f "$COMPOSE" up -d --build web || true
+}
+trap restore_code EXIT
+git checkout -f "$SHA"
+docker compose --env-file "$ENV" -f "$COMPOSE" config --quiet
+docker compose --env-file "$ENV" -f "$COMPOSE" build web
+# Backup of the existing SQLite database, validated before migration.
+docker compose --env-file "$ENV" -f "$COMPOSE" run --rm --no-deps --entrypoint python migrate -c '
+import sqlite3, pathlib, datetime
+p=pathlib.Path("/var/lib/neuro-diagnosis/app_database.db")
+assert p.is_file() and p.stat().st_size>0, "Production DB missing: manual bootstrap required"
+b=p.parent/"backups"
+b.mkdir(mode=0o700, exist_ok=True)
+t=b/("before-release-"+datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d-%H%M%S-%f")+".db")
+with sqlite3.connect(str(p)) as src, sqlite3.connect(str(t)) as dst:
+    assert src.execute("PRAGMA integrity_check").fetchone()[0]=="ok"
+    src.backup(dst)
+with sqlite3.connect(str(t)) as check:
+    assert check.execute("PRAGMA integrity_check").fetchone()[0]=="ok"
+print("NEURO_BACKUP_VERIFIED")
+'
+docker compose --env-file "$ENV" -f "$COMPOSE" run --rm --no-deps migrate
+docker compose --env-file "$ENV" -f "$COMPOSE" up -d web
+healthy=0
+for _ in $(seq 1 24); do
+  if curl --fail --silent --max-time 3 http://127.0.0.1:8781/health/ready >/dev/null; then
+    healthy=1
+    break
+  fi
+  sleep 5
+done
+[[ "$healthy" == 1 ]] || exit 1
+install -d -m 0755 "$(dirname "$STATE")"
+printf '%s\n' "$SHA" >"${STATE}.tmp"
+mv -f "${STATE}.tmp" "$STATE"
+ROLLBACK=0
+printf 'NEURO_DEPLOY_OK sha=%s\n' "$SHA"

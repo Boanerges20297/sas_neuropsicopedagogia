@@ -1,0 +1,9 @@
+# Linux runner and host scripts must not be converted to CRLF on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+infra/runner/Dockerfile text eol=lf
+infra/host/* text eol=lf
+*.py text eol=lf
+*.md text
+*.yml text eol=lf
+*.json text eol=lf
