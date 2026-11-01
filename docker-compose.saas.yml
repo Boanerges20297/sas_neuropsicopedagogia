@@ -51,7 +51,7 @@ services:
     user: "0:0"
     read_only: true
     cap_drop: [ALL]
-    cap_add: [CHOWN]
+    cap_add: [CHOWN, DAC_OVERRIDE]
     security_opt: [no-new-privileges:true]
     env_file: [/etc/neuro-diagnosis/flask.env]
     environment:
