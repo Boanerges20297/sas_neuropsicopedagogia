@@ -33,11 +33,13 @@ services:
     labels:
       - traefik.enable=${NEURO_TRAEFIK_ENABLED:-false}
       - traefik.docker.network=neuro-diagnosis_neuro-diagnosis-network
-      - traefik.http.routers.neuro-diagnosis.rule=Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)
-      - traefik.http.routers.neuro-diagnosis.entrypoints=websecure
-      - traefik.http.routers.neuro-diagnosis.tls=true
-      - traefik.http.routers.neuro-diagnosis.tls.certresolver=letsencrypt
-      - traefik.http.services.neuro-diagnosis.loadbalancer.server.port=8000
+      - traefik.http.routers.neuro-flask.rule=Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)
+      - traefik.http.routers.neuro-flask.entrypoints=websecure
+      - traefik.http.routers.neuro-flask.tls=true
+      - traefik.http.routers.neuro-flask.tls.certresolver=letsencrypt
+      - traefik.http.routers.neuro-flask.priority=1000
+      - traefik.http.routers.neuro-flask.service=neuro-flask
+      - traefik.http.services.neuro-flask.loadbalancer.server.port=8000
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; [urllib.request.urlopen('http://127.0.0.1:8000'+path,timeout=3).close() for path in ('/health/ready','/saas/saude')]"]
       interval: 20s
