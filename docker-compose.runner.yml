@@ -19,7 +19,7 @@ services:
     environment:
       NEURO_PIPELINE_EXECUTOR: neuro-diagnosis-runner
       NEURO_PIPELINE_POLL_SECONDS: "60"
-      NEURO_STATUS_ISSUE: "${NEURO_STATUS_ISSUE:-}"
+      NEURO_STATUS_ISSUE: "${NEURO_STATUS_ISSUE:-2}"
     volumes:
       - /var/lib/neuro-pipeline/work:/work
       - /var/lib/neuro-pipeline/home:/home/runner
