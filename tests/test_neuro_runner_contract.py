@@ -1,0 +1,44 @@
+"""Static safety checks for the isolated Neuro-Diagnosis SaaS release runner."""
+from pathlib import Path
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class RunnerSecurityContractTests(unittest.TestCase):
+    def test_runner_compose_isolated_from_mysql_and_docker_socket(self):
+        config = (ROOT / "docker-compose.runner.yml").read_text(encoding="utf-8")
+        for expected in ("neuro-diagnosis-runner", "user: \"10001:10001\"",
+                         "read_only: true", "no-new-privileges:true",
+                         "/var/lib/neuro-pipeline/work:/work",
+                         "/var/lib/neuro-pipeline/home:/home/runner"):
+            self.assertIn(expected, config)
+        for forbidden in ("/var/run/docker.sock", "privileged: true",
+                          "/etc/neuro-diagnosis/flask.env",
+                          "MYSQL_PASSWORD", "neuro-diagnosis-db"):
+            self.assertNotIn(forbidden, config)
+
+    def test_unrequested_commits_never_trigger_deploy(self):
+        watcher = (ROOT / "scripts/runner-watch.sh").read_text(encoding="utf-8")
+        self.assertIn(".release/request.json", watcher)
+        self.assertIn('git diff --quiet "$parent" "$sha" -- .release/request.json', watcher)
+        self.assertIn("scripts/runner-release.sh", watcher)
+
+    def test_gateway_requires_exact_sha_and_explicit_host_approval(self):
+        gateway = (ROOT / "infra/host/neuro-host-gateway").read_text(encoding="utf-8")
+        deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(encoding="utf-8")
+        self.assertIn("SSH_ORIGINAL_COMMAND", gateway)
+        self.assertIn("NEURO_GATEWAY_DENIED", gateway)
+        self.assertIn("^[0-9a-f]{40}$", deploy)
+        self.assertIn("/etc/neuro-diagnosis/host-approved", deploy)
+        self.assertIn("mysql_saas_profile_migration.sql", deploy)
+        self.assertIn("mysqldump", deploy)
+
+    def test_repository_is_public_read_only_for_runner(self):
+        entry = (ROOT / "infra/runner/runner-entrypoint.sh").read_text(encoding="utf-8")
+        self.assertIn("https://github.com/Boanerges20297/sas_neuropsicopedagogia.git", entry)
+        self.assertNotIn("gh auth", entry)
+
+
+if __name__ == "__main__":
+    unittest.main()
