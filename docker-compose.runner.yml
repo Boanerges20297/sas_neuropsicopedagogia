@@ -1,0 +1,29 @@
+name: neuro-pipeline
+services:
+  runner:
+    build:
+      context: ./infra/runner
+    image: neuro-diagnosis-runner:1
+    container_name: neuro-diagnosis-runner
+    restart: unless-stopped
+    user: "10001:10001"
+    working_dir: /work
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    cpus: 1.0
+    mem_limit: 768m
+    memswap_limit: 1g
+    environment:
+      NEURO_PIPELINE_EXECUTOR: neuro-diagnosis-runner
+      NEURO_PIPELINE_POLL_SECONDS: "60"
+      NEURO_STATUS_ISSUE: "${NEURO_STATUS_ISSUE:-}"
+    volumes:
+      - /var/lib/neuro-pipeline/work:/work
+      - /var/lib/neuro-pipeline/home:/home/runner
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=128m
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
