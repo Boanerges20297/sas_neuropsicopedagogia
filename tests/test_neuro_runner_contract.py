@@ -34,6 +34,15 @@ class RunnerSecurityContractTests(unittest.TestCase):
         self.assertIn("mysql_saas_profile_migration.sql", deploy)
         self.assertIn("mysqldump", deploy)
 
+    def test_issue_observability_reserves_one_issue_without_leaking_token(self):
+        compose = (ROOT / "docker-compose.runner.yml").read_text(encoding="utf-8")
+        observer = (ROOT / "scripts/runner-observe.sh").read_text(encoding="utf-8")
+        self.assertIn('NEURO_STATUS_ISSUE: "${NEURO_STATUS_ISSUE:-2}"', compose)
+        self.assertIn('TOKEN_FILE=/home/runner/.config/neuro-diagnosis/issue-token', observer)
+        self.assertIn("curl --config -", observer)
+        self.assertIn("Authorization: Bearer %s", observer)
+        self.assertNotIn('-H "Authorization: Bearer $TOKEN"', observer)
+
     def test_repository_is_public_read_only_for_runner(self):
         entry = (ROOT / "infra/runner/runner-entrypoint.sh").read_text(encoding="utf-8")
         self.assertIn("https://github.com/Boanerges20297/sas_neuropsicopedagogia.git", entry)
