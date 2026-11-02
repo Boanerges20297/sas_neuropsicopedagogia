@@ -1,4 +1,7 @@
 # Neuro-Diagnosis: pipeline canonico (fase de construcao)
+
+> **AVISO 2026-11-01:** Esta documentacao descreve um pipeline ainda NAO instalado. A producao usa Flask em `docker-compose.saas.yml`, nao `docker-compose.production.yml`. O runner Neuro-Diagnosis nao apareceu na auditoria dos containers. O script host novo e `infra/host/deploy-neuro-diagnosis-saas.sh` e precisa ser instalado/testado antes de releases automatizados. Django foi removido da VPS.
+
 ## Fonte da verdade
 - Repositorio: Boanerges20297/sas_neuropsicopedagogia
 - Branch canonica: main, com a aplicacao Flask como unica base de desenvolvimento.

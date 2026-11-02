@@ -6,6 +6,7 @@ Never print email, password hashes, plaintext or transport private keys.
 This script is passed to container stdin; it is NOT baked into the web image.
 """
 import base64
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -28,7 +29,7 @@ def unb64(data):
 
 def export_admin(db_path, public_key_path):
     source = Path(db_path).resolve()
-    with sqlite3.connect("file:" + source.as_posix() + "?mode=ro", uri=True) as conn:
+    with closing(sqlite3.connect("file:" + source.as_posix() + "?mode=ro", uri=True)) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
             "SELECT nome,email,senha_hash,role,must_change_password "

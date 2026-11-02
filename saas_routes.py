@@ -27,10 +27,13 @@ def is_saas_account():
 
 @bp.before_request
 def guard_saas_identity():
-    if request.endpoint in ("saas.login","saas.register","saas.health"):
+    if request.endpoint in ("saas.login", "saas.register", "saas.health"):
         return None
     if current_user.is_authenticated and not is_saas_account():
         abort(403)
+    if (is_saas_account() and current_user.must_change_password
+            and request.endpoint not in ("saas.profile", "saas.profile_password", "saas.logout")):
+        return redirect(url_for("saas.profile"))
     return None
 
 
@@ -83,7 +86,7 @@ def licensed_tenant():
 @bp.route("/cadastro",methods=["GET","POST"])
 def register():
     if is_saas_account():
-        return redirect(url_for("saas.dashboard"))
+        return redirect(url_for("saas.profile" if current_user.must_change_password else "saas.dashboard"))
     if current_user.is_authenticated:
         logout_user()
         session.clear()
@@ -94,7 +97,10 @@ def register():
         session["signup_last"]=time.time()
         name=request.form.get("nome","").strip()
         email=request.form.get("email","").strip().lower()
-        profession=request.form.get("profession","neuropsicopedagogo")
+        profession=request.form.get("profession","")
+        cpf=request.form.get("cpf","")
+        birth_date=request.form.get("birth_date","")
+        phone=request.form.get("phone","")
         registry=request.form.get("registry_code","").strip()
         password=request.form.get("senha","")
         confirmation=request.form.get("confirmar_senha","")
@@ -103,11 +109,11 @@ def register():
         else:
             try:
                 from app import bcrypt
-                store.register_professional(name,email,bcrypt.generate_password_hash(password).decode(),profession,registry)
+                store.register_professional(name,email,bcrypt.generate_password_hash(password).decode(),profession,registry,cpf,birth_date,phone)
                 flash("Cadastro recebido. A administradora deverá aprovar seu acesso; a licença será verificada separadamente.","success")
                 return redirect(url_for("saas.login"))
             except pymysql.err.IntegrityError:
-                flash("E-mail já cadastrado.","danger")
+                flash("E-mail ou CPF já cadastrado.","danger")
             except ValueError as exc:
                 flash(str(exc),"danger")
     return render_template("saas_register.html",csrf_token=csrf())
@@ -116,7 +122,7 @@ def register():
 @bp.route("/entrar",methods=["GET","POST"])
 def login():
     if is_saas_account():
-        return redirect(url_for("saas.dashboard"))
+        return redirect(url_for("saas.profile" if current_user.must_change_password else "saas.dashboard"))
     if current_user.is_authenticated:
         logout_user()
         session.clear()
@@ -133,7 +139,7 @@ def login():
             session["saas_auth"]=True
             session.pop("login_failures",None)
             session.pop("login_blocked_until",None)
-            return redirect(url_for("saas.dashboard"))
+            return redirect(url_for("saas.profile" if user.must_change_password else "saas.dashboard"))
         failures=int(session.get("login_failures",0))+1
         session["login_failures"]=failures
         if failures>=8:
@@ -250,6 +256,10 @@ def tests():
                                message="Instrumentos indisponíveis sem licença BTA válida."),403
     return render_template("saas_tests.html",tenant=tenant,
                            tests=store.list_visible_tests(current_user.id,tenant["id"]))
+
+
+from saas_profile_routes import register_profile_routes
+register_profile_routes(bp)
 
 
 @bp.route("/saude")

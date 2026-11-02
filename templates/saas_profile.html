@@ -1,0 +1,42 @@
+{% extends "saas_base.html" %}
+{% block title %}Minha conta | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro"><span class="saas-kicker">Minha conta</span><h1>Dados do perfil e acesso</h1>
+<p>Atualize seus dados e proteja seu acesso com uma senha exclusiva.</p></div>
+{% if forced %}
+<section class="saas-card"><h2>Primeiro acesso: altere sua senha</h2>
+<p>Por segurança, defina uma senha pessoal antes de utilizar o sistema.</p></section>
+{% else %}
+<section class="saas-card saas-form-card">
+<h2>Informações pessoais e profissionais</h2>
+<form method="post" action="{{ url_for('saas.profile') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label for="nome">Nome completo</label><input id="nome" name="nome" maxlength="160" autocomplete="name" required value="{{ profile.nome }}">
+<label for="email">E-mail</label><input id="email" name="email" type="email" maxlength="254" autocomplete="email" required value="{{ profile.email }}">
+<label for="cpf">CPF {% if profile.cpf_masked != 'Não informado' %}<small>(atual: {{ profile.cpf_masked }})</small>{% endif %}</label>
+<input id="cpf" name="cpf" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="Informe para cadastrar ou substituir" {% if profile.cpf_masked == 'Não informado' and profile.global_role == 'professional' %}required{% endif %}>
+<label for="profession">Área de atuação</label>
+<select id="profession" name="profession"><option value="">Selecione a área</option>
+{% for key,label in areas.items() %}<option value="{{key}}" {% if profile.practice_area==key %}selected{% endif %}>{{label}}</option>{% endfor %}</select>
+<label for="birth_date">Data de nascimento</label>
+<input id="birth_date" name="birth_date" type="date" value="{{ profile.birth_date or '' }}">
+<label for="phone">Telefone com DDD</label>
+<input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="15" value="{{ profile.phone_display }}" placeholder="(85) 99999-9999" autocomplete="tel-national">
+<label for="senha_atual">Senha atual para confirmar alterações</label>
+<input id="senha_atual" name="senha_atual" type="password" autocomplete="current-password" required>
+<button class="saas-btn" type="submit">Salvar dados</button></form></section>
+{% endif %}
+<section class="saas-card saas-form-card">
+<h2>{{ 'Definir nova senha' if forced else 'Alterar senha' }}</h2>
+<form method="post" action="{{ url_for('saas.profile_password') }}">
+<input type="hidden" name="csrf_token" value="{{csrf_token}}">
+<label for="senha_troca">Senha {{ 'temporária' if forced else 'atual' }}</label>
+<input id="senha_troca" name="senha_atual" type="password" required autocomplete="current-password">
+<label for="nova_senha">Nova senha (mínimo 12 caracteres)</label>
+<input id="nova_senha" name="nova_senha" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+<label for="confirmar_senha">Confirmar nova senha</label>
+<input id="confirmar_senha" name="confirmar_senha" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+<button class="saas-btn" type="submit">Salvar nova senha</button>
+</form></section>
+<script src="{{ url_for('static',filename='saas-form-masks.js') }}" defer></script>
+{% endblock %}

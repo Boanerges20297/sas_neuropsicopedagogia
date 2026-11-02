@@ -648,7 +648,10 @@ def login():
 
 @app.before_request
 def require_password_rotation():
-    if (current_user.is_authenticated and current_user.must_change_password
+    from saas_store import SaaSUser
+    if (current_user.is_authenticated
+            and not isinstance(current_user._get_current_object(), SaaSUser)
+            and current_user.must_change_password
             and request.endpoint not in ('change_password', 'logout', 'static')):
         return redirect(url_for('change_password'))
 
@@ -1201,6 +1204,8 @@ def user_area():
 # SaaS MySQL routes remain separate from existing SQLite paths during migration.
 from saas_routes import bp as saas_blueprint
 app.register_blueprint(saas_blueprint)
+if os.getenv('SAAS_PRIMARY', 'false').lower() == 'true':
+    login_manager.login_view = 'saas.login'
 
 @app.before_request
 def isolate_saas_sessions_from_legacy_sqlite():

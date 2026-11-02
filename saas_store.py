@@ -98,13 +98,14 @@ def audit(cur, actor, tenant_id, action, resource_type, resource_id, outcome="al
         (actor, tenant_id, action, resource_type, resource_id, reason, outcome))
 
 
-def register_professional(nome, email, password_hash, profession, registry_code=""):
+def register_professional(nome, email, password_hash, profession, registry_code="",
+                          cpf="", birth_date="", phone=""):
+    from saas_profile_data import LEGACY_AREA, validate_details
     name = (nome or "").strip()
     mail = (email or "").strip().lower()
     if not name or len(name)>160 or len(mail)>254 or not EMAIL_RE.fullmatch(mail):
         raise ValueError("Nome ou e-mail inválido")
-    if profession not in ("psicologo", "neuropsicopedagogo", "outro"):
-        raise ValueError("Profissão inválida")
+    details = validate_details(cpf, profession, birth_date, phone)
     with transaction() as cur:
         cur.execute(
             """INSERT INTO users (nome,email,password_hash,global_role,active,must_change_password)
@@ -114,7 +115,13 @@ def register_professional(nome, email, password_hash, profession, registry_code=
         cur.execute(
             """INSERT INTO professional_profiles(user_id,profession,registry_code,verification_status)
                VALUES(%s,%s,%s,'pending')""",
-            (user_id, profession, (registry_code or "").strip()[:100] or None))
+            (user_id, LEGACY_AREA[profession], (registry_code or "").strip()[:100] or None))
+        cur.execute(
+            """INSERT INTO professional_details
+               (user_id,cpf_digest,cpf_encrypted,practice_area,birth_date,phone)
+               VALUES(%s,%s,%s,%s,%s,%s)""",
+            (user_id, details["cpf_digest"], details["cpf_encrypted"],
+             details["practice_area"], details["birth_date"], details["phone"]))
         slug = "prof-" + uuid4().hex
         cur.execute(
             """INSERT INTO tenants(nome,slug,owner_user_id,status)
@@ -223,14 +230,105 @@ def create_client(user_id, tenant_id, nome, email=None):
 
 
 def list_visible_tests(user_id,tenant_id):
+    # Verify membership here as well as at the route boundary. Otherwise a
+    # future caller could pass an arbitrary tenant_id and read private tests.
     return all_rows(
         """SELECT t.id,t.title,t.description,t.visibility,t.status,t.tenant_id
            FROM tests t
            WHERE t.active=1 AND t.status='approved'
              AND ((t.visibility='global' AND t.tenant_id IS NULL)
                OR (t.visibility='private' AND t.tenant_id=%s))
+             AND EXISTS (
+                 SELECT 1 FROM tenant_members m
+                 JOIN tenants tenant ON tenant.id=m.tenant_id
+                 WHERE m.tenant_id=%s AND m.user_id=%s
+                   AND m.status='active' AND tenant.status='active'
+             )
            ORDER BY t.title""",
-        (tenant_id,))
+        (tenant_id,tenant_id,user_id))
+
+
+def get_account_profile(user_id):
+    from saas_profile_data import masked_cpf, phone_display
+    profile = one(
+        """SELECT u.id,u.nome,u.email,u.global_role,u.must_change_password,
+                  d.practice_area,d.birth_date,d.phone,d.cpf_encrypted
+           FROM users u LEFT JOIN professional_details d ON d.user_id=u.id
+           WHERE u.id=%s AND u.active=1""", (user_id,))
+    if not profile:
+        raise ValueError("Conta não encontrada")
+    profile["cpf_masked"] = masked_cpf(profile.pop("cpf_encrypted"))
+    profile["phone_display"] = phone_display(profile.get("phone"))
+    return profile
+
+
+def update_account_profile(user_id, nome, email, *, cpf="", practice_area="",
+                           birth_date="", phone=""):
+    from saas_profile_data import LEGACY_AREA, validate_details
+    name = (nome or "").strip()
+    mail = (email or "").strip().lower()
+    if not name or len(name)>160 or len(mail)>254 or not EMAIL_RE.fullmatch(mail):
+        raise ValueError("Nome ou e-mail inválido")
+    with transaction() as cur:
+        cur.execute("SELECT id,global_role FROM users WHERE id=%s AND active=1 FOR UPDATE",
+                    (user_id,))
+        user = cur.fetchone()
+        if not user:
+            raise PermissionError("Conta inativa")
+        cur.execute("SELECT 1 FROM professional_details WHERE user_id=%s FOR UPDATE",
+                    (user_id,))
+        has_details = bool(cur.fetchone())
+        # Administrators imported before this schema have no mandatory professional
+        # identity yet. Existing professionals must provide complete updated details.
+        requested = any((cpf, practice_area, birth_date, phone))
+        if has_details or requested:
+            if not all((practice_area, birth_date, phone)) or (not has_details and not cpf):
+                raise ValueError("Preencha todos os dados profissionais")
+            from saas_profile_data import validate_area, validate_birth_date, validate_phone, prepare_cpf
+            practice_area = validate_area(practice_area)
+            birth = validate_birth_date(birth_date)
+            telephone = validate_phone(phone)
+            if cpf:
+                digest, encrypted = prepare_cpf(cpf)
+                cur.execute(
+                    "SELECT user_id FROM professional_details "
+                    "WHERE cpf_digest=%s AND user_id<>%s FOR UPDATE",
+                    (digest,user_id))
+                if cur.fetchone():
+                    raise ValueError("CPF já cadastrado")
+                if has_details:
+                    cur.execute(
+                        """UPDATE professional_details SET cpf_digest=%s,
+                           cpf_encrypted=%s,practice_area=%s,birth_date=%s,phone=%s
+                           WHERE user_id=%s""",
+                        (digest,encrypted,practice_area,birth,telephone,user_id))
+                else:
+                    cur.execute(
+                        """INSERT INTO professional_details
+                           (user_id,cpf_digest,cpf_encrypted,practice_area,birth_date,phone)
+                           VALUES (%s,%s,%s,%s,%s,%s)""",
+                        (user_id,digest,encrypted,practice_area,birth,telephone))
+            else:
+                cur.execute(
+                    """UPDATE professional_details SET practice_area=%s,
+                       birth_date=%s,phone=%s WHERE user_id=%s""",
+                    (practice_area,birth,telephone,user_id))
+            cur.execute("UPDATE professional_profiles SET profession=%s WHERE user_id=%s",
+                        (LEGACY_AREA[practice_area],user_id))
+        cur.execute("UPDATE users SET nome=%s,email=%s WHERE id=%s",
+                    (name,mail,user_id))
+        audit(cur,user_id,None,"account_profile_updated","user",user_id)
+
+
+def change_account_password(user_id, new_hash):
+    with transaction() as cur:
+        cur.execute("SELECT id FROM users WHERE id=%s AND active=1 FOR UPDATE", (user_id,))
+        if not cur.fetchone():
+            raise PermissionError("Conta inativa")
+        cur.execute(
+            "UPDATE users SET password_hash=%s,must_change_password=0 WHERE id=%s",
+            (new_hash,user_id))
+        audit(cur,user_id,None,"account_password_changed","user",user_id)
 
 
 def admin_global_stats():
