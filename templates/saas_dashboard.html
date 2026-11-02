@@ -1,1 +1,130 @@
-{% extends "saas_base.html" %}{% block title %}Painel profissional | Neuro-Diagnosis{% endblock %}{% block content %}<div class="saas-intro"><span class="saas-kicker">Meu espaço profissional</span><h1>Bem-vindo(a), {{ current_user.nome }}.</h1><p>Pacientes, instrumentos e avaliações do seu espaço, com controle de acesso e licenciamento independente.</p></div>{% if tenant %}<section class="saas-card"><div class="saas-card-header"><div><h2>{{ tenant.nome }}</h2><p>Seu espaço está {{ 'ativo' if tenant.status=='active' else 'pendente' }}.</p></div><span class="saas-chip">{{ tenant.status }}</span></div><p>{% if license and license.status == 'exempt' %}<strong>Acesso administrativo permanente:</strong> sem necessidade de licença BTA.{% else %}<strong>Licença BTA:</strong> {% if license and license.allowed %}Ativa ({{license.state}}){% elif license %}{{license.reason or license.status}}{% else %}Ainda não verificada{% endif %}{% endif %}</p>{% if license and license.allowed %}<div class="saas-actions"><a class="saas-btn" href="{{ url_for('saas.patients') }}">Meus pacientes</a><a class="saas-btn saas-btn--ghost" href="{{ url_for('saas.tests') }}">Instrumentos disponíveis</a></div>{% else %}<p class="saas-hint">O cadastro e os registros permanecem preservados enquanto a licença é validada.</p>{% endif %}</section>{% else %}<section class="saas-card"><h2>Aguardando ativação</h2><p>A administradora precisa aprovar seu espaço profissional.</p></section>{% endif %}{% if stats %}<section class="saas-grid"><div class="saas-card"><span>Profissionais</span><strong>{{stats.professionals}}</strong></div><div class="saas-card"><span>Cadastros pendentes</span><strong>{{stats.pending}}</strong></div><div class="saas-card"><span>Espaços ativos</span><strong>{{stats.active_tenants}}</strong></div><div class="saas-card"><span>Pacientes cadastrados</span><strong>{{stats.total_clients}}</strong></div></section><div class="saas-actions"><a class="saas-btn" href="{{ url_for('saas.professionals') }}">Analisar profissionais</a></div>{% endif %}{% endblock %}
+{% extends "saas_base.html" %}
+{% block title %}Painel | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='saas-dashboard.css') }}">
+{% endblock %}
+{% block content %}
+<div class="nd-dashboard">
+  <header class="nd-hero">
+    <div class="nd-hero-content">
+      <span class="nd-eyebrow"><span aria-hidden="true">✳</span> {{ 'VISÃO ADMINISTRATIVA' if stats else 'MEU ESPAÇO PROFISSIONAL' }}</span>
+      <h1>Seu trabalho, em <em>perspectiva.</em></h1>
+      <p>Olá, <strong>{{ current_user.nome }}</strong>. Uma visão clara do seu espaço, com tudo o que importa à mão.</p>
+      <div class="nd-hero-actions">
+        {% if current_user.is_admin() %}
+        <a class="nd-action nd-action--white" href="{{ url_for('saas.professionals') }}">Ver profissionais <span aria-hidden="true">↗</span></a>
+        {% elif tenant and license and license.allowed %}
+        <a class="nd-action nd-action--white" href="{{ url_for('saas.patients') }}">Meus pacientes <span aria-hidden="true">↗</span></a>
+        {% endif %}
+        <a class="nd-action nd-action--glass" href="{{ url_for('saas.profile') }}">Minha conta <span aria-hidden="true">→</span></a>
+      </div>
+      <span class="nd-hero-foot"><i aria-hidden="true"></i> {{ 'Central administrativa' if stats else 'Painel de acompanhamento' }}</span>
+    </div>
+    <div class="nd-hero-visual" aria-hidden="true">
+      <div class="nd-orbit nd-orbit--outer"></div><div class="nd-orbit nd-orbit--inner"></div>
+      <div class="nd-orb nd-orb--top">✧</div><div class="nd-orb nd-orb--bottom">+</div>
+      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="70" fill="#E8FFFA" fill-opacity=".12"/>
+        <path d="M62 107C45 75 71 48 96 58C117 38 152 58 145 90C167 111 143 145 117 142C93 162 56 141 62 107Z" stroke="#C9FFF3" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M100 59V142M80 78C87 84 94 87 100 89M123 76C113 84 107 92 100 100M73 113C85 112 91 116 100 123M132 116C117 114 110 119 100 130" stroke="#C9FFF3" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="80" cy="78" r="5" fill="#F6DE91"/><circle cx="123" cy="76" r="5" fill="#F6DE91"/>
+        <circle cx="73" cy="113" r="5" fill="#F6DE91"/><circle cx="132" cy="116" r="5" fill="#F6DE91"/>
+      </svg>
+    </div>
+  </header>
+
+  {% if stats %}
+  <section class="nd-section" aria-labelledby="nd-stats-title">
+    <div class="nd-section-heading">
+      <div><span class="nd-section-kicker">PANORAMA DA PLATAFORMA</span><h2 id="nd-stats-title">Indicadores em destaque</h2></div>
+      <a class="nd-textlink" href="{{ url_for('saas.professionals') }}">Gerenciar aprovações <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="nd-metrics">
+      <article class="nd-metric">
+        <span class="nd-metric-icon nd-metric-icon--teal" aria-hidden="true">♙</span>
+        <span class="nd-metric-label">Profissionais cadastrados</span><strong class="nd-metric-number">{{ stats.professionals }}</strong><span class="nd-metric-meta">Na plataforma</span>
+      </article>
+      <article class="nd-metric nd-metric--attention">
+        <span class="nd-metric-icon nd-metric-icon--amber" aria-hidden="true">◷</span>
+        <span class="nd-metric-label">Aguardando aprovação</span><strong class="nd-metric-number">{{ stats.pending }}</strong>
+        <span class="nd-metric-meta">{% if stats.pending %}Requerem análise{% else %}Nenhuma pendência agora{% endif %}</span>
+      </article>
+      <article class="nd-metric">
+        <span class="nd-metric-icon nd-metric-icon--blue" aria-hidden="true">▦</span>
+        <span class="nd-metric-label">Espaços ativos</span><strong class="nd-metric-number">{{ stats.active_tenants }}</strong><span class="nd-metric-meta">Ambientes habilitados</span>
+      </article>
+      <article class="nd-metric">
+        <span class="nd-metric-icon nd-metric-icon--violet" aria-hidden="true">♡</span>
+        <span class="nd-metric-label">Pacientes cadastrados</span><strong class="nd-metric-number">{{ stats.total_clients }}</strong><span class="nd-metric-meta">Total da plataforma</span>
+      </article>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="nd-workspace" aria-labelledby="nd-workspace-title">
+    <div class="nd-section-heading">
+      <div><span class="nd-section-kicker">CENTRAL DE TRABALHO</span><h2 id="nd-workspace-title">{{ 'Seu espaço e prioridades' if stats else 'Visão do seu espaço' }}</h2></div>
+    </div>
+    <div class="nd-workspace-grid">
+      <article class="nd-panel nd-panel--status">
+        <div class="nd-panel-overline">SITUAÇÃO DO ESPAÇO</div>
+        <div class="nd-status-top">
+          <div class="nd-space-icon" aria-hidden="true">✳</div>
+          {% if tenant or current_user.is_admin() %}
+          <span class="nd-state nd-state--active"><span aria-hidden="true">●</span> Ativo</span>
+          {% else %}
+          <span class="nd-state nd-state--pending"><span aria-hidden="true">●</span> Pendente</span>
+          {% endif %}
+        </div>
+        <h3>{{ tenant.nome if tenant else ('Administração da plataforma' if current_user.is_admin() else 'Aguardando ativação') }}</h3>
+        {% if tenant %}
+          <p>Seu espaço profissional está ativo e vinculado à sua conta.</p>
+          <div class="nd-license">
+            <div class="nd-license-symbol" aria-hidden="true">✓</div>
+            <div>
+              <strong>{% if license and license.status == 'exempt' %}Acesso administrativo permanente{% elif license and license.allowed %}Licença BTA válida{% else %}Licenciamento necessário{% endif %}</strong>
+              <span>{% if license and license.status == 'exempt' %}Sem necessidade de licença BTA{% elif license and license.allowed %}Situação: {{ license.state or license.status }}{% elif license %}{{ license.reason or license.status }}{% else %}Aguardando verificação de licença{% endif %}</span>
+            </div>
+          </div>
+        {% elif current_user.is_admin() %}
+          <p>Sua conta administra a plataforma. Um espaço clínico próprio não é necessário para aprovar profissionais e acompanhar cadastros.</p>
+          <div class="nd-license"><div class="nd-license-symbol" aria-hidden="true">✓</div><div><strong>Acesso administrativo permanente</strong><span>Independente de licenciamento BTA, com permissões administrativas preservadas.</span></div></div>
+        {% else %}
+          <p>Seu cadastro ou espaço ainda não foi ativado. Após a aprovação, as ferramentas profissionais poderão ser disponibilizadas conforme o licenciamento.</p>
+        {% endif %}
+      </article>
+      <article class="nd-panel nd-panel--shortcuts">
+        <div class="nd-panel-overline">ACESSO RÁPIDO</div>
+        <h3>Para onde vamos?</h3>
+        <p>Atalhos para as principais operações do dia a dia.</p>
+        <div class="nd-shortcut-list">
+          {% if tenant and license and license.allowed %}
+          <a class="nd-shortcut" href="{{ url_for('saas.patients') }}"><span class="nd-shortcut-icon nd-shortcut-icon--mint" aria-hidden="true">♡</span><span><strong>Pacientes</strong><small>Acessar seus registros</small></span><b aria-hidden="true">↗</b></a>
+          <a class="nd-shortcut" href="{{ url_for('saas.tests') }}"><span class="nd-shortcut-icon nd-shortcut-icon--blue" aria-hidden="true">✦</span><span><strong>Instrumentos</strong><small>Consultar testes disponíveis</small></span><b aria-hidden="true">↗</b></a>
+          {% endif %}
+          {% if current_user.is_admin() %}
+          <a class="nd-shortcut" href="{{ url_for('saas.professionals') }}"><span class="nd-shortcut-icon nd-shortcut-icon--gold" aria-hidden="true">◎</span><span><strong>Aprovações</strong><small>Gerenciar profissionais</small></span><b aria-hidden="true">↗</b></a>
+          {% endif %}
+          <a class="nd-shortcut" href="{{ url_for('saas.profile') }}"><span class="nd-shortcut-icon nd-shortcut-icon--violet" aria-hidden="true">⚙</span><span><strong>Minha conta</strong><small>Perfil, e-mail e senha</small></span><b aria-hidden="true">↗</b></a>
+        </div>
+      </article>
+    </div>
+  </section>
+  {% if stats %}
+  <section class="nd-insights" aria-label="Acompanhamento administrativo">
+    <article class="nd-panel nd-overview">
+      <div class="nd-panel-overline">ACOMPANHAMENTO</div><h3>Fila de aprovação</h3>
+      <p>Visualize rapidamente a proporção de cadastros profissionais aguardando decisão.</p>
+      <div class="nd-progress-top"><span>Solicitações pendentes</span><strong>{{ stats.pending }} de {{ stats.professionals }}</strong></div>
+      <div class="nd-progress" role="progressbar" aria-label="Profissionais pendentes" aria-valuemin="0" aria-valuemax="{{ stats.professionals if stats.professionals else 1 }}" aria-valuenow="{{ stats.pending }}"><span style="width: {{ (100 * stats.pending / stats.professionals)|round(1) if stats.professionals else 0 }}%"></span></div>
+      <div class="nd-insight-bottom">{% if stats.pending %}<span>Há solicitações para analisar.</span>{% else %}<span>Fila em dia. Nenhum cadastro pendente.</span>{% endif %}<a href="{{ url_for('saas.professionals') }}">Abrir fila ↗</a></div>
+    </article>
+    <article class="nd-panel nd-overview nd-overview--soft">
+      <div class="nd-panel-overline">PRÓXIMO PASSO</div><h3>Mais clareza, menos cliques.</h3>
+      <p>As atividades de administração ficam organizadas aqui. Os indicadores são derivados dos cadastros reais da plataforma.</p>
+      <a class="nd-secondary-link" href="{{ url_for('saas.professionals') }}">Consultar profissionais <span aria-hidden="true">↗</span></a>
+    </article>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
