@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 ROOT=/work/sas_neuropsicopedagogia
-ORIGIN=git@github.com:Boanerges20297/sas_neuropsicopedagogia.git
+ORIGIN=https://github.com/Boanerges20297/sas_neuropsicopedagogia.git
 [[ "${NEURO_PIPELINE_EXECUTOR:-}" == neuro-diagnosis-runner ]] || exit 70
 [[ "$(id -u)" == 10001 ]] || exit 70
 [[ ! -S /var/run/docker.sock ]] || exit 70
