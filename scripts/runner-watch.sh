@@ -5,14 +5,12 @@ STATE=/home/runner/.local/state/neuro-diagnosis
 INTERVAL="${NEURO_PIPELINE_POLL_SECONDS:-60}"
 [[ "$INTERVAL" =~ ^[0-9]+$ ]] && (( INTERVAL >= 15 )) || exit 70
 [[ "${NEURO_PIPELINE_EXECUTOR:-}" == neuro-diagnosis-runner ]] || exit 70
-[[ -n "${NEURO_STATUS_ISSUE:-}" ]] || { echo NEURO_RUNNER_NOT_BOOTSTRAPPED; exit 70; }
-[[ -r /home/runner/.config/neuro-diagnosis/issue-token ]] || exit 70
 [[ -r /home/runner/.ssh/vps_deploy_ed25519 ]] || exit 70
 mkdir -p "$STATE/processed" "$STATE/rejected" "$STATE/logs"
 exec 9>"$STATE/watcher.lock"
 flock -n 9 || exit 73
 cd "$ROOT"
-[[ "$(git remote get-url origin)" == git@github.com:Boanerges20297/sas_neuropsicopedagogia.git ]] || exit 70
+[[ "$(git remote get-url origin)" == https://github.com/Boanerges20297/sas_neuropsicopedagogia.git ]] || exit 70
 while :; do
     if ! git fetch --quiet origin main; then
         echo NEURO_FETCH_FAILED >&2
