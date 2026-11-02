@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
-  "requestId": "neuro-prod-pipeline-validation-20261102-01",
-  "action": "release",
-  "versionName": "0.1.0",
-  "versionCode": 1
+    "schemaVersion":  1,
+    "requestId":  "neuro-prod-dashboard-modern-20261102-01",
+    "action":  "release",
+    "versionName":  "0.1.0",
+    "versionCode":  1
 }
