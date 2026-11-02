@@ -28,7 +28,7 @@ PY
 TOKEN="$(cat "$TOKEN_FILE")"
 # Never expose the authorization token in curl process arguments, logs, or Git.
 [[ "$TOKEN" =~ ^[A-Za-z0-9_-]{20,512}$ ]] || { echo NEURO_ISSUE_TOKEN_INVALID >&2; exit 78; }
-printf 'header = "Authorization: Bearer %s"\\n' "$TOKEN" | \
+printf 'header = "Authorization: Bearer %s"\n' "$TOKEN" | \
   curl --config - --fail --silent --show-error --max-time 12 --retry 2 \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
