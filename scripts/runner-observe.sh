@@ -9,8 +9,10 @@ TOKEN_FILE=/home/runner/.config/neuro-diagnosis/issue-token
 [[ "$STATUS" =~ ^(running|success|failed)$ ]] || exit 64
 [[ "$REQUEST" =~ ^[A-Za-z0-9._-]{1,96}$ ]] || exit 64
 [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || exit 64
-[[ "$ISSUE" =~ ^[0-9]+$ ]] || exit 70
-[[ -r "$TOKEN_FILE" ]] || exit 70
+if [[ ! "$ISSUE" =~ ^[0-9]+$ ]] || [[ ! -r "$TOKEN_FILE" ]]; then
+  printf 'NEURO_RUNNER_STATUS_LOCAL status=%s request=%s sha=%s\n' "$STATUS" "$REQUEST" "$SHA"
+  exit 0
+fi
 BODY="$(python - "$STATUS" "$REQUEST" "$SHA" "$MESSAGE" <<'PY'
 import json, sys
 status, request, sha, message = sys.argv[1:]
