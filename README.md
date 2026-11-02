@@ -1,3 +1,7 @@
+> **Neuro-Diagnosis SaaS — operação atual:** o pipeline de produção usa Flask + MySQL, runner isolado e releases explícitas pela `main`. Consulte [PIPELINE_CANONICO_NEURO.md](PIPELINE_CANONICO_NEURO.md) para arquitetura, deploy, backups, validação e rollback, e o [Issue #2](https://github.com/Boanerges20297/sas_neuropsicopedagogia/issues/2) para histórico/status. O conteúdo abaixo é documentação legada do questionário e não descreve a produção SaaS.
+
+---
+
 # Questionário Altas Habilidades - Formulário Interativo
 
 Este projeto transforma o questionário em PDF do AEE-AH/SD (Atendimento Educacional Especializado ao Estudante com Altas Habilidades/Superdotação) em um formulário web interativo.
