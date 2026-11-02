@@ -52,7 +52,17 @@ for _ in $(seq 1 24); do
   sleep 5
 done
 [[ "$ok" == 1 ]] || exit 1
-curl -fsS --max-time 10 https://neuro-diagnosis.tech/saas/entrar >/dev/null
+public_ok=0
+# Traefik briefly withdraws the router while Docker recreates the web container.
+# A transient HTTPS 404 is not a failed deployment; retry within a fixed window.
+for _ in $(seq 1 12); do
+  if curl -fsS --max-time 5 https://neuro-diagnosis.tech/saas/entrar >/dev/null; then
+    public_ok=1
+    break
+  fi
+  sleep 5
+done
+[[ "$public_ok" == 1 ]] || { echo NEURO_PUBLIC_ROUTE_NOT_READY >&2; exit 1; }
 mkdir -p "$(dirname "$STATE")"
 printf '%s\n' "$SHA" > "$STATE.tmp"
 mv -f "$STATE.tmp" "$STATE"

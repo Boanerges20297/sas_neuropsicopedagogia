@@ -34,6 +34,15 @@ class RunnerSecurityContractTests(unittest.TestCase):
         self.assertIn("mysql_saas_profile_migration.sql", deploy)
         self.assertIn("mysqldump", deploy)
 
+    def test_public_route_has_bounded_retries_before_rollback(self):
+        deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(encoding="utf-8")
+        self.assertIn('for _ in $(seq 1 12); do', deploy)
+        self.assertIn('curl -fsS --max-time 5 https://neuro-diagnosis.tech/saas/entrar', deploy)
+        self.assertIn('[[ "$public_ok" == 1 ]] || { echo NEURO_PUBLIC_ROUTE_NOT_READY', deploy)
+        self.assertIn('trap restore EXIT', deploy)
+        self.assertLess(deploy.index('[[ "$ok" == 1 ]] || exit 1'), deploy.index('public_ok=0'))
+        self.assertLess(deploy.index('NEURO_PUBLIC_ROUTE_NOT_READY'), deploy.index('ROLLBACK=0\nprintf'))
+
     def test_issue_observability_reserves_one_issue_without_leaking_token(self):
         compose = (ROOT / "docker-compose.runner.yml").read_text(encoding="utf-8")
         observer = (ROOT / "scripts/runner-observe.sh").read_text(encoding="utf-8")
