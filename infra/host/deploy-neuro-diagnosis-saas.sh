@@ -7,7 +7,7 @@ ROOT=/opt/neuro-diagnosis
 ENV=/etc/neuro-diagnosis/flask.env
 APPROVAL=/etc/neuro-diagnosis/host-approved
 COMPOSE=docker-compose.saas.yml
-STATE=/var/lib/neuro-diagnosis/deployed-sha
+STATE=/var/lib/neuro-pipeline/deployed-sha
 BACKUPS=/var/lib/neuro-diagnosis/backups
 [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || exit 64
 [[ -f "$APPROVAL" && -r "$ENV" && -d "$ROOT/.git" ]] || { echo NEURO_HOST_NOT_BOOTSTRAPPED >&2; exit 73; }
@@ -56,5 +56,6 @@ curl -fsS --max-time 10 https://neuro-diagnosis.tech/saas/entrar >/dev/null
 mkdir -p "$(dirname "$STATE")"
 printf '%s\n' "$SHA" > "$STATE.tmp"
 mv -f "$STATE.tmp" "$STATE"
+chmod 0644 "$STATE"
 ROLLBACK=0
 printf 'NEURO_DEPLOY_OK sha=%s backup=%s\n' "$SHA" "$BACKUP"
