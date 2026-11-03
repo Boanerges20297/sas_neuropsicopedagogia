@@ -14,9 +14,19 @@ from flask import Blueprint,abort,flash,redirect,render_template,request,session
 from flask_login import current_user,login_required,login_user,logout_user
 
 import saas_store as store
+from saas_admin_workspace import own_admin_workspace
 from bta_license_client import LicenseDecision, resolve_tenant_license, activate_tenant_trial
 
 bp=Blueprint("saas",__name__,url_prefix="/saas")
+
+
+@bp.context_processor
+def saas_workspace_navigation():
+    available = False
+    if is_saas_account() and current_user.is_practitioner():
+        available = (bool(own_admin_workspace(current_user.id))
+                     if current_user.is_admin() else True)
+    return {"has_saas_workspace": available}
 
 
 def is_saas_account():
@@ -72,7 +82,8 @@ def practitioner_only(f):
 def licensed_tenant():
     if not is_saas_account() or not current_user.is_practitioner():
         abort(403)
-    tenant=store.own_tenant(current_user.id)
+    tenant=(own_admin_workspace(current_user.id) if current_user.is_admin()
+            else store.own_tenant(current_user.id))
     if not tenant:
         abort(403,"Espaço profissional não ativado")
     # Apenas identidades administrativas autenticadas no MySQL ficam isentas do BTA.
@@ -162,12 +173,27 @@ def logout():
 def dashboard():
     if not is_saas_account() or not current_user.is_practitioner():
         return render_template("saas_status.html",message="Área do paciente disponível por convite do profissional.")
-    tenant=store.own_tenant(current_user.id)
+    tenant=(own_admin_workspace(current_user.id) if current_user.is_admin()
+            else store.own_tenant(current_user.id))
     decision=(LicenseDecision(status="exempt",reason="admin_permanent_access")
               if current_user.is_admin() else
               resolve_tenant_license(tenant["slug"],tenant["nome"]) if tenant else None)
     global_stats=store.admin_global_stats() if current_user.is_admin() else None
-    return render_template("saas_dashboard.html",tenant=tenant,license=decision,stats=global_stats)
+    return render_template("saas_dashboard.html",tenant=tenant,license=decision,
+                           stats=global_stats,csrf_token=csrf())
+
+
+@bp.route("/meu-espaco/ativar", methods=["POST"])
+@admin_only
+def activate_admin_workspace():
+    check_csrf()
+    from saas_admin_workspace import activate_personal_admin_workspace
+    try:
+        activate_personal_admin_workspace(int(current_user.id))
+        flash("Seu espaço clínico privado está disponível.", "success")
+    except (ValueError, PermissionError) as exc:
+        flash(str(exc), "danger")
+    return redirect(url_for("saas.dashboard"))
 
 
 @bp.route("/profissionais")
@@ -261,12 +287,17 @@ def tests():
 from saas_profile_routes import register_profile_routes
 register_profile_routes(bp)
 
+from saas_neurocore_routes import register_neurocore_routes
+register_neurocore_routes(bp)
+
 
 @bp.route("/saude")
 def health():
     from flask import jsonify
     try:
         store.one("SELECT 1 AS ok")
+        # Fail release smoke if the NeuroCore additive schema was not applied.
+        store.one("SELECT 1 FROM neurocore_evidence_reviews LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503

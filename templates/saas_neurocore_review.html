@@ -1,0 +1,69 @@
+{% extends "saas_base.html" %}
+{% block title %}NeuroCore {{topic_name}} | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{ url_for('static',filename='saas-neurocore.css') }}">{% endblock %}
+{% block content %}
+<div class="nc-shell">
+  <nav class="nc-breadcrumb" aria-label="Navegação">
+    <a href="{{url_for('saas.patients')}}">Pacientes</a><span>/</span>
+    <a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span>
+    <span>{{topic_name}}</span>
+  </nav>
+  <header class="nc-hero"><div><span class="saas-kicker">{{tenant.nome}} · NeuroCore v{{summary.version}}</span>
+    <h1>Roteiro documental — {{topic_name}}</h1>
+    <p>Paciente: <strong>{{client.nome}}</strong> · {{fields|length}} áreas de documentação</p>
+  </div><span class="nc-tag">Revisão profissional</span></header>
+  <section class="nc-notice" role="note"><strong>Atenção:</strong>
+    este roteiro experimental registra a disponibilidade de informações, não a presença ou ausência de sintomas.
+    Preencher todas as áreas não confirma nem exclui TEA/TDAH. Não há pontuação, triagem automática ou laudo.
+  </section>
+  <section class="nc-two-col">
+    <div>
+      <h2>Fontes e documentação</h2>
+      <form method="post" class="nc-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        {% for field in fields %}
+        {% set val = values.get(field.key, 'nao_documentado') %}
+        {% set current = val.get('status', 'nao_documentado') if val is mapping else val %}
+        <fieldset class="saas-card nc-field">
+          <legend>{{loop.index}}. {{field.label}}</legend>
+          <p>{{field.reason}}</p>
+          <label for="status_{{field.key}}">Situação da documentação</label>
+          <select id="status_{{field.key}}" name="status_{{field.key}}">
+            <option value="nao_documentado" {% if current=='nao_documentado' %}selected{% endif %}>Ainda não documentado</option>
+            <option value="em_investigacao" {% if current=='em_investigacao' %}selected{% endif %}>Em investigação</option>
+            <option value="documentado" {% if current=='documentado' %}selected{% endif %}>Informação documentada</option>
+            <option value="nao_aplicavel" {% if current=='nao_aplicavel' %}selected{% endif %}>Não se aplica (justificar)</option>
+          </select>
+          <label for="reason_{{field.key}}">Justificativa quando não aplicável</label>
+          <input type="text" id="reason_{{field.key}}" name="reason_{{field.key}}"
+            maxlength="400" value="{{val.get('justificativa','') if val is mapping else ''}}"
+            aria-describedby="hint_{{field.key}}">
+          <small id="hint_{{field.key}}">Use uma justificativa objetiva. Não registre dados clínicos ou pessoais neste campo.</small>
+        </fieldset>
+        {% endfor %}
+        <div class="nc-actions"><button class="saas-btn" type="submit">Salvar roteiro documental</button>
+          <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patient_workspace',client_id=client.id)}}">Voltar ao paciente</a>
+        </div>
+      </form>
+    </div>
+    <aside class="nc-aside">
+      <section class="saas-card"><h2>Conferência das fontes</h2>
+        <div class="nc-facts">
+          <div><strong>{{summary.counts.documentado}}</strong><span>Documentadas</span></div>
+          <div><strong>{{summary.counts.em_investigacao}}</strong><span>Em investigação</span></div>
+          <div><strong>{{summary.counts.nao_documentado}}</strong><span>Não documentadas</span></div>
+          <div><strong>{{summary.counts.nao_aplicavel}}</strong><span>Não aplicáveis</span></div>
+        </div>
+        <p>Os números indicam <b>estado dos registros</b>, jamais intensidade clínica ou probabilidade diagnóstica.</p>
+        {% if saved %}<p class="nc-saved">Última alteração: {{saved.updated_at}}</p>{% else %}<p class="nc-draft">Nenhum rascunho salvo.</p>{% endif %}
+      </section>
+      <section class="saas-card"><h2>Referências para consulta</h2>
+        <p>Fontes de orientação documental, não substitutos de avaliação especializada.</p>
+        <ul class="nc-links">{% for ref in summary.references %}
+          <li><a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.title}}</a></li>
+        {% else %}<li>Todas as áreas foram sinalizadas. Revise a qualidade das evidências.</li>{% endfor %}</ul>
+      </section>
+    </aside>
+  </section>
+</div>
+{% endblock %}

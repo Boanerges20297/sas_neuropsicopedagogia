@@ -40,6 +40,8 @@ BACKUP="$BACKUPS/pre-release-${SHA:0:12}-$(date -u +%Y%m%dT%H%M%S).sql"
 docker exec neuro-diagnosis-db sh -c 'exec mysqldump --single-transaction --no-tablespaces -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' > "$BACKUP"
 [[ -s "$BACKUP" ]] && grep -q 'CREATE TABLE' "$BACKUP" || { echo NEURO_BACKUP_INVALID >&2; exit 1; }
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_profile_migration.sql"
+# Additive, idempotent NeuroCore documentation table after the verified database backup.
+docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_neurocore_review_migration.sql"
 docker compose -f "$COMPOSE" up -d web
 ok=0
 for _ in $(seq 1 24); do

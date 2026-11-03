@@ -16,6 +16,14 @@
         {% elif tenant and license and license.allowed %}
         <a class="nd-action nd-action--white" href="{{ url_for('saas.patients') }}">Meus pacientes <span aria-hidden="true">↗</span></a>
         {% endif %}
+        {% if current_user.is_admin() and not tenant %}
+        <form method="post" action="{{url_for('saas.activate_admin_workspace')}}" class="nd-admin-workspace-form">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <button class="nd-action nd-action--glass" type="submit">Ativar meu espaço clínico</button>
+        </form>
+        {% elif current_user.is_admin() and tenant %}
+        <a class="nd-action nd-action--white" href="{{url_for('saas.patients')}}">Meu espaço clínico</a>
+        {% endif %}
         <a class="nd-action nd-action--glass" href="{{ url_for('saas.profile') }}">Minha conta <span aria-hidden="true">→</span></a>
       </div>
       <span class="nd-hero-foot"><i aria-hidden="true"></i> {{ 'Central administrativa' if stats else 'Painel de acompanhamento' }}</span>

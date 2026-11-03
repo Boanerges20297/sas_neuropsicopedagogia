@@ -1,6 +1,6 @@
 # NeuroCore v0.1 — TEA e TDAH (STI, 02/11/2026)
 
-Estado: protótipo experimental no STI01, ainda não publicado nem incorporado ao atendimento.
+Estado: núcleo experimental integrado apenas ao código no STI01; rotas documentais em desenvolvimento, NÃO publicado nem liberado para atendimento clínico. Consulte CHECKPOINT_2026-11-02_NEUROCORE_WORKSPACE.md.
 
 O primeiro motor organiza evidências de avaliações e indica documentos ou informações pendentes. O recuperador bibliográfico usa TF-IDF treinado no STI com scikit-learn sobre seis resumos ORIGINAIS e metadados de referências. O runtime usa apenas Python padrão e um índice JSON; nenhum caso real é usado para treinamento.
 
@@ -13,4 +13,4 @@ Comandos no STI, dentro da raiz do projeto:
 - python -m unittest discover -s tests -p test_neurocore.py -v
 - python -m unittest discover -s tests -q
 
-Antes de integrar: consertar fluxos do espaço profissional, revisar autorização e isolamento por tenant; validar vocabulário e fontes com a profissional habilitada; criar protocolo de avaliação de segurança com casos sintéticos. Publicação somente pelo pipeline canônico mediante release aprovada. Sem mudar BTA ou a versão em produção.
+Próxima etapa: validar a integração com MySQL de homologação, atualizar o script operacional da VPS sob autorização, revisar conteúdo com a profissional habilitada e executar testes visuais. Nenhum deploy foi acionado. Sem modificar BTA nem o ambiente de produção.

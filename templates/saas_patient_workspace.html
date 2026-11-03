@@ -1,0 +1,34 @@
+{% extends "saas_base.html" %}
+{% block title %}Espaço do paciente | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{ url_for('static',filename='saas-neurocore.css') }}">{% endblock %}
+{% block content %}
+<div class="nc-shell">
+  <nav class="nc-breadcrumb" aria-label="Navegação"><a href="{{ url_for('saas.patients') }}">Pacientes</a><span>/</span><span>Espaço individual</span></nav>
+  <header class="nc-hero">
+    <div><span class="saas-kicker">Espaço profissional · {{tenant.nome}}</span>
+      <h1>{{client.nome}}</h1>
+      <p>Registros documentais de acompanhamento organizados para revisão profissional.</p>
+    </div><span class="nc-tag">Acesso restrito</span>
+  </header>
+  <section class="nc-notice" role="note">
+    <strong>Instrumento em desenvolvimento.</strong>
+    Estes roteiros organizam informações; não são testes padronizados nem emitem diagnóstico ou probabilidade.
+    O uso profissional requer revisão da administradora.
+  </section>
+  <section aria-labelledby="nc-title">
+    <h2 id="nc-title">Roteiros de investigação documental</h2>
+    <div class="nc-grid">
+      {% for key,topic in topics.items() %}
+      <article class="saas-card nc-card">
+        <span class="nc-topic">{{topic.name}}</span><h3>{{"Transtorno do Espectro Autista" if key=="tea" else "Transtorno de Déficit de Atenção/Hiperatividade"}}</h3>
+        <p>{{topic.review_fields|length}} áreas de documentação; referências rastreáveis e lacunas verificáveis.</p>
+        {% set namespace_found = namespace(entry=None) %}
+        {% for item in reviews %}{% if item.topic==key %}{% set namespace_found.entry = item %}{% endif %}{% endfor %}
+        {% if namespace_found.entry %}<span class="nc-saved">Rascunho salvo · revisão pendente</span>{% else %}<span class="nc-draft">Ainda não iniciado</span>{% endif %}
+        <a class="saas-btn" href="{{url_for('saas.neurocore_review',client_id=client.id,topic=key)}}">{{"Continuar roteiro" if namespace_found.entry else "Abrir roteiro"}}</a>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

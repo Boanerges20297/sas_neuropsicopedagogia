@@ -1,1 +1,35 @@
-{% extends "saas_base.html" %}{% block title %}Instrumentos | Neuro-Diagnosis{% endblock %}{% block content %}<div class="saas-intro"><span class="saas-kicker">{{tenant.nome}}</span><h1>Testes disponíveis</h1><p>Instrumentos do seu espaço e testes globais disponibilizados pela administração.</p></div><section class="saas-grid">{% for test in tests %}<article class="saas-card"><span class="saas-chip">{{'Compartilhado' if test.visibility=='global' else 'Meu espaço'}}</span><h2>{{test.title}}</h2><p>{{test.description or 'Avaliação pronta para utilização.'}}</p></article>{% else %}<div class="saas-card"><h2>Ainda não há instrumentos publicados</h2><p>Os instrumentos aprovados serão exibidos aqui.</p></div>{% endfor %}</section>{% endblock %}
+{% extends "saas_base.html" %}
+{% block title %}Instrumentos e roteiros | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">{% endblock %}
+{% block content %}
+<div class="nc-shell">
+  <header class="nc-hero">
+    <div><span class="saas-kicker">{{tenant.nome}} · Biblioteca profissional</span>
+      <h1>Instrumentos e roteiros</h1>
+      <p>Organize os dados do acompanhamento e consulte instrumentos disponibilizados no seu espaço.</p>
+    </div><span class="nc-tag">Biblioteca em evolução</span>
+  </header>
+  <section class="saas-card">
+    <span class="nc-topic">NEUROCORE EXPERIMENTAL</span>
+    <h2>Roteiros documentais de TEA e TDAH</h2>
+    <p>Reúna fontes, acompanhe lacunas e revise informações por paciente, sem pontuação ou conclusão diagnóstica automática.</p>
+    <p><strong>Importante:</strong> roteiro de documentação não equivale a teste psicológico padronizado.</p>
+    <a class="saas-btn" href="{{url_for('saas.patients')}}">Escolher paciente e abrir roteiro</a>
+  </section>
+  <section aria-labelledby="catalog-title">
+    <h2 id="catalog-title">Catálogo de instrumentos</h2>
+    <div class="saas-grid">
+      {% for test in tests %}
+      <article class="saas-card">
+        <span class="saas-chip">{{'Compartilhado' if test.visibility=='global' else 'Meu espaço'}}</span>
+        <h2>{{test.title}}</h2>
+        <p>{{test.description or 'Descrição ainda não cadastrada.'}}</p>
+        <p class="nc-draft">Disponível para consulta de catálogo. Aplicação digital não habilitada nesta etapa.</p>
+      </article>
+      {% else %}
+      <div class="saas-card"><h2>Nenhum instrumento publicado</h2><p>Instrumentos aprovados pela administração aparecerão aqui. Enquanto isso, utilize os roteiros documentais experimentais por paciente.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

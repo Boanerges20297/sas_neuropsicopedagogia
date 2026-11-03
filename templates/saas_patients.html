@@ -1,1 +1,38 @@
-{% extends "saas_base.html" %}{% block title %}Meus pacientes | Neuro-Diagnosis{% endblock %}{% block content %}<div class="saas-intro"><span class="saas-kicker">{{tenant.nome}}</span><h1>Meus pacientes</h1><p>Somente os pacientes do seu espaço profissional são mostrados.</p></div><section class="saas-card saas-form-card"><h2>Novo paciente</h2><form method="post"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><label for="nome">Nome</label><input name="nome" id="nome" maxlength="180" required><label for="email">E-mail (opcional)</label><input type="email" name="email" id="email"><button class="saas-btn" type="submit">Adicionar ao meu espaço</button></form></section><section class="saas-card"><h2>Pacientes cadastrados</h2><div class="saas-list">{% for p in clients %}<article class="saas-person"><strong>{{p.nome}}</strong><span>{{p.status}}</span></article>{% else %}<p class="saas-hint">Nenhum paciente cadastrado ainda.</p>{% endfor %}</div></section>{% endblock %}
+{% extends "saas_base.html" %}
+{% block title %}Meus pacientes | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">{% endblock %}
+{% block content %}
+<div class="saas-intro">
+  <span class="saas-kicker">{{tenant.nome}}</span>
+  <h1>Meus pacientes</h1>
+  <p>Pacientes do seu espaço profissional. Abra o espaço individual para organizar as informações e acompanhar roteiros TEA/TDAH.</p>
+</div>
+<div class="nc-grid">
+  <section class="saas-card saas-form-card">
+    <h2>Novo paciente</h2>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+      <label for="nome">Nome do paciente</label>
+      <input name="nome" id="nome" maxlength="180" required>
+      <label for="email">E-mail (opcional)</label>
+      <input type="email" name="email" id="email">
+      <button class="saas-btn" type="submit">Adicionar ao meu espaço</button>
+    </form>
+  </section>
+  <section class="saas-card">
+    <h2>Pacientes cadastrados</h2>
+    <div class="saas-list">
+      {% for p in clients %}
+      <article class="saas-person">
+        <div><strong>{{p.nome}}</strong><p class="saas-hint">Estado: {{p.status}}</p></div>
+        {% if p.status!='archived' %}
+        <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patient_workspace',client_id=p.id)}}">Abrir espaço individual</a>
+        {% endif %}
+      </article>
+      {% else %}
+      <p class="saas-hint">Nenhum paciente cadastrado ainda.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -73,7 +73,7 @@ class BTAIntegrationTests(unittest.TestCase):
         admin = SimpleNamespace(id=1, is_practitioner=lambda: True, is_admin=lambda: True)
         with patch.object(saas_routes, "current_user", admin), \
              patch.object(saas_routes, "is_saas_account", return_value=True), \
-             patch.object(saas_routes.store, "own_tenant", return_value=tenant), \
+             patch.object(saas_routes, "own_admin_workspace", return_value=tenant), \
              patch.object(saas_routes, "resolve_tenant_license") as remote:
             own, decision = saas_routes.licensed_tenant()
         self.assertEqual(own, tenant)
