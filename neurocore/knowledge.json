@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "language": "pt-BR",
+  "scope": "apoio_a_organizacao_de_evidencias_em_criancas_e_adolescentes",
+  "disclaimer": "Prototipo educacional e de apoio documental. Nao realiza triagem automatizada, diagnostico, estimativa de probabilidade, classificacao de risco, prescricao ou substituicao da avaliacao profissional.",
+  "topics": {
+    "tea": {
+      "name": "TEA",
+      "review_fields": [
+        {
+          "key": "historico_desenvolvimento",
+          "label": "Histórico do desenvolvimento e marcos",
+          "reason": "Registrar informações históricas, contexto e eventuais mudanças no desenvolvimento.",
+          "refs": [
+            "nice-cg128",
+            "cdc-tea"
+          ]
+        },
+        {
+          "key": "familia_cuidadores",
+          "label": "Relatos da família e de cuidadores",
+          "reason": "Documentar fonte, contexto, período e possíveis divergências entre informantes.",
+          "refs": [
+            "nice-cg128",
+            "cdc-tea"
+          ]
+        },
+        {
+          "key": "observacao_profissional",
+          "label": "Observação profissional direta",
+          "reason": "Registrar contexto da observação e limitações do ambiente.",
+          "refs": [
+            "nice-cg128",
+            "cdc-tea"
+          ]
+        },
+        {
+          "key": "comunicacao_interacao",
+          "label": "Comunicação e interação social",
+          "reason": "Organizar informações observadas e relatadas, sem inferir diagnóstico.",
+          "refs": [
+            "nice-cg128"
+          ]
+        },
+        {
+          "key": "interesses_comportamentos",
+          "label": "Padrões comportamentais e interesses",
+          "reason": "Documentar características repetitivas, preferências e circunstâncias observadas.",
+          "refs": [
+            "nice-cg128"
+          ]
+        },
+        {
+          "key": "funcionamento_necessidades",
+          "label": "Impacto funcional, competências e necessidades",
+          "reason": "Registrar forças, necessidades de apoio e repercussões no cotidiano.",
+          "refs": [
+            "nice-cg128"
+          ]
+        },
+        {
+          "key": "condicoes_associadas",
+          "label": "Condições coexistentes e outras explicações",
+          "reason": "Considerar linguagem, audição, visão, TDAH e outras condições em avaliação competente.",
+          "refs": [
+            "nice-cg128",
+            "review-coocorrencia"
+          ]
+        },
+        {
+          "key": "informacoes_escola",
+          "label": "Informações escolares e de outros ambientes",
+          "reason": "Documentar informações de educadores quando pertinentes e autorizadas.",
+          "refs": [
+            "nice-cg128"
+          ]
+        }
+      ]
+    },
+    "tdah": {
+      "name": "TDAH",
+      "review_fields": [
+        {
+          "key": "historico_desenvolvimento",
+          "label": "Histórico do desenvolvimento e início das dificuldades",
+          "reason": "Registrar cronologia e dados disponíveis, sem converter relatos em critérios preenchidos automaticamente.",
+          "refs": [
+            "nice-ng87",
+            "aap-tdah"
+          ]
+        },
+        {
+          "key": "atencao_atividade",
+          "label": "Atenção, atividade e impulsividade",
+          "reason": "Descrever exemplos concretos e as circunstâncias observadas.",
+          "refs": [
+            "nice-ng87",
+            "cdc-tdah"
+          ]
+        },
+        {
+          "key": "fontes_multiplas",
+          "label": "Relatos de diferentes informantes",
+          "reason": "Separar observações de responsáveis, escola e profissionais.",
+          "refs": [
+            "nice-ng87",
+            "aap-tdah"
+          ]
+        },
+        {
+          "key": "contextos_multiplos",
+          "label": "Informações de contextos diferentes",
+          "reason": "Investigar como as dificuldades aparecem em ambientes distintos.",
+          "refs": [
+            "nice-ng87",
+            "aap-tdah"
+          ]
+        },
+        {
+          "key": "impacto_funcional",
+          "label": "Impacto funcional no cotidiano",
+          "reason": "Descrever prejuízos ou dificuldades e também pontos fortes.",
+          "refs": [
+            "nice-ng87"
+          ]
+        },
+        {
+          "key": "curso_temporal",
+          "label": "Persistência e evolução ao longo do tempo",
+          "reason": "Registrar a duração e a evolução documentada das dificuldades.",
+          "refs": [
+            "nice-ng87"
+          ]
+        },
+        {
+          "key": "outras_explicacoes",
+          "label": "Sono, ansiedade, aprendizagem e outras explicações",
+          "reason": "Registrar avaliação de fatores que podem produzir dificuldades semelhantes.",
+          "refs": [
+            "cdc-tdah",
+            "aap-tdah"
+          ]
+        },
+        {
+          "key": "condicoes_coexistentes",
+          "label": "Condições coexistentes, inclusive TEA",
+          "reason": "Não pressupor exclusividade entre TDAH e TEA; orientar avaliação apropriada.",
+          "refs": [
+            "aap-tdah",
+            "review-coocorrencia"
+          ]
+        }
+      ]
+    }
+  },
+  "references": [
+    {
+      "id": "nice-cg128",
+      "topic": [
+        "tea"
+      ],
+      "type": "guideline",
+      "title": "NICE CG128 — Autism spectrum disorder in under 19s: recognition, referral and diagnosis",
+      "url": "https://www.nice.org.uk/guidance/cg128/chapter/Recommendations",
+      "year": 2011,
+      "rights": "link_and_original_metadata_only",
+      "notes": "Avaliação multiprofissional, histórico do desenvolvimento, relato de cuidadores, observação e informações de escola; instrumentos não decidem diagnóstico isoladamente.",
+      "review_status": "reference_verified_not_clinically_curated"
+    },
+    {
+      "id": "nice-ng87",
+      "topic": [
+        "tdah"
+      ],
+      "type": "guideline",
+      "title": "NICE NG87 — Attention deficit hyperactivity disorder: diagnosis and management",
+      "url": "https://www.nice.org.uk/guidance/ng87/chapter/recommendations",
+      "year": 2018,
+      "rights": "link_and_original_metadata_only",
+      "notes": "Avaliação em diferentes contextos, impacto funcional, história, informantes e condições coexistentes; escala isolada não confirma diagnóstico.",
+      "review_status": "reference_verified_not_clinically_curated"
+    },
+    {
+      "id": "cdc-tea",
+      "topic": [
+        "tea"
+      ],
+      "type": "public_health_guidance",
+      "title": "CDC — Clinical Testing and Diagnosis for Autism Spectrum Disorder",
+      "url": "https://www.cdc.gov/autism/hcp/diagnosis/index.html",
+      "year": 2025,
+      "rights": "link_and_original_metadata_only",
+      "notes": "A avaliação incorpora histórico de desenvolvimento relatado por cuidadores e observação profissional; nenhum instrumento isolado basta.",
+      "review_status": "reference_verified_not_clinically_curated"
+    },
+    {
+      "id": "cdc-tdah",
+      "topic": [
+        "tdah"
+      ],
+      "type": "public_health_guidance",
+      "title": "CDC — Diagnosing ADHD",
+      "url": "https://www.cdc.gov/adhd/diagnosis/",
+      "year": 2024,
+      "rights": "link_and_original_metadata_only",
+      "notes": "Não existe teste único; analisar possibilidades como sono, ansiedade e dificuldades de aprendizagem.",
+      "review_status": "reference_verified_not_clinically_curated"
+    },
+    {
+      "id": "aap-tdah",
+      "topic": [
+        "tdah"
+      ],
+      "type": "peer_reviewed_guideline",
+      "title": "Wolraich et al. (2019) — AAP ADHD Clinical Practice Guideline",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/31570648/",
+      "doi": "10.1542/peds.2019-2528",
+      "pmid": "31570648",
+      "year": 2019,
+      "rights": "metadata_only_pending_reuse_check",
+      "notes": "Recomenda avaliação em mais de um ambiente com informações de responsáveis e escola, e investigação de condições coexistentes.",
+      "review_status": "reference_verified_not_clinically_curated"
+    },
+    {
+      "id": "review-coocorrencia",
+      "topic": [
+        "tea",
+        "tdah"
+      ],
+      "type": "peer_reviewed_review",
+      "title": "Diagnosis and treatment of children and adolescents with autism and ADHD (2023)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37065905/",
+      "doi": "10.1002/pits.22808",
+      "pmid": "37065905",
+      "year": 2023,
+      "rights": "metadata_only_pending_reuse_check",
+      "notes": "Revisão sobre avaliação e intervenções quando TEA e TDAH coexistem, sem presumir que a presença de um exclua o outro.",
+      "review_status": "reference_verified_not_clinically_curated"
+    }
+  ]
+}

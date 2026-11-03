@@ -1,0 +1,2 @@
+# Somente STI/desenvolvimento; NAO incluir em requirements.production.txt
+scikit-learn>=1.9,<2
