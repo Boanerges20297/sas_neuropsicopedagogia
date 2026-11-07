@@ -1,0 +1,36 @@
+{% extends "saas_base.html" %}
+{% block title %}Dados iniciais | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">{% endblock %}
+{% block content %}
+<div class="nc-shell">
+  <nav class="nc-breadcrumb" aria-label="Navegação">
+    <a href="{{url_for('saas.patients')}}">Pacientes</a><span>/</span>
+    <a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><span>Dados iniciais</span>
+  </nav>
+  <header class="nc-hero">
+    <div><span class="saas-kicker">{{tenant.nome}} · Uso profissional</span>
+      <h1>Dados iniciais de {{client.nome}}</h1>
+      <p>Informações declaradas na abertura do acompanhamento, preservadas separadamente da avaliação clínica.</p>
+    </div><span class="nc-tag">Restrito</span>
+  </header>
+  {% if intake %}
+  <div class="saas-card">
+    <h2>Identificação do atendimento</h2>
+    <p><strong>Modalidade:</strong> {{'O próprio adulto' if intake.representation_mode=='self' else 'Menor acompanhado por responsável legal'}}</p>
+    <p><strong>Data de nascimento:</strong> {{intake.birth_date.strftime('%d/%m/%Y')}}</p>
+    <p><strong>Idade atual:</strong> {{intake.age}} anos</p>
+    {% if intake.representation_mode=='guardian' %}
+      <p><strong>Responsável informado:</strong> {{intake.guardian_name}}</p>
+      <p class="saas-hint">Vínculo declarado, ainda sujeito à verificação antes da liberação de acesso.</p>
+    {% endif %}
+    <h2>Observações iniciais relatadas</h2>
+    <p style="white-space:pre-wrap">{{intake.initial_report or 'Nenhuma observação inicial registrada.'}}</p>
+    <p class="saas-hint">O relato não constitui diagnóstico nem conclusão da avaliação profissional.</p>
+  </div>
+  {% else %}
+  <section class="saas-card"><h2>Cadastro anterior</h2>
+    <p>Este paciente foi incluído antes do novo formulário. Não foi inventada uma data de nascimento ou um responsável.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

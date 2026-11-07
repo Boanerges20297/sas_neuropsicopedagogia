@@ -1,22 +1,48 @@
 {% extends "saas_base.html" %}
-{% block title %}Meus pacientes | Neuro-Diagnosis{% endblock %}
-{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">{% endblock %}
+{% block title %}Pacientes | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
+<script defer src="{{url_for('static',filename='saas-patient-intake.js')}}"></script>
+<style>#guardian_fields[hidden],#adult_contact[hidden]{display:none!important}</style>
+{% endblock %}
 {% block content %}
 <div class="saas-intro">
   <span class="saas-kicker">{{tenant.nome}}</span>
   <h1>Meus pacientes</h1>
-  <p>Pacientes do seu espaço profissional. Abra o espaço individual para organizar as informações e acompanhar roteiros TEA/TDAH.</p>
+  <p>O paciente é quem recebe o atendimento. A conta de acesso pode pertencer ao próprio adulto ou ao responsável por um menor.</p>
 </div>
 <div class="nc-grid">
   <section class="saas-card saas-form-card">
     <h2>Novo paciente</h2>
+    <p class="saas-hint">O cadastro clínico não cria uma segunda conta. O acesso ao portal depende de verificação e autorização.</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-      <label for="nome">Nome do paciente</label>
-      <input name="nome" id="nome" maxlength="180" required>
-      <label for="email">E-mail (opcional)</label>
-      <input type="email" name="email" id="email">
-      <button class="saas-btn" type="submit">Adicionar ao meu espaço</button>
+      <label for="representation_mode">Quem responderá pelo paciente?</label>
+      <select id="representation_mode" name="representation_mode" required>
+        <option value="self" {% if request.form.get('representation_mode','self')=='self' %}selected{% endif %}>O próprio paciente (adulto)</option>
+        <option value="guardian" {% if request.form.get('representation_mode')=='guardian' %}selected{% endif %}>Responsável legal (menor de idade)</option>
+      </select>
+      <label for="nome">Nome completo do paciente</label>
+      <input id="nome" name="nome" maxlength="180" value="{{request.form.get('nome','')}}" required autocomplete="off">
+      <label for="birth_date">Data de nascimento do paciente</label>
+      <input id="birth_date" name="birth_date" type="date" value="{{request.form.get('birth_date','')}}" required>
+      <p class="saas-hint" id="intake_age" aria-live="polite">A idade é calculada com base na data de nascimento.</p>
+      <div id="adult_contact">
+        <label for="email">E-mail do adulto (opcional)</label>
+        <input type="email" id="email" name="email" maxlength="254" value="{{request.form.get('email','')}}">
+      </div>
+      <fieldset id="guardian_fields" class="saas-card" {% if request.form.get('representation_mode','self')!='guardian' %}hidden{% endif %}>
+        <legend><strong>Responsável pelo menor</strong></legend>
+        <p class="saas-hint">Informe o titular da conta. O menor não precisa de login próprio.</p>
+        <label for="guardian_name">Nome do responsável legal</label>
+        <input id="guardian_name" name="guardian_name" maxlength="160" value="{{request.form.get('guardian_name','')}}">
+        <label for="guardian_email">E-mail do responsável (opcional)</label>
+        <input type="email" id="guardian_email" name="guardian_email" maxlength="254" value="{{request.form.get('guardian_email','')}}">
+      </fieldset>
+      <label for="initial_report">Observações iniciais — sinais e dificuldades relatados</label>
+      <textarea id="initial_report" name="initial_report" rows="4" maxlength="2000" aria-describedby="initial_report_help">{{request.form.get('initial_report','')}}</textarea>
+      <p class="saas-hint" id="initial_report_help">Relato inicial fornecido no cadastro. Não representa diagnóstico e ficará restrito ao profissional.</p>
+      <button class="saas-btn" type="submit">Cadastrar paciente</button>
     </form>
   </section>
   <section class="saas-card">

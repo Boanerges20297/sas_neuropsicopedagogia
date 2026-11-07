@@ -100,4 +100,6 @@ Migrações na ordem: `mysql_saas_profile_migration.sql` → `mysql_neurocore_re
 5. Aplicação e revisão de instrumentos versionados por papel/habilitação; não usar critérios do DSM como pontuação diagnóstica.
 6. Teste de execução containerizada de produção e script instalado, seguido de release pelo pipeline canônico quando aprovado.
 
+**Adendo 07/11/2026 — conta e paciente não são sinônimos:** leia DECISAO_PACIENTE_CONTA_RESPONSAVEL_2026-11-07.md. Adulto responde por si; menor é paciente com responsável titular de UMA conta, sem login próprio. O registro clínico usa nome, DOB/idade derivada e relato inicial criptografado. O autoatendimento de adultos e a vinculação/verificação de responsáveis ainda não estão liberados.
+
 **Resumo:** o backend e as interfaces iniciais de agenda são uma primeira fatia executável. Portal, consentimento operacional, notas clínicas seguras, avaliações completas e compartilhamento ainda não estão prontos. Não apresentar o SaaS como serviço clínico integralmente implantado antes de cumprir esses critérios.

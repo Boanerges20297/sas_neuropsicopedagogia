@@ -15,6 +15,11 @@
     Estes roteiros organizam informações; não são testes padronizados nem emitem diagnóstico ou probabilidade.
     O uso profissional requer revisão da administradora.
   </section>
+  <section class="saas-card" aria-label="Dados iniciais do paciente">
+    <h2>Dados de identificação e relato inicial</h2>
+    <p>Consulte a idade, a representação por adulto ou responsável e as observações fornecidas no cadastro.</p>
+    <a class="saas-btn" href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Ver dados iniciais</a>
+  </section>
   <section class="saas-card" aria-label="Atendimentos do paciente">
     <h2>Agenda e sessões</h2>
     <p>Planeje atendimentos, confirme presença e acompanhe o histórico deste paciente.</p>

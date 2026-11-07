@@ -263,8 +263,17 @@ def patients():
     if request.method=="POST":
         check_csrf()
         try:
-            store.create_client(current_user.id,tenant["id"],request.form.get("nome",""),
-                                request.form.get("email",""))
+            from saas_patient_intake import register_intake
+            register_intake(
+                int(current_user.id), tenant["id"],
+                mode=request.form.get("representation_mode", ""),
+                name=request.form.get("nome", ""),
+                birth_date=request.form.get("birth_date", ""),
+                initial_report=request.form.get("initial_report", ""),
+                guardian_name=request.form.get("guardian_name", ""),
+                guardian_email=request.form.get("guardian_email", ""),
+                email=request.form.get("email", ""),
+            )
             flash("Paciente registrado no seu espaço profissional.","success")
             return redirect(url_for("saas.patients"))
         except ValueError as exc:
@@ -294,6 +303,9 @@ register_neurocore_routes(bp)
 from saas_care_routes import register_care_routes
 register_care_routes(bp)
 
+from saas_patient_intake_routes import register_patient_intake_routes
+register_patient_intake_routes(bp)
+
 
 @bp.route("/saude")
 def health():
@@ -305,6 +317,7 @@ def health():
         store.one("SELECT 1 FROM care_appointments LIMIT 1")
         store.one("SELECT 1 FROM care_encounters LIMIT 1")
         store.one("SELECT 1 FROM care_portal_grants LIMIT 1")
+        store.one("SELECT 1 FROM care_patient_intakes LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503

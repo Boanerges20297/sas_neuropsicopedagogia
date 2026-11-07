@@ -4,7 +4,7 @@ WORKDIR /app
 COPY requirements.txt requirements.production.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.production.txt
 RUN groupadd -g 10001 neuro && useradd -u 10001 -g neuro -r -M neuro
-COPY --chown=neuro:neuro app.py schema.py account_management.py bta_license_client.py saas_routes.py saas_scope.py saas_store.py saas_profile_data.py saas_profile_routes.py saas_neurocore_routes.py saas_neurocore_store.py saas_admin_workspace.py saas_care_routes.py saas_care_store.py saas_portal_policy.py ./
+COPY --chown=neuro:neuro app.py schema.py account_management.py bta_license_client.py saas_routes.py saas_scope.py saas_store.py saas_profile_data.py saas_profile_routes.py saas_neurocore_routes.py saas_neurocore_store.py saas_admin_workspace.py saas_care_routes.py saas_care_store.py saas_portal_policy.py saas_patient_intake.py saas_patient_intake_routes.py ./
 COPY --chown=neuro:neuro neurocore/ ./neurocore/
 COPY --chown=neuro:neuro templates/ ./templates/
 COPY --chown=neuro:neuro static/ ./static/

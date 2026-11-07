@@ -79,13 +79,17 @@ INSERT INTO care_appointments
 INSERT INTO care_encounters
  (id,tenant_id,appointment_id,client_id,professional_user_id,status)
  VALUES(501,201,401,301,101,'draft');
+INSERT INTO care_patient_intakes
+ (tenant_id,client_id,professional_user_id,representation_mode,guardian_contact_id)
+ VALUES(201,301,101,'guardian',601),
+       (202,302,102,'self',NULL);
 """, db=db)
 
 
 def verify(db):
     tables = int(mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE';", db=db))
-    if tables < 19:
-        raise AssertionError(f"Expected at least 19 tables, found {tables}")
+    if tables < 21:
+        raise AssertionError(f"Expected at least 21 tables, found {tables}")
     if mysql("SELECT verification_status FROM care_client_contacts LIMIT 1;", db=db) != "unverified":
         raise AssertionError("Guardian should start UNVERIFIED")
     for query, expected in [
@@ -150,6 +154,28 @@ UPDATE care_portal_grants SET status='active',authorized_by=101,
     print("PORTAL_POLICY_HOMOLOGATION_OK default_deny=1 proof_required=1 "
           "cross_client_denied=1 explicit_grant=1 revoke=1")
 
+    # Intake: a minor needs one guardian contact for that EXACT patient,
+    # whereas an independent adult must not be represented by a guardian.
+    for bad in (
+        """INSERT INTO care_patient_intakes
+           (tenant_id,client_id,professional_user_id,representation_mode,guardian_contact_id)
+           VALUES(201,303,101,'guardian',NULL);""",
+        """INSERT INTO care_patient_intakes
+           (tenant_id,client_id,professional_user_id,representation_mode,guardian_contact_id)
+           VALUES(201,303,101,'self',601);""",
+        """INSERT INTO care_patient_intakes
+           (tenant_id,client_id,professional_user_id,representation_mode,guardian_contact_id)
+           VALUES(201,303,101,'guardian',601);""",
+        """INSERT INTO care_patient_intakes
+           (tenant_id,client_id,professional_user_id,representation_mode)
+           VALUES(201,303,102,'self');""",
+    ):
+        mysql(bad, db=db, expect_error=True)
+    if mysql("SELECT COUNT(*) FROM care_patient_intakes;", db=db) != "2":
+        raise AssertionError("Exactly two synthetic patient intake profiles expected")
+    print("PATIENT_INTAKE_HOMOLOGATION_OK adult_self=1 minor_guardian=1 "
+          "no_extra_login=1 invalid_guardian_links_denied=4")
+
     print(f"MYSQL_HOMOLOGATION_OK tables={tables} tenants=2 blocked_invariants={len(rejections)} guardian_unverified=1")
 
 
@@ -167,7 +193,8 @@ def main():
         created = True
         names = ("mysql_saas_schema.sql", "mysql_saas_profile_migration.sql",
                  "mysql_neurocore_review_migration.sql", "mysql_care_workflow_migration.sql",
-                 "mysql_care_portal_access_migration.sql")
+                 "mysql_care_portal_access_migration.sql",
+                 "mysql_care_patient_intake_migration.sql")
         for filename in names:
             apply_file(filename, db)
         for filename in names[1:]:
