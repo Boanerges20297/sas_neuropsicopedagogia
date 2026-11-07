@@ -33,6 +33,9 @@ def render_dashboard(*, admin=False, tenant=None, license=None, stats=None):
         stats=stats,
         csrf_token="test-csrf",
         has_saas_workspace=bool(tenant) if admin else True,
+        can_manage_accounts=admin,
+        can_manage_professionals=admin,
+        can_manage_activations=True,
     )
 
 

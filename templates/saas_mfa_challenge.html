@@ -1,0 +1,23 @@
+{% extends "saas_base.html" %}
+{% block title %}Verificação em duas etapas | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<section class="saas-card saas-form-card" style="max-width:560px;margin:2rem auto">
+  <span class="saas-kicker">VERIFICAÇÃO DE SEGURANÇA</span>
+  <h1>Confirme seu segundo fator</h1>
+  <p>Use o código de 6 números do aplicativo autenticador ou um código de recuperação ainda não utilizado.</p>
+  <form method="post" action="{{ url_for('saas.mfa_challenge') }}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label for="mfa-code">Código TOTP ou de recuperação</label>
+    <input id="mfa-code" name="code" required autocomplete="one-time-code"
+           inputmode="text" maxlength="20" spellcheck="false" autofocus>
+    <label class="saas-check" for="trust-device">
+      <input id="trust-device" type="checkbox" name="trust_device" value="on">
+      Confiar neste aparelho por 30 dias
+    </label>
+    <p class="saas-hint">Em aparelho compartilhado ou público, não marque a opção. Um código de recuperação não autoriza cadastrar aparelho confiável.</p>
+    <button class="saas-btn" type="submit">Confirmar acesso</button>
+  </form>
+  <p class="saas-hint">Tentativas restantes nesta sessão: {{attempts_left}}.</p>
+  <p><a href="{{url_for('saas.login')}}">Usar outra conta</a></p>
+</section>
+{% endblock %}

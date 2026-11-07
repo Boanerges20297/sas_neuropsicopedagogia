@@ -61,6 +61,12 @@ class SaaSUser(UserMixin):
         self.role = row["global_role"]
         self.active = bool(row["active"])
         self.must_change_password = bool(row["must_change_password"])
+        self.mfa_required = bool(row.get("mfa_required", False))
+        self.mfa_enabled = bool(row.get("mfa_enabled", False))
+        self.admin_rights = (
+            {feature: bool(row.get("allow_" + feature, False))
+             for feature in ("accounts", "professionals", "activations", "clinic")}
+            if row.get("rights_id") is not None else None)
 
     @property
     def is_active(self):
@@ -82,13 +88,28 @@ def get_user(user_id):
     except (ValueError, TypeError):
         return None
     row = one(
-        "SELECT id,nome,email,global_role,active,must_change_password FROM users WHERE id=%s",
+        """SELECT u.id,u.nome,u.email,u.global_role,u.active,u.must_change_password,
+                  COALESCE(f.required,0) AS mfa_required,
+                  (f.enabled_at IS NOT NULL) AS mfa_enabled,
+                  r.user_id AS rights_id,r.allow_accounts,r.allow_professionals,
+                  r.allow_activations,r.allow_clinic
+           FROM users u
+           LEFT JOIN saas_mfa_factors f ON f.user_id=u.id
+           LEFT JOIN saas_account_rights r ON r.user_id=u.id WHERE u.id=%s""",
         (uid,))
     return SaaSUser(row) if row and row["active"] else None
 
 
 def user_by_email(email):
-    return one("SELECT * FROM users WHERE email=%s", (email.strip().lower(),))
+    return one(
+        """SELECT u.*,COALESCE(f.required,0) AS mfa_required,
+                  (f.enabled_at IS NOT NULL) AS mfa_enabled,
+                  r.user_id AS rights_id,r.allow_accounts,r.allow_professionals,
+                  r.allow_activations,r.allow_clinic
+           FROM users u
+           LEFT JOIN saas_mfa_factors f ON f.user_id=u.id
+           LEFT JOIN saas_account_rights r ON r.user_id=u.id WHERE u.email=%s""",
+        (email.strip().lower(),))
 
 
 def audit(cur, actor, tenant_id, action, resource_type, resource_id, outcome="allowed", reason=None):
@@ -112,6 +133,10 @@ def register_professional(nome, email, password_hash, profession, registry_code=
                VALUES (%s,%s,%s,'professional',0,0)""",
             (name, mail, password_hash))
         user_id = cur.lastrowid
+        # Require choice and confirmation of a TOTP authenticator at first access.
+        cur.execute(
+            "INSERT INTO saas_mfa_factors(user_id,required) VALUES(%s,1)",
+            (user_id,))
         cur.execute(
             """INSERT INTO professional_profiles(user_id,profession,registry_code,verification_status)
                VALUES(%s,%s,%s,'pending')""",
@@ -328,6 +353,10 @@ def change_account_password(user_id, new_hash):
         cur.execute(
             "UPDATE users SET password_hash=%s,must_change_password=0 WHERE id=%s",
             (new_hash,user_id))
+        # Changing credentials invalidates device trust on every other browser.
+        cur.execute(
+            """UPDATE saas_mfa_trusted_devices SET revoked_at=UTC_TIMESTAMP()
+               WHERE user_id=%s AND revoked_at IS NULL""", (user_id,))
         audit(cur,user_id,None,"account_password_changed","user",user_id)
 
 

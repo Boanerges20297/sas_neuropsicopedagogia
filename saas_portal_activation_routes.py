@@ -4,6 +4,7 @@ from flask_login import current_user
 
 from saas_routes import bp, check_csrf, practitioner_only, licensed_tenant
 from saas_portal_activation import activate_client_account
+from saas_account_access import can_admin
 from saas_portal_activation_queue import pending_activation_queue
 from saas_routes import csrf
 from flask import render_template
@@ -12,6 +13,8 @@ from flask import render_template
 @bp.route("/ativacoes")
 @practitioner_only
 def activation_queue():
+    if current_user.is_admin() and not can_admin(int(current_user.id), "activations"):
+        abort(403)
     # Commercial entitlement applies to professionals, but admin/superadmin
     # can manage activation across tenants without a clinical workspace.
     if not current_user.is_admin():
@@ -35,6 +38,8 @@ def activation_queue():
           methods=["POST"])
 @practitioner_only
 def activate_client_account_route(client_id, principal_id):
+    if current_user.is_admin() and not can_admin(int(current_user.id), "activations"):
+        abort(403)
     check_csrf()
     # Commercial BTA gate applies to professionals; admin/superadmin exempt.
     if not current_user.is_admin():

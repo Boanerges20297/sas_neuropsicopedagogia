@@ -72,6 +72,8 @@ class ActivationQueueRouteTests(unittest.TestCase):
         # Admins can review activations without creating a clinical tenant.
         self.workspace=patch("saas_routes.own_admin_workspace",return_value=None)
         self.workspace.start()
+        self.permissions=patch.object(routes,"can_admin",return_value=True)
+        self.permissions.start()
         with self.browser.session_transaction() as s:
             s["_user_id"]="saas:33"
             s["_fresh"]=True
@@ -79,6 +81,7 @@ class ActivationQueueRouteTests(unittest.TestCase):
             s["saas_csrf"]="activation-queue-test-csrf"
 
     def tearDown(self):
+        self.permissions.stop()
         self.workspace.stop()
         self.get_user.stop()
         app.config["TESTING"]=self.old

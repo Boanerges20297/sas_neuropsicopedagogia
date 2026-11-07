@@ -21,10 +21,10 @@
 <input id="birth_date" name="birth_date" type="date" required>
 <label for="phone">Telefone com DDD</label>
 <input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="15" autocomplete="tel-national" placeholder="(85) 99999-9999" required>
-<label for="senha">Senha (mínimo 12 caracteres)</label>
-<input id="senha" name="senha" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+<label for="senha">Senha (mínimo 8 caracteres)</label><p class="saas-hint">Pelo menos 2 letras, 4 números e 1 símbolo.</p>
+<input id="senha" name="senha" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
 <label for="confirmar_senha">Confirmar senha</label>
-<input id="confirmar_senha" name="confirmar_senha" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+<input id="confirmar_senha" name="confirmar_senha" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
 <button class="saas-btn" type="submit">Solicitar aprovação</button>
 </form><p class="saas-hint">Já tem cadastro? <a href="{{url_for('saas.login')}}">Entrar</a></p>
 </section>

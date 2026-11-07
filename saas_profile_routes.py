@@ -5,6 +5,7 @@ import pymysql
 
 import saas_store as store
 from saas_profile_data import AREAS
+from saas_login_policy import valid_credential, requirement
 
 
 def register_profile_routes(bp):
@@ -57,11 +58,14 @@ def register_profile_routes(bp):
         row = store.user_by_email(current_user.email)
         if not row or not bcrypt.check_password_hash(row["password_hash"], old):
             flash("Senha atual incorreta.", "danger")
-        elif len(new) < 12 or len(new) > 128 or new != confirm or new == old:
-            flash("A nova senha precisa ser diferente, ter 12 a 128 caracteres e coincidir com a confirmação.", "danger")
+        elif not valid_credential(new) or new != confirm or new == old:
+            flash(requirement() + " Deve ser diferente da anterior e coincidir com a confirmação.", "danger")
         else:
             store.change_account_password(int(current_user.id),
                                           bcrypt.generate_password_hash(new).decode())
             flash("Senha atualizada com sucesso.", "success")
-            return redirect(url_for("saas.dashboard"))
+            return redirect(url_for(
+                "saas.mfa_settings"
+                if (current_user.mfa_required and not current_user.mfa_enabled)
+                else "saas.dashboard"))
         return redirect(url_for("saas.profile"))

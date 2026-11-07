@@ -62,6 +62,10 @@ class SaaSAccountFlowTests(unittest.TestCase):
             csrf_token="test-csrf-code",email=self.record["email"],
             senha="TemporaryAccess123!"))
 
+    def current_csrf(self):
+        with self.client.session_transaction() as sess:
+            return sess["saas_csrf"]
+
     def test_login_requires_profile_first(self):
         logged=self.do_login()
         self.assertEqual(logged.status_code,302)
@@ -78,32 +82,32 @@ class SaaSAccountFlowTests(unittest.TestCase):
         called=[]
         with patch.object(store,"change_account_password",side_effect=lambda uid,hash_value: called.append((uid,hash_value))):
             wrong=self.client.post("/saas/perfil/senha",data=dict(
-                csrf_token="test-csrf-code",senha_atual="wrong",
-                nova_senha="DifferentPassword123!",confirmar_senha="DifferentPassword123!"))
+                csrf_token=self.current_csrf(),senha_atual="wrong",
+                nova_senha="DifferentPassword1234!",confirmar_senha="DifferentPassword1234!"))
             self.assertEqual(wrong.status_code,302)
             self.assertEqual(called,[])
             short=self.client.post("/saas/perfil/senha",data=dict(
-                csrf_token="test-csrf-code",senha_atual="TemporaryAccess123!",
+                csrf_token=self.current_csrf(),senha_atual="TemporaryAccess123!",
                 nova_senha="short",confirmar_senha="short"))
             self.assertEqual(short.status_code,302)
             self.assertEqual(called,[])
             valid=self.client.post("/saas/perfil/senha",data=dict(
-                csrf_token="test-csrf-code",senha_atual="TemporaryAccess123!",
-                nova_senha="DifferentPassword123!",confirmar_senha="DifferentPassword123!"))
+                csrf_token=self.current_csrf(),senha_atual="TemporaryAccess123!",
+                nova_senha="DifferentPassword1234!",confirmar_senha="DifferentPassword1234!"))
             self.assertEqual(valid.status_code,302)
             self.assertIn("/saas/painel",valid.location)
             self.assertEqual(called[0][0],9876)
-            self.assertTrue(bcrypt.check_password_hash(called[0][1],"DifferentPassword123!"))
+            self.assertTrue(bcrypt.check_password_hash(called[0][1],"DifferentPassword1234!"))
 
     def test_csrf_required_and_profile_edit_blocked_during_rotation(self):
         self.do_login()
         bad=self.client.post("/saas/perfil/senha",data=dict(
-            senha_atual="TemporaryAccess123!",nova_senha="DifferentPassword123!",
-            confirmar_senha="DifferentPassword123!"))
+            senha_atual="TemporaryAccess123!",nova_senha="DifferentPassword1234!",
+            confirmar_senha="DifferentPassword1234!"))
         self.assertEqual(bad.status_code,400)
         with patch.object(store,"update_account_profile") as update:
             blocked=self.client.post("/saas/perfil",data=dict(
-                csrf_token="test-csrf-code",nome="Alterado",
+                csrf_token=self.current_csrf(),nome="Alterado",
                 email="other@example.invalid",senha_atual="TemporaryAccess123!"))
             self.assertEqual(blocked.status_code,302)
             update.assert_not_called()

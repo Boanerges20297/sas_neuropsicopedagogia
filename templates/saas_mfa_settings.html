@@ -1,0 +1,77 @@
+{% extends "saas_base.html" %}
+{% block title %}Segurança da conta | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro">
+  <span class="saas-kicker">PROTEÇÃO DA CONTA</span>
+  <h1>{{ 'Primeiro acesso: escolha seu autenticador' if mandatory else 'Autenticação em duas etapas' }}</h1>
+  {% if mandatory %}
+  <p>Por segurança, antes de acessar o painel escolha qualquer aplicativo TOTP compatível, registre a conta e confirme o primeiro código. Não há como pular esta etapa.</p>
+  {% else %}
+  <p>Use um aplicativo autenticador para confirmar o acesso depois da senha. Seus códigos não são enviados por SMS.</p>
+  {% endif %}
+</div>
+{% if codes_once %}
+<section class="saas-card" role="status" style="border:2px solid currentColor">
+  <h2>Guarde seus códigos de recuperação</h2>
+  <p><strong>Esta é a única exibição.</strong> Cada código funciona apenas uma vez se você perder o autenticador. Guarde em um cofre de senhas, nunca no prontuário.</p>
+  <div class="saas-list">
+    {% for code in codes_once %}<code style="font-size:1.05rem;letter-spacing:.07em">{{code}}</code>{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% if enabled %}
+<section class="saas-card">
+  <h2><span aria-hidden="true">✓</span> Segundo fator habilitado</h2>
+  <p>Novos aparelhos precisarão do aplicativo autenticador ou de um código de recuperação. Dispositivos explicitamente confiáveis podem dispensar o código por até 30 dias, mas nunca a senha.</p>
+  <h3>Revogar aparelhos confiáveis</h3>
+  <form method="post" action="{{url_for('saas.mfa_settings')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="action" value="revoke_devices">
+    <label for="confirm-current-password">Confirme sua senha atual</label>
+    <input id="confirm-current-password" name="current_password" type="password"
+           autocomplete="current-password" required>
+    <button class="saas-btn saas-btn--ghost" type="submit">Revogar todos os aparelhos confiáveis</button>
+  </form>
+  <p class="saas-hint">O autenticador permanece vinculado. Para recuperar uma conta sem os códigos, será necessário suporte com verificação de identidade.</p>
+</section>
+{% elif seed %}
+<section class="saas-card saas-form-card">
+  <h2>Escolha seu aplicativo autenticador</h2>
+  <p>Você pode usar Google Authenticator, Microsoft Authenticator, 2FAS, Aegis ou qualquer aplicativo compatível com TOTP. Não é preciso informar à plataforma qual deles escolheu.</p>
+  <p>Abra o aplicativo, escolha <strong>adicionar conta por QR Code</strong> e escaneie a imagem abaixo.</p>
+  {% if qr_image %}
+    <div style="max-width:260px;margin:1rem auto;text-align:center">
+      <img src="{{ qr_image }}" width="224" height="224" alt="QR Code de configuração da autenticação"
+           style="width:100%;height:auto;border-radius:8px;background:white;padding:8px">
+    </div>
+  {% endif %}
+  <p>Se estiver usando o mesmo celular, cadastre manualmente:</p>
+  <p><strong>Chave secreta — não compartilhe:</strong></p>
+  <p><code style="overflow-wrap:anywhere;letter-spacing:.1em">{{seed}}</code></p>
+  <p><a href="{{uri}}">Abrir aplicativo compatível neste dispositivo</a></p>
+  <p class="saas-hint">O código muda a cada 30 segundos. Esta configuração expira em 15 minutos; enquanto não confirmar, o login atual permanece sem segundo fator.</p>
+  <form method="post" action="{{url_for('saas.mfa_settings')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="action" value="confirm">
+    <label for="setup-code">Código exibido no aplicativo</label>
+    <input id="setup-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+           minlength="6" maxlength="6" pattern="[0-9]{6}" required>
+    <button class="saas-btn" type="submit">Ativar autenticação em duas etapas</button>
+  </form>
+</section>
+{% else %}
+<section class="saas-card saas-form-card">
+  <h2>Ativar o segundo fator</h2>
+  <p>Você só precisa de um aplicativo autenticador e da senha atual.</p>
+  <form method="post" action="{{url_for('saas.mfa_settings')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="action" value="begin">
+    <label for="setup-current-password">Senha atual</label>
+    <input id="setup-current-password" name="current_password" type="password"
+           autocomplete="current-password" required>
+    <button class="saas-btn" type="submit">Configurar autenticador</button>
+  </form>
+</section>
+{% endif %}
+<p><a href="{{url_for('saas.profile')}}">Voltar para minha conta</a></p>
+{% endblock %}

@@ -18,6 +18,8 @@ class AdminWorkspaceRouteTests(unittest.TestCase):
         })
         self.loader = patch.object(store, "get_user", return_value=self.admin)
         self.loader.start()
+        self.permissions=patch("saas_routes.can_admin",return_value=True)
+        self.permissions.start()
         with self.client.session_transaction() as sess:
             sess["_user_id"] = "saas:9"
             sess["_fresh"] = True
@@ -25,6 +27,7 @@ class AdminWorkspaceRouteTests(unittest.TestCase):
             sess["saas_csrf"] = "admin-csrf"
 
     def tearDown(self):
+        self.permissions.stop()
         self.loader.stop()
         app.config["TESTING"] = self.prev
 

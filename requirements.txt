@@ -8,3 +8,5 @@ python-dotenv>=1.0.0
 PyMySQL[rsa]>=1.1,<2
 requests>=2.31,<3
 cryptography>=45,<49
+qrcode>=8,<9
+pypng>=0.20220715.0,<1

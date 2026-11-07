@@ -14,6 +14,8 @@ from flask import Blueprint,abort,flash,redirect,render_template,request,session
 from flask_login import current_user,login_required,login_user,logout_user
 
 import saas_store as store
+from saas_login_policy import valid_credential, requirement
+from saas_account_access import can_admin, admin_permissions
 from saas_admin_workspace import own_admin_workspace
 from bta_license_client import LicenseDecision, resolve_tenant_license, activate_tenant_trial
 
@@ -23,11 +25,22 @@ bp=Blueprint("saas",__name__,url_prefix="/saas")
 @bp.context_processor
 def saas_workspace_navigation():
     available = False
+    rights = dict(accounts=False, professionals=False, activations=False, clinic=False)
     if (is_saas_account() and current_user.is_practitioner()
             and not current_user.must_change_password):
-        available = (bool(own_admin_workspace(current_user.id))
-                     if current_user.is_admin() else True)
-    return {"has_saas_workspace": available}
+        if current_user.is_admin():
+            limits = getattr(current_user, "admin_rights", None)
+            rights = {key: (current_user.role == "superadmin"
+                            or limits is None or limits.get(key, False))
+                      for key in rights}
+            available = rights["clinic"] and bool(own_admin_workspace(current_user.id))
+        else:
+            available = True
+            rights["activations"] = True
+    return {"has_saas_workspace": available,
+            "can_manage_accounts": rights["accounts"],
+            "can_manage_professionals": rights["professionals"],
+            "can_manage_activations": rights["activations"]}
 
 
 def is_saas_account():
@@ -45,6 +58,11 @@ def guard_saas_identity():
     if (is_saas_account() and current_user.must_change_password
             and request.endpoint not in ("saas.profile", "saas.profile_password", "saas.logout")):
         return redirect(url_for("saas.profile"))
+    if (is_saas_account() and not current_user.must_change_password
+            and request.endpoint not in ("saas.mfa_settings", "saas.logout")):
+        # Newly created accounts must complete MFA before entering the app.
+        if current_user.mfa_required and not current_user.mfa_enabled:
+            return redirect(url_for("saas.mfa_settings"))
     return None
 
 
@@ -81,6 +99,9 @@ def practitioner_only(f):
 
 
 def licensed_tenant():
+    if (is_saas_account() and current_user.is_admin()
+            and not can_admin(int(current_user.id), "clinic")):
+        abort(403)
     if not is_saas_account() or not current_user.is_practitioner():
         abort(403)
     tenant=(own_admin_workspace(current_user.id) if current_user.is_admin()
@@ -116,8 +137,8 @@ def register():
         registry=request.form.get("registry_code","").strip()
         password=request.form.get("senha","")
         confirmation=request.form.get("confirmar_senha","")
-        if len(password)<12 or password!=confirmation:
-            flash("Use senha de pelo menos 12 caracteres e confirme corretamente.","danger")
+        if not valid_credential(password) or password!=confirmation:
+            flash(requirement() + " Confirme a senha corretamente.","danger")
         else:
             try:
                 from app import bcrypt
@@ -146,9 +167,23 @@ def login():
         row=store.user_by_email(request.form.get("email",""))
         password=request.form.get("senha","")
         if row and row["active"] and bcrypt.check_password_hash(row["password_hash"],password):
+            import saas_mfa_store as mfa
+            from saas_mfa_routes import TRUST_COOKIE
+            if row.get("mfa_enabled", False):
+                token = request.cookies.get(TRUST_COOKIE)
+                if not mfa.trusted(int(row["id"]), token, request.headers.get("User-Agent")):
+                    # Signed pending session, with no authenticated user yet.
+                    session.clear()
+                    session["saas_mfa_pending"] = int(row["id"])
+                    session["saas_mfa_pending_at"] = time.time()
+                    session["saas_mfa_attempts"] = 0
+                    session["saas_csrf"] = secrets.token_urlsafe(32)
+                    return redirect(url_for("saas.mfa_challenge"))
             user=store.SaaSUser(row)
+            session.clear()
             login_user(user,fresh=True)
             session["saas_auth"]=True
+            session["saas_csrf"]=secrets.token_urlsafe(32)
             session.pop("login_failures",None)
             session.pop("login_blocked_until",None)
             return redirect(url_for("saas.profile" if user.must_change_password else "saas.dashboard"))
@@ -187,6 +222,8 @@ def dashboard():
 @bp.route("/meu-espaco/ativar", methods=["POST"])
 @admin_only
 def activate_admin_workspace():
+    if not can_admin(int(current_user.id), "clinic"):
+        abort(403)
     check_csrf()
     from saas_admin_workspace import activate_personal_admin_workspace
     try:
@@ -200,6 +237,8 @@ def activate_admin_workspace():
 @bp.route("/profissionais")
 @admin_only
 def professionals():
+    if not can_admin(int(current_user.id), "professionals"):
+        abort(403)
     return render_template("saas_professionals.html",pending=store.pending_professionals(),
                            professionals=store.list_professionals(),csrf_token=csrf())
 
@@ -207,6 +246,8 @@ def professionals():
 @bp.route("/profissionais/<int:professional_id>/decidir",methods=["POST"])
 @admin_only
 def decide_professional(professional_id):
+    if not can_admin(int(current_user.id), "professionals"):
+        abort(403)
     check_csrf()
     decision=request.form.get("decision")
     if decision not in ("approve","reject"):
@@ -243,6 +284,8 @@ def _attempt_trial(professional_id):
 @bp.route("/profissionais/<int:professional_id>/trial",methods=["POST"])
 @admin_only
 def trial_professional(professional_id):
+    if not can_admin(int(current_user.id), "professionals"):
+        abort(403)
     check_csrf()
     tenant=store.own_tenant(professional_id)
     if not tenant or not store.get_user(professional_id):
@@ -308,6 +351,10 @@ register_patient_intake_routes(bp)
 
 # A restricted POST route only: no public patient portal or automatic access.
 import saas_portal_activation_routes
+import saas_account_admin_routes
+
+from saas_mfa_routes import register_mfa_routes
+register_mfa_routes(bp)
 
 
 @bp.route("/saude")
@@ -325,6 +372,10 @@ def health():
         store.one("SELECT 1 FROM care_portal_self_grants LIMIT 1")
         store.one("SELECT 1 FROM care_portal_consents LIMIT 1")
         store.one("SELECT 1 FROM care_portal_client_activations LIMIT 1")
+        store.one("SELECT 1 FROM saas_account_rights LIMIT 1")
+        store.one("SELECT 1 FROM saas_mfa_factors LIMIT 1")
+        store.one("SELECT 1 FROM saas_mfa_recovery_codes LIMIT 1")
+        store.one("SELECT 1 FROM saas_mfa_trusted_devices LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503

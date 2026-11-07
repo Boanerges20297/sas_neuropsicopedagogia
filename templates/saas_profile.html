@@ -32,11 +32,23 @@
 <input type="hidden" name="csrf_token" value="{{csrf_token}}">
 <label for="senha_troca">Senha {{ 'temporária' if forced else 'atual' }}</label>
 <input id="senha_troca" name="senha_atual" type="password" required autocomplete="current-password">
-<label for="nova_senha">Nova senha (mínimo 12 caracteres)</label>
-<input id="nova_senha" name="nova_senha" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+<label for="nova_senha">Nova senha (mínimo 8 caracteres)</label><p class="saas-hint">Pelo menos 2 letras, 4 números e 1 símbolo.</p>
+<input id="nova_senha" name="nova_senha" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
 <label for="confirmar_senha">Confirmar nova senha</label>
-<input id="confirmar_senha" name="confirmar_senha" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+<input id="confirmar_senha" name="confirmar_senha" type="password" minlength="8" maxlength="128" required autocomplete="new-password">
+<div class="saas-actions">
+<button type="button" class="saas-btn saas-btn--ghost" data-suggest-password data-password-target="nova_senha" data-confirm-target="confirmar_senha" data-notice-target="new-password-feedback">Sugerir senha</button>
+<button type="button" class="saas-btn saas-btn--ghost" data-toggle-password data-password-target="nova_senha" aria-pressed="false">Mostrar senha</button>
+</div>
+<p id="new-password-feedback" class="saas-hint" role="status" aria-live="polite">A sugestão preenche a nova senha e sua confirmação. Você pode editar livremente.</p>
 <button class="saas-btn" type="submit">Salvar nova senha</button>
 </form></section>
+{% if not forced %}
+<section class="saas-card">
+  <h2>Proteção adicional de acesso</h2>
+  <p>Configure seu aplicativo autenticador e gerencie aparelhos confiáveis.</p>
+  <a class="saas-btn" href="{{url_for('saas.mfa_settings')}}">Segurança e autenticador</a>
+</section>
+{% endif %}
 <script src="{{ url_for('static',filename='saas-form-masks.js') }}" defer></script>
 {% endblock %}

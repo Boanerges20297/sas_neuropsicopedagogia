@@ -1,0 +1,110 @@
+{% extends "saas_base.html" %}
+{% block title %}Contas e acessos | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro">
+  <span class="saas-kicker">ADMINISTRAÇÃO DE ACESSOS</span>
+  <h1>Contas e permissões</h1>
+  <p>Crie contas com perfil definido. Um administrador pode também atuar como profissional em um espaço clínico particular; isso não abre prontuários de outros profissionais.</p>
+</div>
+
+{% if one_time_password %}
+<section class="saas-card" role="status">
+  <h2>Conta #{{ created_id }} criada</h2>
+  <p><strong>Senha temporária:</strong> <code>{{ one_time_password }}</code></p>
+  <p>Copie agora e entregue ao titular por um canal seguro. A senha não será exibida novamente. No primeiro login será obrigatória a troca por uma senha de 8 a 128 caracteres, com pelo menos duas letras, quatro números e um símbolo.</p>
+  <p>Contas de pacientes/responsáveis permanecem pendentes até verificação e ativação individual. A criação não compartilha documentos clínicos.</p>
+</section>
+{% endif %}
+
+<section class="saas-card saas-form-card">
+  <h2>Criar uma conta</h2>
+  <form method="post" action="{{url_for('saas.managed_accounts')}}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="account-name">Nome completo</label>
+    <input id="account-name" name="nome" required maxlength="160" autocomplete="off">
+    <label for="account-email">E-mail</label>
+    <input id="account-email" name="email" type="email" required maxlength="254" autocomplete="off">
+    <label for="account-role">Perfil de acesso</label>
+    <select id="account-role" name="role" required>
+      <option value="patient">Paciente / responsável (aguarda ativação)</option>
+      <option value="professional">Profissional (licença BTA necessária)</option>
+      <option value="admin">Administração</option>
+      {% if allow_superadmin %}<option value="superadmin">Superadministração</option>{% endif %}
+    </select>
+    <fieldset id="administrative-rights" style="margin:1rem 0;padding:1rem;border:1px solid #ccc;border-radius:12px">
+      <legend>Permissões administrativas específicas</legend>
+      <label class="saas-check"><input type="checkbox" name="allow_accounts"> Criar e consultar contas</label>
+      <label class="saas-check"><input type="checkbox" name="allow_professionals"> Aprovar profissionais e gerenciar trial BTA</label>
+      <label class="saas-check"><input type="checkbox" name="allow_activations"> Ativar contas de clientes de outros profissionais</label>
+    </fieldset>
+    <label class="saas-check"><input id="clinical-workspace" type="checkbox" name="clinical_workspace">
+      Também pode atuar como profissional em espaço clínico próprio</label>
+    <p class="saas-hint">A escolha cria um ambiente privado para o profissional. Administração global não dá acesso aos prontuários de outros profissionais.</p>
+    <div id="professional-fields" hidden>
+      <h3>Identificação profissional</h3>
+      <label for="account-cpf">CPF</label>
+      <input id="account-cpf" name="cpf" inputmode="numeric" autocomplete="off">
+      <label for="account-area">Área de atuação</label>
+      <select id="account-area" name="profession">
+        <option value="">Selecione a área</option>
+        {% for value,label in areas.items() %}<option value="{{value}}">{{label}}</option>{% endfor %}
+      </select>
+      <label for="account-birth">Data de nascimento</label>
+      <input id="account-birth" type="date" name="birth_date">
+      <label for="account-phone">Telefone com DDD</label>
+      <input id="account-phone" name="phone" type="tel" inputmode="tel" autocomplete="off">
+    </div>
+    <label for="account-password">Senha temporária (mínimo 8 caracteres)</label>
+    <input id="account-password" name="senha" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+    <label for="account-password-confirm">Confirmar senha temporária</label>
+    <input id="account-password-confirm" name="confirmar_senha" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+    <div class="saas-actions">
+      <button type="button" class="saas-btn saas-btn--ghost" data-suggest-password data-password-target="account-password" data-confirm-target="account-password-confirm" data-notice-target="account-password-feedback">Sugerir senha</button>
+      <button type="button" class="saas-btn saas-btn--ghost" data-toggle-password data-password-target="account-password" aria-pressed="false">Mostrar senha</button>
+    </div>
+    <p id="account-password-feedback" class="saas-hint" role="status" aria-live="polite">No mínimo 8 caracteres: 2 letras, 4 números e 1 símbolo. Você pode digitar ou gerar uma sugestão.</p>
+    <p class="saas-hint">A senha será exibida uma única vez depois da criação para entrega por canal seguro. Troca obrigatória no primeiro acesso.</p>
+    <button type="submit" class="saas-btn">Criar conta</button>
+  </form>
+</section>
+
+<section class="saas-card">
+  <h2>Contas recentes</h2>
+  <div class="saas-list">
+    {% for u in accounts %}
+    <article class="saas-person">
+      <div>
+        <strong>{{u.nome}}</strong>
+        <p>{{u.email}} · {{u.global_role}} · {{'Ativa' if u.active else 'Pendente/inativa'}}</p>
+        <p class="saas-hint">{{'Com espaço clínico' if u.clinical_workspace else 'Sem espaço clínico próprio'}} · {{'Troca de senha pendente' if u.must_change_password else 'Senha pessoal definida'}}</p>
+      </div>
+    </article>
+    {% else %}
+    <p>Não há contas cadastradas.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+(() => {
+ const role = document.getElementById('account-role');
+ const clinical = document.getElementById('clinical-workspace');
+ const fields = document.getElementById('professional-fields');
+ function update() {
+   const r = role.value;
+   const needs = r === 'professional' || (r !== 'patient' && clinical.checked);
+   clinical.disabled = (r === 'patient' || r === 'professional');
+   if (r === 'patient' || r === 'professional') clinical.checked = r === 'professional';
+   fields.hidden = !needs;
+   for (const field of fields.querySelectorAll('input,select')) field.required = needs;
+   const adminRights = document.getElementById('administrative-rights');
+   const admin = (r === 'admin' || r === 'superadmin');
+   adminRights.hidden = !admin;
+   for (const field of adminRights.querySelectorAll('input')) field.disabled = !admin;
+ }
+ role.addEventListener('change',update);
+ clinical.addEventListener('change',update);
+ update();
+})();
+</script>
+{% endblock %}

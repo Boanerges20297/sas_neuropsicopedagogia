@@ -1,1 +1,71 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}Neuro-Diagnosis{% endblock %}</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='dashboard-v2.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='saas.css') }}">{% block dashboard_styles %}{% endblock %}</head><body class="neuro-dashboard"><nav class="saas-top"><a class="saas-mark" href="{{ url_for('saas.dashboard') }}">✦ Neuro-Diagnosis <span>SaaS</span></a><div class="saas-menu">{% if current_user.is_authenticated and session.get('saas_auth') %}<a href="{{ url_for('saas.dashboard') }}">Meu painel</a>{% if current_user.is_practitioner() %}<a href="{{ url_for('saas.activation_queue') }}">Ativações de clientes</a>{% endif %}<a href="{{ url_for('saas.profile') }}">Minha conta</a>{% if has_saas_workspace %}<a href="{{ url_for('saas.patients') }}">Pacientes</a><a href="{{ url_for('saas.care_calendar') }}">Agenda</a><a href="{{ url_for('saas.tests') }}">Testes</a>{% endif %}{% if current_user.is_admin() %}<a href="{{ url_for('saas.professionals') }}">Aprovações</a>{% endif %}<a href="{{ url_for('saas.logout') }}">Sair</a>{% else %}<a href="{{ url_for('saas.login') }}">Entrar</a><a href="{{ url_for('saas.register') }}">Cadastro profissional</a>{% endif %}</div></nav><main class="saas-main">{% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<p class="saas-alert saas-alert--{{ category }}" role="status">{{message}}</p>{% endfor %}{% endwith %}{% block content %}{% endblock %}</main></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}Neuro-Diagnosis{% endblock %}</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='dashboard-v2.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='saas.css') }}">{% block dashboard_styles %}{% endblock %}</head><body class="neuro-dashboard"><nav class="saas-top"><a class="saas-mark" href="{{ url_for('saas.dashboard') }}">✦ Neuro-Diagnosis <span>SaaS</span></a><div class="saas-menu">{% if current_user.is_authenticated and session.get('saas_auth') %}<a href="{{ url_for('saas.dashboard') }}">Meu painel</a>{% if can_manage_activations %}<a href="{{ url_for('saas.activation_queue') }}">Ativações de clientes</a>{% endif %}<a href="{{ url_for('saas.profile') }}">Minha conta</a>{% if has_saas_workspace %}<a href="{{ url_for('saas.patients') }}">Pacientes</a><a href="{{ url_for('saas.care_calendar') }}">Agenda</a><a href="{{ url_for('saas.tests') }}">Testes</a>{% endif %}{% if can_manage_accounts %}<a href="{{ url_for('saas.managed_accounts') }}">Contas</a>{% endif %}{% if can_manage_professionals %}<a href="{{ url_for('saas.professionals') }}">Aprovações</a>{% endif %}<a href="{{ url_for('saas.logout') }}">Sair</a>{% else %}<a href="{{ url_for('saas.login') }}">Entrar</a><a href="{{ url_for('saas.register') }}">Cadastro profissional</a>{% endif %}</div></nav><main class="saas-main">{% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<p class="saas-alert saas-alert--{{ category }}" role="status">{{message}}</p>{% endfor %}{% endwith %}{% block content %}{% endblock %}</main><script>
+/* Shared account-form helpers. Secure RNG; suggestions stay in browser until POST. */
+(() => {
+  "use strict";
+  const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const DIGITS = "0123456789";
+  const SYMBOLS = "!@#$%&*-_";
+  const ALL = LETTERS + DIGITS + SYMBOLS;
+  const choose = (alphabet) => {
+    if (!window.crypto || !window.crypto.getRandomValues) throw new Error("secure_rng_missing");
+    const data = new Uint32Array(1);
+    const range = 0x100000000;
+    const max = Math.floor(range / alphabet.length) * alphabet.length;
+    let draw;
+    do {
+      window.crypto.getRandomValues(data);
+      draw = data[0];
+    } while (draw >= max);
+    return alphabet[draw % alphabet.length];
+  };
+  const suggested = () => {
+    const chars = [
+      choose(LETTERS), choose(LETTERS),
+      choose(DIGITS), choose(DIGITS), choose(DIGITS), choose(DIGITS),
+      choose(SYMBOLS)
+    ];
+    while (chars.length < 16) chars.push(choose(ALL));
+    for (let i = chars.length - 1; i > 0; i--) {
+      const random = new Uint32Array(1);
+      const range = 0x100000000;
+      const max = Math.floor(range / (i + 1)) * (i + 1);
+      let n;
+      do {
+        window.crypto.getRandomValues(random);
+        n = random[0];
+      } while (n >= max);
+      const j = n % (i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join("");
+  };
+  document.querySelectorAll("[data-suggest-password]").forEach(button => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.dataset.passwordTarget);
+      const confirm = document.getElementById(button.dataset.confirmTarget);
+      const notice = document.getElementById(button.dataset.noticeTarget || "");
+      if (!input || !confirm) return;
+      try {
+        const generated = suggested();
+        input.value = generated;
+        confirm.value = generated;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        confirm.dispatchEvent(new Event("input", { bubbles: true }));
+        if (notice) notice.textContent = "Senha sugerida e confirmação preenchidas. Você pode editar.";
+      } catch (_) {
+        if (notice) notice.textContent = "O gerador seguro não está disponível. Digite uma senha manualmente.";
+      }
+    });
+  });
+  document.querySelectorAll("[data-toggle-password]").forEach(button => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.dataset.passwordTarget);
+      if (!input) return;
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      button.textContent = show ? "Ocultar senha" : "Mostrar senha";
+      button.setAttribute("aria-pressed", String(show));
+    });
+  });
+})();
+</script></body></html>

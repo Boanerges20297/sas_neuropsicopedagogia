@@ -74,6 +74,7 @@ class BTAIntegrationTests(unittest.TestCase):
         with patch.object(saas_routes, "current_user", admin), \
              patch.object(saas_routes, "is_saas_account", return_value=True), \
              patch.object(saas_routes, "own_admin_workspace", return_value=tenant), \
+             patch.object(saas_routes, "can_admin", return_value=True), \
              patch.object(saas_routes, "resolve_tenant_license") as remote:
             own, decision = saas_routes.licensed_tenant()
         self.assertEqual(own, tenant)

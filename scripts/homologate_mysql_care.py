@@ -105,7 +105,7 @@ INSERT INTO care_patient_intakes
 
 def verify(db):
     tables = int(mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE';", db=db))
-    if tables < 26:
+    if tables < 30:
         raise AssertionError(f"Expected at least 26 tables, found {tables}")
     if mysql("SELECT verification_status FROM care_client_contacts LIMIT 1;", db=db) != "unverified":
         raise AssertionError("Guardian should start UNVERIFIED")
@@ -249,6 +249,15 @@ UPDATE care_portal_consents
     print("PATIENT_INTAKE_HOMOLOGATION_OK adult_self=1 minor_guardian=1 "
           "no_extra_login=1 invalid_guardian_links_denied=4")
 
+    # New accounts require a TOTP enrollment with no implicit device trust.
+    mysql("INSERT INTO saas_mfa_factors(user_id,required) VALUES(101,1);",db=db)
+    if mysql("SELECT required FROM saas_mfa_factors WHERE user_id=101;",db=db)!="1":
+        raise AssertionError("First-access MFA enrollment flag missing")
+    if mysql("SELECT COUNT(*) FROM saas_mfa_trusted_devices;",db=db)!="0":
+        raise AssertionError("Unexpected trusted devices before TOTP enrollment")
+    if mysql("SELECT COUNT(*) FROM saas_account_rights;",db=db)!="0":
+        raise AssertionError("Admin rights implicitly granted")
+    print("MFA_HOMOLOGATION_OK first_login_required=1 trusted_devices=0 explicit_rights=0")
     print(f"MYSQL_HOMOLOGATION_OK tables={tables} tenants=2 blocked_invariants={len(rejections)} guardian_unverified=1")
 
 
@@ -269,7 +278,9 @@ def main():
                  "mysql_care_portal_access_migration.sql",
                  "mysql_care_patient_intake_migration.sql",
                  "mysql_care_portal_self_access_migration.sql",
-                 "mysql_care_client_activation_migration.sql")
+                 "mysql_care_client_activation_migration.sql",
+                 "mysql_saas_account_rights_migration.sql",
+                 "mysql_saas_mfa_migration.sql")
         for filename in names:
             apply_file(filename, db)
         for filename in names[1:]:

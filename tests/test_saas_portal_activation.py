@@ -221,7 +221,8 @@ class ActivationRouteTests(unittest.TestCase):
             s["_user_id"] = "saas:33"
         with patch.object(activation_routes,"activate_client_account",
                           return_value=True) as act, \
-             patch.object(activation_routes,"licensed_tenant") as licensed:
+             patch.object(activation_routes,"licensed_tenant") as licensed, \
+             patch.object(activation_routes,"can_admin",return_value=True):
             result = self.browser.post(self.url(),data={"csrf_token":"activation-test-csrf"})
             self.assertEqual(result.status_code,302)
             act.assert_called_once_with(33,301,104)
