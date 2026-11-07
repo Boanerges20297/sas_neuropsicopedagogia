@@ -32,3 +32,6 @@ Ponto de partida sincronizado com origin/main: ca3c366956439e1b134f9981b3db45e6e
 
 ## Interpretação correta
 Arquitetura operacional definida e primeira fatia de atendimento programada/testada no STI. Não equivale a atendimento clínico integral nem a produção pronta.
+
+## Atualização posterior — 07/11/2026
+O MySQL 8.4.8 foi localizado dentro do Ubuntu/WSL do próprio STI (via socket, sem porta 3306 do Windows). O checkpoint seguinte `CHECKPOINT_2026-11-07_HOMOLOGACAO_MYSQL_PORTAL.md` confirma homologação REAL das migrações, 20 tabelas, bloqueios de integridade, política do portal e 96 testes (95 aprovados, 1 ignorado). As afirmações acima sobre indisponibilidade de MySQL são registro histórico do primeiro diagnóstico, não o estado atual. Concorrência real, E2E e produção continuam pendentes.

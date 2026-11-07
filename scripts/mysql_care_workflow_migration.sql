@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS care_client_contacts (
   verification_status ENUM('unverified','verified','revoked') NOT NULL DEFAULT 'unverified',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY ix_care_contacts_client (tenant_id,client_id,professional_user_id),
+  UNIQUE KEY uq_care_contact_all_scope (id,tenant_id,client_id,professional_user_id),
   CONSTRAINT fk_care_contact_client FOREIGN KEY (client_id,tenant_id)
       REFERENCES clients(id,tenant_id),
   CONSTRAINT fk_care_contact_member FOREIGN KEY (tenant_id,professional_user_id)
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS care_appointments (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_care_request (tenant_id,professional_user_id,request_id),
   UNIQUE KEY uq_care_appointment_scope (id,tenant_id),
+  UNIQUE KEY uq_care_appointment_full_scope (id,tenant_id,client_id,professional_user_id),
   KEY ix_care_professional_schedule (tenant_id,professional_user_id,starts_at_utc),
   KEY ix_care_client_schedule (tenant_id,client_id,starts_at_utc),
   CONSTRAINT chk_care_interval CHECK (ends_at_utc > starts_at_utc),
@@ -56,8 +58,8 @@ CREATE TABLE IF NOT EXISTS care_encounters (
   signed_at DATETIME NULL,
   UNIQUE KEY uq_care_encounter_appointment (appointment_id),
   KEY ix_care_encounters_prof (tenant_id,professional_user_id,opened_at),
-  CONSTRAINT fk_care_encounter_appt FOREIGN KEY(appointment_id,tenant_id)
-      REFERENCES care_appointments(id,tenant_id),
+  CONSTRAINT fk_care_encounter_appt FOREIGN KEY(appointment_id,tenant_id,client_id,professional_user_id)
+      REFERENCES care_appointments(id,tenant_id,client_id,professional_user_id),
   CONSTRAINT fk_care_encounter_client FOREIGN KEY(client_id,tenant_id)
       REFERENCES clients(id,tenant_id),
   CONSTRAINT fk_care_encounter_member FOREIGN KEY(tenant_id,professional_user_id)

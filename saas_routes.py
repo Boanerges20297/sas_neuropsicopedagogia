@@ -304,6 +304,7 @@ def health():
         store.one("SELECT 1 FROM neurocore_evidence_reviews LIMIT 1")
         store.one("SELECT 1 FROM care_appointments LIMIT 1")
         store.one("SELECT 1 FROM care_encounters LIMIT 1")
+        store.one("SELECT 1 FROM care_portal_grants LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503

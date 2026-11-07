@@ -90,7 +90,7 @@ flowchart TD
 
 **Gate de publicação obrigatório:** a cópia do script instalada na VPS (`/usr/local/sbin/deploy-neuro-diagnosis`) deve ser reconciliada e verificada com o script versionado, sob autorização; apenas editar `infra/host/deploy-neuro-diagnosis-saas.sh` no Git não altera a cópia instalada.
 
-Migrações na ordem: `mysql_saas_profile_migration.sql` → `mysql_neurocore_review_migration.sql` → `mysql_care_workflow_migration.sql`; confirmar backup, índices, tabelas e endpoint de saúde. **Sem release automática nesta etapa.**
+Migrações na ordem: `mysql_saas_profile_migration.sql` → `mysql_neurocore_review_migration.sql` → `mysql_care_workflow_migration.sql` → `mysql_care_portal_access_migration.sql`; confirmar backup, índices, tabelas e endpoint de saúde. **Sem release automática nesta etapa.**
 
 ## 7. Critérios de aceite pendentes para uso real
 1. Migrações ensaiadas em MySQL de homologação descartável e backup/restauração verificados.
