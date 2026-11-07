@@ -39,6 +39,26 @@ services:
       - traefik.http.routers.neuro-flask.tls.certresolver=letsencrypt
       - traefik.http.routers.neuro-flask.priority=1000
       - traefik.http.routers.neuro-flask.service=neuro-flask
+      # Project-scoped rate limits, not global Traefik configuration.
+      # Sources are remote addresses until a verified CDN/trusted-proxy
+      # configuration is deployed at the host edge; never trust arbitrary XFF.
+      - traefik.http.routers.neuro-flask.middlewares=neuro-general-limit
+      - traefik.http.middlewares.neuro-general-limit.ratelimit.average=120
+      - traefik.http.middlewares.neuro-general-limit.ratelimit.period=1m
+      - traefik.http.middlewares.neuro-general-limit.ratelimit.burst=60
+      - traefik.http.middlewares.neuro-general-limit.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
+      # Sensitive SaaS identity endpoints receive a stricter independent pool.
+      - traefik.http.routers.neuro-auth.rule=(Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)) && (PathPrefix(`/saas/entrar`) || Path(`/saas/cadastro`) || PathPrefix(`/saas/recuperar-senha`))
+      - traefik.http.routers.neuro-auth.entrypoints=websecure
+      - traefik.http.routers.neuro-auth.tls=true
+      - traefik.http.routers.neuro-auth.tls.certresolver=letsencrypt
+      - traefik.http.routers.neuro-auth.priority=1100
+      - traefik.http.routers.neuro-auth.service=neuro-flask
+      - traefik.http.routers.neuro-auth.middlewares=neuro-auth-limit
+      - traefik.http.middlewares.neuro-auth-limit.ratelimit.average=30
+      - traefik.http.middlewares.neuro-auth-limit.ratelimit.period=1m
+      - traefik.http.middlewares.neuro-auth-limit.ratelimit.burst=15
+      - traefik.http.middlewares.neuro-auth-limit.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
       - traefik.http.services.neuro-flask.loadbalancer.server.port=8000
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; [urllib.request.urlopen('http://127.0.0.1:8000'+path,timeout=3).close() for path in ('/health/ready','/saas/saude')]"]

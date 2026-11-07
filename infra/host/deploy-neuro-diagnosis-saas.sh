@@ -55,6 +55,8 @@ docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWO
 # Account permissions and MFA schema are installed before the new application starts.
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_account_rights_migration.sql"
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_mfa_migration.sql"
+# Shared login throttling and disposable email OTP reset records.
+docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_login_recovery_migration.sql"
 docker compose -f "$COMPOSE" up -d web
 ok=0
 for _ in $(seq 1 24); do

@@ -161,10 +161,13 @@ def login():
         session.clear()
     if request.method=="POST":
         check_csrf()
-        if session.get("login_blocked_until",0)>time.time():
-            abort(429)
+        import saas_login_recovery as recovery
+        email = request.form.get("email", "").strip().lower()
+        if recovery.cooldown_remaining(email):
+            flash("Muitas tentativas incorretas. Aguarde a pausa de segurança ou recupere sua senha.", "warning")
+            return redirect(url_for("saas.request_password_reset"))
         from app import bcrypt
-        row=store.user_by_email(request.form.get("email",""))
+        row=store.user_by_email(email)
         password=request.form.get("senha","")
         if row and row["active"] and bcrypt.check_password_hash(row["password_hash"],password):
             import saas_mfa_store as mfa
@@ -184,14 +187,11 @@ def login():
             login_user(user,fresh=True)
             session["saas_auth"]=True
             session["saas_csrf"]=secrets.token_urlsafe(32)
-            session.pop("login_failures",None)
-            session.pop("login_blocked_until",None)
+            recovery.clear_failures(email)
             return redirect(url_for("saas.profile" if user.must_change_password else "saas.dashboard"))
-        failures=int(session.get("login_failures",0))+1
-        session["login_failures"]=failures
-        if failures>=8:
-            session["login_blocked_until"]=time.time()+300
-            session["login_failures"]=0
+        if recovery.note_wrong_password(email):
+            flash("Cinco tentativas incorretas. Para recuperar o acesso, solicite um código por e-mail.", "warning")
+            return redirect(url_for("saas.request_password_reset"))
         flash("Credenciais inválidas ou cadastro aguardando aprovação.","danger")
     return render_template("login.html",saas_mode=True,csrf_token=csrf())
 
@@ -352,6 +352,8 @@ register_patient_intake_routes(bp)
 # A restricted POST route only: no public patient portal or automatic access.
 import saas_portal_activation_routes
 import saas_account_admin_routes
+from saas_login_recovery_routes import register_recovery_routes
+register_recovery_routes(bp)
 
 from saas_mfa_routes import register_mfa_routes
 register_mfa_routes(bp)

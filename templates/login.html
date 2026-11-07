@@ -95,7 +95,11 @@
                 </div>
                 <div class="neuro-access__help" id="neuro-ajuda" tabindex="-1">
                     <strong>Precisa recuperar o acesso?</strong>
+                    {% if saas_mode|default(false) %}
+                    <p><a href="{{url_for('saas.request_password_reset')}}">Recuperar senha por e-mail</a></p>
+                    {% else %}
                     <p>Por segurança, solicite a redefinição da senha à administração da plataforma.</p>
+                    {% endif %}
                     <a href="#neuro-access-title">Voltar ao login</a>
                 </div>
             </div>

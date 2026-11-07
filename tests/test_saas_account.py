@@ -50,9 +50,15 @@ class SaaSAccountFlowTests(unittest.TestCase):
             cpf_masked="Não informado",practice_area=None,birth_date=None,
             phone_display="",global_role="superadmin",must_change_password=1))
         self.profile_data.start()
+        self.recovery_check=patch("saas_login_recovery.cooldown_remaining",return_value=0)
+        self.recovery_clear=patch("saas_login_recovery.clear_failures",return_value=None)
+        self.recovery_check.start()
+        self.recovery_clear.start()
         with self.client.session_transaction() as s:
             s["saas_csrf"]="test-csrf-code"
     def tearDown(self):
+        self.recovery_clear.stop()
+        self.recovery_check.stop()
         self.profile_data.stop()
         self.lookup.stop()
         self.get_user.stop()

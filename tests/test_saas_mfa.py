@@ -57,6 +57,10 @@ class FirstAccessFlowTests(unittest.TestCase):
         })
         self.get_user=patch.object(store,"get_user",return_value=self.user)
         self.get_user.start()
+        self.cooldown=patch("saas_login_recovery.cooldown_remaining",return_value=0)
+        self.reset_failures=patch("saas_login_recovery.clear_failures",return_value=None)
+        self.cooldown.start()
+        self.reset_failures.start()
         with self.client.session_transaction() as s:
             s["_user_id"]="saas:37"
             s["_fresh"]=True
@@ -64,6 +68,8 @@ class FirstAccessFlowTests(unittest.TestCase):
             s["saas_csrf"]="mfa-flow-csrf"
 
     def tearDown(self):
+        self.reset_failures.stop()
+        self.cooldown.stop()
         self.get_user.stop()
         app.config["TESTING"]=self.old
 
