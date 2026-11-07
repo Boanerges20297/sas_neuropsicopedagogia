@@ -42,6 +42,8 @@ docker exec neuro-diagnosis-db sh -c 'exec mysqldump --single-transaction --no-t
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_profile_migration.sql"
 # Additive, idempotent NeuroCore documentation table after the verified database backup.
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_neurocore_review_migration.sql"
+# Additive care workflow tables: appointments, encounter metadata and contacts.
+docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_care_workflow_migration.sql"
 docker compose -f "$COMPOSE" up -d web
 ok=0
 for _ in $(seq 1 24); do

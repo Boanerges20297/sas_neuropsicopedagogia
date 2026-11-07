@@ -1,0 +1,90 @@
+{% extends "saas_base.html" %}
+{% block title %}Agenda do cliente | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-care.css')}}">
+{% endblock %}
+{% block content %}
+<div class="nc-shell">
+  <nav class="nc-breadcrumb" aria-label="Navegação">
+    <a href="{{url_for('saas.patients')}}">Pacientes</a><span>/</span>
+    <a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><span>Atendimentos</span>
+  </nav>
+  <header class="nc-hero">
+    <div><span class="saas-kicker">Atendimento · {{tenant.nome}}</span>
+      <h1>Agenda de {{client.nome}}</h1>
+      <p>Registre e acompanhe seus atendimentos de forma organizada.</p>
+    </div><span class="nc-tag">Acesso profissional</span>
+  </header>
+  <div class="care-columns">
+    <section class="saas-card">
+      <h2>Agendar atendimento</h2>
+      <p class="saas-hint">Horários de Fortaleza. Não é possível agendar em períodos já ocupados pelo profissional.</p>
+      <form method="post" class="care-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="request_id" value="{{request_id}}">
+        <label for="local_start">Data e horário</label>
+        <input id="local_start" name="local_start" type="datetime-local" step="900" required>
+        <label for="duration">Duração</label>
+        <select id="duration" name="duration" required>
+          {% for mins in [30,45,60,90,120] %}<option value="{{mins}}" {% if mins==60 %}selected{% endif %}>{{mins}} minutos</option>{% endfor %}
+        </select>
+        <label for="service_type">Tipo de atendimento</label>
+        <select id="service_type" name="service_type" required>
+          {% for key,title in service_names.items() %}<option value="{{key}}">{{title}}</option>{% endfor %}
+        </select>
+        <label for="modality">Modalidade</label>
+        <select id="modality" name="modality" required>
+          {% for key,title in modality_names.items() %}<option value="{{key}}">{{title}}</option>{% endfor %}
+        </select>
+        <button class="saas-btn" type="submit">Confirmar novo agendamento</button>
+      </form>
+    </section>
+    <section aria-labelledby="care-history-title">
+      <h2 id="care-history-title">Histórico de atendimentos</h2>
+      <div class="care-history">
+        {% for item in appointments %}
+          <article class="saas-card care-history-item">
+            <div class="care-history-top">
+              <div><strong>{{item.local_start}}</strong>
+                <p>{{service_names.get(item.service_type,item.service_type)}} · {{modality_names.get(item.modality,item.modality)}}</p>
+              </div>
+              <span class="care-status care-status--{{item.status}}">{{status_names.get(item.status,item.status)}}</span>
+            </div>
+            {% if item.status in ['scheduled','confirmed'] %}
+              <div class="care-actions">
+                {% if item.status=='scheduled' %}
+                <form method="post" action="{{url_for('saas.appointment_action',client_id=client.id,appointment_id=item.id)}}">
+                  <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                  <input type="hidden" name="target" value="confirmed">
+                  <button type="submit" class="saas-btn">Confirmar</button>
+                </form>
+                {% endif %}
+                <form method="post" action="{{url_for('saas.appointment_action',client_id=client.id,appointment_id=item.id)}}">
+                  <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                  <input type="hidden" name="target" value="completed">
+                  <button type="submit" class="saas-btn">Marcar realizado</button>
+                </form>
+                <form method="post" action="{{url_for('saas.appointment_action',client_id=client.id,appointment_id=item.id)}}">
+                  <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                  <input type="hidden" name="target" value="no_show">
+                  <button type="submit" class="care-outline">Não compareceu</button>
+                </form>
+                <form method="post" action="{{url_for('saas.appointment_action',client_id=client.id,appointment_id=item.id)}}">
+                  <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                  <input type="hidden" name="target" value="cancelled">
+                  <button type="submit" class="care-outline">Cancelar</button>
+                </form>
+              </div>
+            {% elif item.status=='completed' %}
+              <p class="care-footnote">Sessão registrada como realizada. Registro documental aberto em rascunho.</p>
+            {% endif %}
+          </article>
+        {% else %}
+          <div class="saas-card"><p>Nenhum atendimento registrado para este cliente.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "saas_base.html" %}
+{% block title %}Agenda de atendimento | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-care.css')}}">
+{% endblock %}
+{% block content %}
+<div class="nc-shell">
+  <header class="nc-hero">
+    <div>
+      <span class="saas-kicker">Atendimento profissional · {{tenant.nome}}</span>
+      <h1>Agenda de atendimentos</h1>
+      <p>Seus compromissos nos próximos 30 dias, com situação registrada e histórico do cliente.</p>
+    </div>
+    <span class="nc-tag">Agenda privada</span>
+  </header>
+  <div class="care-heading">
+    <h2>Próximos compromissos</h2>
+    <a class="saas-btn" href="{{url_for('saas.patients')}}">Abrir meus pacientes</a>
+  </div>
+  <section class="care-list" aria-label="Atendimentos">
+    {% for item in appointments %}
+      <article class="saas-card care-item">
+        <div class="care-date"><strong>{{item.local_start}}</strong><span>Fortaleza (UTC−3)</span></div>
+        <div class="care-detail">
+          <span class="nc-topic">{{service_names.get(item.service_type, item.service_type)}}</span>
+          <h3>{{item.client_name}}</h3>
+          <span class="care-status care-status--{{item.status}}">{{status_names.get(item.status,item.status)}}</span>
+        </div>
+        <a class="saas-btn" href="{{url_for('saas.client_appointments',client_id=item.client_id)}}">Ver atendimento</a>
+      </article>
+    {% else %}
+      <div class="saas-card care-empty">
+        <h3>Agenda livre</h3>
+        <p>Ainda não há atendimentos registrados para os próximos 30 dias.</p>
+        <a href="{{url_for('saas.patients')}}">Escolher paciente e agendar</a>
+      </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

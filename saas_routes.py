@@ -23,7 +23,8 @@ bp=Blueprint("saas",__name__,url_prefix="/saas")
 @bp.context_processor
 def saas_workspace_navigation():
     available = False
-    if is_saas_account() and current_user.is_practitioner():
+    if (is_saas_account() and current_user.is_practitioner()
+            and not current_user.must_change_password):
         available = (bool(own_admin_workspace(current_user.id))
                      if current_user.is_admin() else True)
     return {"has_saas_workspace": available}
@@ -290,6 +291,9 @@ register_profile_routes(bp)
 from saas_neurocore_routes import register_neurocore_routes
 register_neurocore_routes(bp)
 
+from saas_care_routes import register_care_routes
+register_care_routes(bp)
+
 
 @bp.route("/saude")
 def health():
@@ -298,6 +302,8 @@ def health():
         store.one("SELECT 1 AS ok")
         # Fail release smoke if the NeuroCore additive schema was not applied.
         store.one("SELECT 1 FROM neurocore_evidence_reviews LIMIT 1")
+        store.one("SELECT 1 FROM care_appointments LIMIT 1")
+        store.one("SELECT 1 FROM care_encounters LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503
