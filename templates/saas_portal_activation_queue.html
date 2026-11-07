@@ -1,0 +1,28 @@
+{% extends "saas_base.html" %}
+{% block title %}Ativações de clientes | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<header class="saas-intro">
+  <span class="saas-kicker">GESTÃO DE ACESSO</span>
+  <h1>Ativações de clientes</h1>
+  <p>{% if global_scope %}Você pode liberar contas vinculadas aos pacientes de todos os profissionais.{% else %}Você pode liberar somente contas dos seus pacientes.{% endif %} A identidade e o vínculo legal precisam estar verificados.</p>
+</header>
+<section class="saas-card">
+{% for item in requests %}
+<article class="saas-person" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem">
+  <div>
+    <strong>{{ item.patient_name }}</strong>
+    <p class="saas-hint">{{ "Paciente adulto" if item.representation_mode == "self" else "Menor com responsável" }} · Conta: {{ item.account_name }}</p>
+    {% if global_scope %}<p class="saas-hint">Profissional: {{ item.clinician_name }} · {{ item.tenant_name }}</p>{% endif %}
+    <p class="saas-hint">{{ "Conta ainda não ativada" if item.login_status == "pending" else "Conta existente, vínculo pendente" }}</p>
+  </div>
+  <form method="post" action="{{ url_for('saas.activate_client_account_route',client_id=item.client_id,principal_id=item.principal_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="saas-btn">Liberar conta</button>
+  </form>
+</article>
+{% else %}
+<p class="saas-hint">Nenhuma solicitação elegível. Contas não verificadas ou suspensas permanecem bloqueadas.</p>
+{% endfor %}
+</section>
+<p class="saas-hint">Ativar a conta não concede acesso a relatórios, documentos clínicos ou diagnósticos.</p>
+{% endblock %}

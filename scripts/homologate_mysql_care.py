@@ -52,16 +52,17 @@ def fixtures(db):
 INSERT INTO users(id,nome,email,password_hash,global_role,active)
  VALUES (101,'Synthetic Alpha','alpha@example.invalid','test-only','professional',1),
         (102,'Synthetic Beta','beta@example.invalid','test-only','professional',1),
-        (104,'Synthetic Guardian Account','guardian@example.invalid','test-only','patient',1);
+        (104,'Synthetic Guardian Account','guardian@example.invalid','test-only','patient',1),
+        (105,'Synthetic Adult Account','adult@example.invalid','test-only','patient',1);
 INSERT INTO tenants(id,nome,slug,owner_user_id,status)
  VALUES(201,'Synthetic Clinic A','hml-a',101,'active'),
        (202,'Synthetic Clinic B','hml-b',102,'active');
 INSERT INTO tenant_members(tenant_id,user_id,membership_role,status)
  VALUES(201,101,'owner','active'),(202,102,'owner','active');
-INSERT INTO clients(id,tenant_id,professional_user_id,nome)
- VALUES(301,201,101,'Synthetic Patient A'),
-       (302,202,102,'Synthetic Patient B'),
-       (303,201,101,'Synthetic Patient C');
+INSERT INTO clients(id,tenant_id,professional_user_id,nome,birth_date)
+ VALUES(301,201,101,'Synthetic Child A','2016-01-01'),
+       (302,202,102,'Synthetic Adult B','1991-01-01'),
+       (303,201,101,'Synthetic Patient C','2014-05-04');
 INSERT INTO care_client_contacts
  (id,tenant_id,client_id,professional_user_id,full_name,contact_role,email)
  VALUES(601,201,301,101,'Synthetic Guardian','legal_guardian','guardian@example.invalid');
@@ -71,6 +72,22 @@ INSERT INTO care_portal_identity_links
 INSERT INTO care_portal_grants
  (id,tenant_id,client_id,professional_user_id,user_id,identity_link_id,permission_scope,expires_at)
  VALUES(801,201,301,101,104,701,'appointments','2027-12-31 00:00:00');
+INSERT INTO care_portal_self_links
+ (id,tenant_id,client_id,professional_user_id,user_id)
+ VALUES(901,202,302,102,105);
+INSERT INTO care_portal_self_grants
+ (id,tenant_id,client_id,professional_user_id,user_id,self_link_id,permission_scope,expires_at)
+ VALUES(902,202,302,102,105,901,'appointments','2027-12-31 00:00:00');
+INSERT INTO care_portal_consents
+ (id,tenant_id,client_id,professional_user_id,user_id,permission_scope,expires_at)
+ VALUES(1001,201,301,101,104,'appointments','2027-12-31 00:00:00'),
+       (1002,202,302,102,105,'appointments','2027-12-31 00:00:00');
+INSERT INTO care_portal_login_requests(user_id,status,activated_by,activated_at)
+ VALUES(104,'active',101,UTC_TIMESTAMP()),
+       (105,'active',102,UTC_TIMESTAMP());
+INSERT INTO care_portal_client_activations
+ (id,tenant_id,client_id,professional_user_id,user_id)
+ VALUES(1101,201,301,101,104),(1102,202,302,102,105);
 INSERT INTO care_appointments
  (id,tenant_id,client_id,professional_user_id,request_id,service_type,modality,
   starts_at_utc,ends_at_utc,status)
@@ -88,8 +105,8 @@ INSERT INTO care_patient_intakes
 
 def verify(db):
     tables = int(mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE';", db=db))
-    if tables < 21:
-        raise AssertionError(f"Expected at least 21 tables, found {tables}")
+    if tables < 26:
+        raise AssertionError(f"Expected at least 26 tables, found {tables}")
     if mysql("SELECT verification_status FROM care_client_contacts LIMIT 1;", db=db) != "unverified":
         raise AssertionError("Guardian should start UNVERIFIED")
     for query, expected in [
@@ -122,6 +139,12 @@ VALUES(201,301,101,'33333333-3333-4333-8333-333333333333','initial','in_person',
     if str(BASE) not in sys.path:
         sys.path.insert(0, str(BASE))
     from saas_portal_policy import SELECT_ALLOWED
+    from saas_portal_activation_queue import QUEUE_SQL
+    admin_queue = QUEUE_SQL.replace("%s", "1", 1).replace("%s", "999", 1)
+    owner_101_queue = QUEUE_SQL.replace("%s", "0", 1).replace("%s", "101", 1)
+    owner_102_queue = QUEUE_SQL.replace("%s", "0", 1).replace("%s", "102", 1)
+    if mysql(admin_queue, db=db):
+        raise AssertionError("Unverified accounts appeared in activation queue")
     grant_query = SELECT_ALLOWED
     for value in ("104", "201", "301", "'appointments'"):
         grant_query = grant_query.replace("%s", value, 1)
@@ -144,13 +167,63 @@ UPDATE care_portal_identity_links SET verification_status='verified',
   verification_evidence_ref='synthetic-review-101',
   verified_by=101, verified_at=UTC_TIMESTAMP() WHERE id=701;
 UPDATE care_portal_grants SET status='active',authorized_by=101,
-  authorized_at=UTC_TIMESTAMP() WHERE id=801;""", db=db)
+  authorized_at=UTC_TIMESTAMP() WHERE id=801;
+UPDATE care_portal_consents SET status='accepted',
+  consent_evidence_ref='synthetic-ack-104',consent_at=UTC_TIMESTAMP(),
+  confirmed_by_user_id=104 WHERE id=1001;""", db=db)
+    if mysql(grant_query, db=db):
+        raise AssertionError("Grant and consent without client activation allowed guardian")
+    if not mysql(admin_queue, db=db).startswith("301\t"):
+        raise AssertionError("Verified guardian missing from admin activation queue")
+    if not mysql(owner_101_queue, db=db).startswith("301\t"):
+        raise AssertionError("Owner cannot see their verified guardian activation")
+    if mysql(owner_102_queue, db=db):
+        raise AssertionError("Another clinician can enumerate guardian activation")
+    mysql("""UPDATE care_portal_client_activations
+      SET status='active',activated_by=101,activated_at=UTC_TIMESTAMP()
+      WHERE id=1101;""", db=db)
     if mysql(grant_query, db=db) != "1":
         raise AssertionError("Verified, scoped guardian grant was not recognized")
+    if mysql(admin_queue, db=db):
+        raise AssertionError("Activated client remains in pending queue")
     mysql("UPDATE care_client_contacts SET verification_status='revoked' WHERE id=601;",
           db=db)
     if mysql(grant_query, db=db):
         raise AssertionError("Revoked guardian still has access")
+    from saas_portal_policy import SELECT_SELF_ALLOWED
+    self_query = SELECT_SELF_ALLOWED
+    for value in ("105", "202", "302", "'appointments'"):
+        self_query = self_query.replace("%s", value, 1)
+    if mysql(self_query, db=db):
+        raise AssertionError("Unverified adult account unexpectedly has access")
+    mysql("""UPDATE care_portal_self_links
+      SET verification_status='verified', verification_evidence_ref='synthetic-proof',
+      verified_by=102, verified_at=UTC_TIMESTAMP(),
+      consent_evidence_ref='synthetic-ack', consent_at=UTC_TIMESTAMP()
+      WHERE id=901;
+UPDATE care_portal_self_grants
+      SET status='active', authorized_by=102, authorized_at=UTC_TIMESTAMP()
+      WHERE id=902;
+UPDATE care_portal_consents
+      SET status='accepted', consent_evidence_ref='synthetic-user-ack',
+      confirmed_by_user_id=105, consent_at=UTC_TIMESTAMP()
+      WHERE id=1002;""", db=db)
+    if mysql(self_query, db=db):
+        raise AssertionError("Adult grant without client activation was accepted")
+    if not mysql(admin_queue, db=db).startswith("302\t"):
+        raise AssertionError("Verified adult missing from admin queue")
+    if not mysql(owner_102_queue, db=db).startswith("302\t"):
+        raise AssertionError("Owner cannot see verified adult activation")
+    if mysql(owner_101_queue, db=db):
+        raise AssertionError("Cross-tenant adult was listed to another clinician")
+    mysql("""UPDATE care_portal_client_activations
+      SET status='active',activated_by=102,activated_at=UTC_TIMESTAMP()
+      WHERE id=1102;""", db=db)
+    if mysql(self_query, db=db) != "1":
+        raise AssertionError("Verified adult scope and consent were not recognized")
+    if mysql(admin_queue, db=db):
+        raise AssertionError("Activated adult remains pending")
+    print("ACTIVATION_QUEUE_HOMOLOGATION_OK guardian=1 adult=1 scoped=1 hidden_after_activation=1")
     print("PORTAL_POLICY_HOMOLOGATION_OK default_deny=1 proof_required=1 "
           "cross_client_denied=1 explicit_grant=1 revoke=1")
 
@@ -194,7 +267,9 @@ def main():
         names = ("mysql_saas_schema.sql", "mysql_saas_profile_migration.sql",
                  "mysql_neurocore_review_migration.sql", "mysql_care_workflow_migration.sql",
                  "mysql_care_portal_access_migration.sql",
-                 "mysql_care_patient_intake_migration.sql")
+                 "mysql_care_patient_intake_migration.sql",
+                 "mysql_care_portal_self_access_migration.sql",
+                 "mysql_care_client_activation_migration.sql")
         for filename in names:
             apply_file(filename, db)
         for filename in names[1:]:

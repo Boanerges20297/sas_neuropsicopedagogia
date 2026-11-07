@@ -306,6 +306,9 @@ register_care_routes(bp)
 from saas_patient_intake_routes import register_patient_intake_routes
 register_patient_intake_routes(bp)
 
+# A restricted POST route only: no public patient portal or automatic access.
+import saas_portal_activation_routes
+
 
 @bp.route("/saude")
 def health():
@@ -318,6 +321,10 @@ def health():
         store.one("SELECT 1 FROM care_encounters LIMIT 1")
         store.one("SELECT 1 FROM care_portal_grants LIMIT 1")
         store.one("SELECT 1 FROM care_patient_intakes LIMIT 1")
+        store.one("SELECT 1 FROM care_portal_self_links LIMIT 1")
+        store.one("SELECT 1 FROM care_portal_self_grants LIMIT 1")
+        store.one("SELECT 1 FROM care_portal_consents LIMIT 1")
+        store.one("SELECT 1 FROM care_portal_client_activations LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503
