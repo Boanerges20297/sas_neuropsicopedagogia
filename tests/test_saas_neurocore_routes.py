@@ -137,7 +137,7 @@ class NeuroCoreMigrationContractTests(unittest.TestCase):
             encoding="utf-8")
         b = deploy.index("NEURO_BACKUP_INVALID")
         m = deploy.index("mysql_neurocore_review_migration.sql")
-        web = deploy.index('docker compose -f "$COMPOSE" up -d web', m)
+        web = deploy.index('up -d --no-deps --force-recreate --no-build web', m)
         self.assertLess(b, m)
         self.assertLess(m, web)
         self.assertIn("mysql_saas_profile_migration.sql", deploy)

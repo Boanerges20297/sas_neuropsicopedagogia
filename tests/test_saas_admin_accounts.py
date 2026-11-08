@@ -126,6 +126,58 @@ class AdminCreationTests(unittest.TestCase):
                 passwords.temporary_credential()))
 
 
+class BrowserSuggestionTests(unittest.TestCase):
+    def test_policy_aligned_client_generator(self):
+        """Execute actual shared-form JS and compare output to Python policy."""
+        import json
+        import shutil
+        import subprocess
+        from pathlib import Path
+
+        if not shutil.which("node"):
+            self.skipTest("Node not available in this runner")
+        template=Path(__file__).resolve().parents[1] / "templates" / "saas_base.html"
+        js = r"""
+const fs=require('node:fs');
+const vm=require('node:vm');
+const crypto=require('node:crypto');
+const text=fs.readFileSync(process.argv[1],'utf8');
+const match=text.match(/<script>([\s\S]*?)<\/script>/);
+if(!match) throw Error('missing shared form helper');
+let callback=null;
+const button={dataset:{passwordTarget:'p',confirmTarget:'c',noticeTarget:'n'},
+  addEventListener:(event,fn)=>{if(event==='click')callback=fn;}};
+const fields={p:{value:'',dispatchEvent(){}},
+  c:{value:'',dispatchEvent(){}},n:{textContent:''}};
+const document={
+  querySelectorAll:selector=>selector==='[data-suggest-password]'?[button]:[],
+  getElementById:id=>fields[id]||null
+};
+vm.runInNewContext(match[1], {
+  document,window:{crypto:crypto.webcrypto},Uint32Array,Event:class{}
+});
+if(typeof callback!=='function') throw Error('not connected');
+const results=[];
+for(let i=0;i<250;i++){
+  callback();
+  if(fields.p.value!==fields.c.value) throw Error('different confirmation');
+  if(!fields.n.textContent.includes('validada')) throw Error('invalid feedback');
+  results.push(fields.p.value);
+}
+process.stdout.write(JSON.stringify(results));
+"""
+        run=subprocess.run(["node","-e",js,str(template)],
+                           capture_output=True,text=True,timeout=30,check=True)
+        suggestions=json.loads(run.stdout)
+        self.assertEqual(len(suggestions),250)
+        for proposed in suggestions:
+            self.assertEqual(len(proposed),20)
+            self.assertTrue(passwords.valid_credential(proposed))
+            self.assertGreaterEqual(sum(c.isalpha() for c in proposed),4)
+            self.assertGreaterEqual(sum(c.isdigit() for c in proposed),6)
+            self.assertGreaterEqual(sum(not c.isalnum() for c in proposed),2)
+
+
 class PermissionTests(unittest.TestCase):
     def test_new_admin_limited_superadmin_unlimited(self):
         row={"global_role":"admin","active":1,"rights_id":14,

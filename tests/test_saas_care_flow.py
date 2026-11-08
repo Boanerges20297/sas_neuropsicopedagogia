@@ -286,7 +286,7 @@ class MigrationAndRuntimeContracts(unittest.TestCase):
             encoding="utf-8")
         backup = script.index("NEURO_BACKUP_INVALID")
         care_migration = script.index("mysql_care_workflow_migration.sql")
-        web = script.index('docker compose -f "$COMPOSE" up -d web', care_migration)
+        web = script.index('up -d --no-deps --force-recreate --no-build web', care_migration)
         self.assertLess(backup, care_migration)
         self.assertLess(care_migration, web)
 

@@ -50,12 +50,16 @@ class RunnerSecurityContractTests(unittest.TestCase):
 
     def test_public_route_has_bounded_retries_before_rollback(self):
         deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(encoding="utf-8")
-        self.assertIn('for _ in $(seq 1 12); do', deploy)
-        self.assertIn('curl -fsS --max-time 5 https://neuro-diagnosis.tech/saas/entrar', deploy)
-        self.assertIn('[[ "$public_ok" == 1 ]] || { echo NEURO_PUBLIC_ROUTE_NOT_READY', deploy)
+        self.assertIn('for _ in $(seq 1 30); do', deploy)
+        self.assertIn('https://neuro-diagnosis.tech/saas/entrar', deploy)
+        self.assertIn('smoke_public stage || { echo NEURO_STAGE_PUBLIC_ROUTE_FAILED', deploy)
+        self.assertIn('smoke_public primary || { echo NEURO_PRIMARY_PUBLIC_ROUTE_FAILED', deploy)
         self.assertIn('trap restore EXIT', deploy)
-        self.assertLess(deploy.index('[[ "$ok" == 1 ]] || exit 1'), deploy.index('public_ok=0'))
-        self.assertLess(deploy.index('NEURO_PUBLIC_ROUTE_NOT_READY'), deploy.index('ROLLBACK=0\nprintf'))
+        self.assertIn('^x-neuro-deploy-slot: $slot$', deploy)
+        self.assertLess(deploy.index('smoke_local 8782 ||'),
+                        deploy.index('bash "$ROUTER_SCRIPT" 8782',deploy.index('# Candidate uses')))
+        self.assertLess(deploy.index('smoke_public primary ||'),
+                        deploy.index('ROLLBACK=0',deploy.index('# Candidate uses')))
 
     def test_issue_observability_reserves_one_issue_without_leaking_token(self):
         compose = (ROOT / "docker-compose.runner.yml").read_text(encoding="utf-8")

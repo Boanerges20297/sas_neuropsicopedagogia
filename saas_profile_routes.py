@@ -71,8 +71,12 @@ def register_profile_routes(bp):
         row = store.user_by_email(current_user.email)
         if not row or not bcrypt.check_password_hash(row["password_hash"], old):
             flash("Senha atual incorreta.", "danger")
-        elif not valid_credential(new) or new != confirm or new == old:
-            flash(requirement() + " Deve ser diferente da anterior e coincidir com a confirmação.", "danger")
+        elif not valid_credential(new):
+            flash(requirement(), "danger")
+        elif new != confirm:
+            flash("A confirmação não coincide com a nova senha.", "danger")
+        elif new == old:
+            flash("A nova senha precisa ser diferente da senha atual.", "danger")
         else:
             store.change_account_password(int(current_user.id),
                                           bcrypt.generate_password_hash(new).decode())

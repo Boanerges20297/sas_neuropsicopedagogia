@@ -6,6 +6,13 @@
   const DIGITS = "0123456789";
   const SYMBOLS = "!@#$%&*-_";
   const ALL = LETTERS + DIGITS + SYMBOLS;
+  // Mirrors saas_login_policy.valid_credential. Never present a generated
+  // password as valid until the same category counts have been checked.
+  const meetsPasswordPolicy = (value) => typeof value === "string"
+    && value.length >= 8 && value.length <= 128
+    && (value.match(/[A-Za-z]/g) || []).length >= 2
+    && (value.match(/[0-9]/g) || []).length >= 4
+    && (value.match(/[^A-Za-z0-9\s]/g) || []).length >= 1;
   const choose = (alphabet) => {
     if (!window.crypto || !window.crypto.getRandomValues) throw new Error("secure_rng_missing");
     const data = new Uint32Array(1);
@@ -20,11 +27,12 @@
   };
   const suggested = () => {
     const chars = [
-      choose(LETTERS), choose(LETTERS),
-      choose(DIGITS), choose(DIGITS), choose(DIGITS), choose(DIGITS),
-      choose(SYMBOLS)
+      choose(LETTERS), choose(LETTERS), choose(LETTERS), choose(LETTERS),
+      choose(DIGITS), choose(DIGITS), choose(DIGITS),
+      choose(DIGITS), choose(DIGITS), choose(DIGITS),
+      choose(SYMBOLS), choose(SYMBOLS)
     ];
-    while (chars.length < 16) chars.push(choose(ALL));
+    while (chars.length < 20) chars.push(choose(ALL));
     for (let i = chars.length - 1; i > 0; i--) {
       const random = new Uint32Array(1);
       const range = 0x100000000;
@@ -37,7 +45,9 @@
       const j = n % (i + 1);
       [chars[i], chars[j]] = [chars[j], chars[i]];
     }
-    return chars.join("");
+    const value = chars.join("");
+    if (!meetsPasswordPolicy(value)) throw new Error("password_policy_mismatch");
+    return value;
   };
   document.querySelectorAll("[data-suggest-password]").forEach(button => {
     button.addEventListener("click", () => {
@@ -51,7 +61,7 @@
         confirm.value = generated;
         input.dispatchEvent(new Event("input", { bubbles: true }));
         confirm.dispatchEvent(new Event("input", { bubbles: true }));
-        if (notice) notice.textContent = "Senha sugerida e confirmação preenchidas. Você pode editar.";
+        if (notice) notice.textContent = "Senha gerada e validada (20 caracteres, 2+ letras, 4+ números e 1+ símbolo). Confirmação preenchida.";
       } catch (_) {
         if (notice) notice.textContent = "O gerador seguro não está disponível. Digite uma senha manualmente.";
       }

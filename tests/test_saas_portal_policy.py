@@ -127,7 +127,7 @@ class PortalPolicyTests(TestCase):
         guardian = deploy.index("mysql_care_portal_access_migration.sql")
         intake = deploy.index("mysql_care_patient_intake_migration.sql")
         adult = deploy.index("mysql_care_portal_self_access_migration.sql")
-        web = deploy.index('docker compose -f "$COMPOSE" up -d web', adult)
+        web = deploy.index('up -d --no-deps --force-recreate --no-build web', adult)
         self.assertLess(backup, care)
         self.assertLess(care, guardian)
         self.assertLess(guardian, intake)
