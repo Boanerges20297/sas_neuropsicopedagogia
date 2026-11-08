@@ -105,8 +105,8 @@ INSERT INTO care_patient_intakes
 
 def verify(db):
     tables = int(mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE';", db=db))
-    if tables < 32:
-        raise AssertionError(f"Expected at least 26 tables, found {tables}")
+    if tables < 33:
+        raise AssertionError(f"Expected at least 33 tables, found {tables}")
     if mysql("SELECT verification_status FROM care_client_contacts LIMIT 1;", db=db) != "unverified":
         raise AssertionError("Guardian should start UNVERIFIED")
     for query, expected in [
@@ -281,7 +281,8 @@ def main():
                  "mysql_care_client_activation_migration.sql",
                  "mysql_saas_account_rights_migration.sql",
                  "mysql_saas_mfa_migration.sql",
-                 "mysql_saas_login_recovery_migration.sql")
+                 "mysql_saas_login_recovery_migration.sql",
+                 "mysql_saas_smtp_settings_migration.sql")
         for filename in names:
             apply_file(filename, db)
         for filename in names[1:]:

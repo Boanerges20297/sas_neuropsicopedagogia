@@ -4,6 +4,7 @@ Mounted on the existing Flask application under /saas. MySQL is the
 authoritative store here; no SQLite fallback or implicit BTA activation.
 """
 from datetime import timedelta
+import os
 from functools import wraps
 from hmac import compare_digest
 import secrets
@@ -40,7 +41,8 @@ def saas_workspace_navigation():
     return {"has_saas_workspace": available,
             "can_manage_accounts": rights["accounts"],
             "can_manage_professionals": rights["professionals"],
-            "can_manage_activations": rights["activations"]}
+            "can_manage_activations": rights["activations"],
+            "smtp_setup_available": os.getenv("NEURO_SMTP_WEB_CONFIG_ENABLED", "false").lower()=="true"}
 
 
 def is_saas_account():
@@ -357,6 +359,10 @@ register_recovery_routes(bp)
 
 from saas_mfa_routes import register_mfa_routes
 register_mfa_routes(bp)
+
+# Superadmin-only credential setup lives inside the SaaS Blueprint.
+from saas_smtp_admin_routes import register_smtp_routes
+register_smtp_routes(bp)
 
 
 @bp.route("/saude")

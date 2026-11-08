@@ -1,0 +1,73 @@
+{% extends "saas_base.html" %}
+{% block title %}E-mail de segurança | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro">
+<span class="saas-kicker">SUPERADMIN • SEGURANÇA</span>
+<h1>Configuração do e-mail de recuperação</h1>
+<p>Configure o Gmail oficial do Neuro-Diagnosis sem utilizar SSH ou publicar credenciais no repositório. A senha de app é recebida apenas por HTTPS e armazenada criptografada.</p>
+</div>
+<section class="saas-card">
+  <h2>Estado do serviço</h2>
+  <p><strong>Remetente:</strong> {{info.sender}}</p>
+  <p><strong>SMTP:</strong> smtp.gmail.com • SSL/TLS • porta 465</p>
+  <p><strong>Credencial:</strong> {{'Configurada (oculta)' if info.configured else 'Não configurada'}}</p>
+  <p><strong>Recuperação de senha:</strong> {{'Ativada após teste' if info.enabled else 'Desativada'}}</p>
+  <p class="saas-hint">Somente superadmin autenticado com TOTP pode acessar. Toda alteração exige a senha atual. A senha de app não é exibida nem registrada em logs.</p>
+</section>
+
+<section class="saas-card saas-form-card">
+  <h2>1. Inserir ou substituir a senha de app</h2>
+  <p>Recomendamos revogar a senha anteriormente compartilhada no chat e gerar uma nova no Google. Ela possui 16 letras, geralmente apresentada em quatro grupos.</p>
+  <form method="post" action="{{url_for('saas.smtp_admin')}}" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="action" value="save">
+    <label for="smtp-app-password">Nova senha de app do Gmail</label>
+    <input id="smtp-app-password" name="app_password" type="password" required minlength="16" maxlength="32" autocomplete="new-password" spellcheck="false">
+    <label for="smtp-current-password">Confirme sua senha de acesso ao Neuro-Diagnosis</label>
+    <input id="smtp-current-password" name="current_password" type="password" required autocomplete="current-password">
+    <button class="saas-btn" type="submit">Salvar credencial com segurança</button>
+  </form>
+  <p class="saas-hint">Ao salvar uma nova senha, o serviço é automaticamente desativado até nova verificação. Não use sua senha normal do Gmail.</p>
+</section>
+
+{% if info.configured %}
+<section class="saas-card saas-form-card">
+  <h2>2. Enviar código de teste</h2>
+  <p>O teste será enviado exclusivamente para <strong>{{info.sender}}</strong>. O código tem seis dígitos e expira em dez minutos.</p>
+  <form method="post" action="{{url_for('saas.smtp_admin')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="action" value="test">
+    <label for="smtp-test-password">Confirme sua senha de acesso</label>
+    <input id="smtp-test-password" name="current_password" type="password" required autocomplete="current-password">
+    <button class="saas-btn saas-btn--ghost" type="submit">Enviar teste para o Gmail</button>
+  </form>
+</section>
+
+<section class="saas-card saas-form-card">
+  <h2>3. Confirmar recebimento e ativar</h2>
+  <p>Somente após receber o e-mail de teste informe o código abaixo. A recuperação por OTP de quatro dígitos será então habilitada.</p>
+  <form method="post" action="{{url_for('saas.smtp_admin')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" name="action" value="confirm">
+    <label for="smtp-code">Código de verificação do teste</label>
+    <input id="smtp-code" name="test_code" type="text" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6" required>
+    <label for="smtp-confirm-password">Confirme sua senha de acesso</label>
+    <input id="smtp-confirm-password" name="current_password" type="password" required autocomplete="current-password">
+    <button class="saas-btn" type="submit">Confirmar e ativar o envio</button>
+  </form>
+</section>
+{% endif %}
+
+{% if info.enabled %}
+<section class="saas-card saas-form-card">
+<h2>Suspender recuperação por e-mail</h2>
+<form method="post" action="{{url_for('saas.smtp_admin')}}">
+<input type="hidden" name="csrf_token" value="{{csrf_token}}">
+<input type="hidden" name="action" value="disable">
+<label for="smtp-disable-password">Confirme sua senha de acesso</label>
+<input id="smtp-disable-password" name="current_password" type="password" required autocomplete="current-password">
+<button class="saas-btn saas-btn--ghost" type="submit">Desativar envio</button>
+</form>
+</section>
+{% endif %}
+{% endblock %}
