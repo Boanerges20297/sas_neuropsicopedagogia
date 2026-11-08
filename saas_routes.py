@@ -54,7 +54,8 @@ def is_saas_account():
 
 @bp.before_request
 def guard_saas_identity():
-    if request.endpoint in ("saas.login", "saas.register", "saas.health"):
+    if request.endpoint in ("saas.login", "saas.register", "saas.health",
+                            "saas.verify_email", "saas.resend_verification_email"):
         return None
     if current_user.is_authenticated and not is_saas_account():
         abort(403)
@@ -170,8 +171,15 @@ def register():
             try:
                 from app import bcrypt
                 store.register_professional(name,email,bcrypt.generate_password_hash(password).decode(),profession,registry,cpf,birth_date,phone)
-                flash("Cadastro recebido. A administradora deverá aprovar seu acesso; a licença será verificada separadamente.","success")
-                return redirect(url_for("saas.login"))
+                import saas_email_verification as mailcheck
+                sent=mailcheck.request_registration_code(email)
+                flash("Cadastro criado. Confirme o codigo enviado ao e-mail antes da aprovacao profissional."
+                      if sent else
+                      "Cadastro criado, mas o envio do codigo esta indisponivel. "
+                      "Solicite reenvio na tela de verificacao quando o e-mail estiver configurado.",
+                      "success" if sent else "warning")
+                session["saas_verify_email"]=email
+                return redirect(url_for("saas.verify_email"))
             except pymysql.err.IntegrityError:
                 flash("E-mail ou CPF já cadastrado.","danger")
             except ValueError as exc:
@@ -197,6 +205,11 @@ def login():
         row=store.user_by_email(email)
         password=request.form.get("senha","")
         if row and row["active"] and bcrypt.check_password_hash(row["password_hash"],password):
+            if row.get("email_verification_pending",False):
+                recovery.clear_failures(email)
+                flash("Confirme o e-mail cadastrado antes do primeiro acesso.","warning")
+                session["saas_verify_email"]=email
+                return redirect(url_for("saas.verify_email"))
             import saas_mfa_store as mfa
             from saas_mfa_routes import TRUST_COOKIE
             trusted_device = False
@@ -396,6 +409,8 @@ import saas_portal_activation_routes
 import saas_account_admin_routes
 from saas_login_recovery_routes import register_recovery_routes
 register_recovery_routes(bp)
+from saas_email_routes import register_email_routes
+register_email_routes(bp)
 
 from saas_mfa_routes import register_mfa_routes
 register_mfa_routes(bp)

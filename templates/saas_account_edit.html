@@ -9,6 +9,7 @@
 <label for="nome">Nome completo</label><input id="nome" name="nome" required maxlength="160" value="{{account.nome}}">
 <label for="email">E-mail de acesso e recuperação</label><input id="email" name="email" type="email" required readonly maxlength="254" value="{{account.email}}">
 <p class="saas-hint">Proteção de identidade: o endereço de recuperação não pode ser redirecionado pela administração. Para trocar este e-mail, o próprio titular deve fazê-lo em Minha Conta, autenticado; correções assistidas exigirão um fluxo de verificação de identidade.</p>
+<p class="saas-hint">Estado do e-mail: {{'Confirmado' if account.email_verified else 'Aguardando codigo' if account.email_pending else 'Legado sem comprovacao'}}</p>
 <label for="role">Perfil de acesso</label>
 <select id="role" name="role" {% if account.id==actor_id %}disabled{% endif %}>
 <option value="patient" {% if account.global_role=='patient' %}selected{% endif %}>Paciente / responsável</option>
@@ -32,8 +33,8 @@
 <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.managed_accounts')}}">Cancelar</a></div>
 </form></section>
 {% if actor_superadmin %}
-<section class="saas-card saas-form-card">
-  <h2>Redefinição segura de senha</h2>
+<details class="saas-card saas-profile-panel">
+  <summary>Recuperação de senha do titular</summary>
   <p>O SuperAdmin pode iniciar a recuperação, mas não recebe a senha nem o código.
     O titular receberá um código de 4 dígitos no e-mail cadastrado e deverá
     escolher a própria senha. O código expira em 3 minutos e o TOTP não é desativado.</p>
@@ -50,6 +51,27 @@
   {% else %}
   <p class="saas-hint">Conta inativa: regularize o cadastro antes de solicitar recuperação.</p>
   {% endif %}
+</details>
+{% endif %}
+{% if can_regularize_bootstrap %}
+<section class="saas-card saas-form-card">
+  <h2>Regularizar e-mail do administrador inicial</h2>
+  <p>Disponivel apenas para uma conta administrativa importada que ainda
+    nao possui autenticador configurado nem atividade clinica. A troca
+    somente acontece depois da confirmacao pelo titular no novo e-mail.</p>
+  <form method="post" action="{{url_for('saas.request_bootstrap_email',account_id=account.id)}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label for="regularizar-novo-email">Novo e-mail que o titular consegue acessar</label>
+    <input id="regularizar-novo-email" name="novo_email" required type="email"
+           maxlength="254" autocomplete="off">
+    <label for="regularizar-senha-operador">Sua senha de SuperAdmin para autorizar</label>
+    <input id="regularizar-senha-operador" name="senha_atual" type="password"
+           required autocomplete="current-password">
+    <button class="saas-btn" type="submit">Solicitar confirmacao do novo e-mail</button>
+  </form>
+  <p class="saas-hint">O titular confirma o codigo em
+    <a href="{{url_for('saas.verify_email')}}">Confirmar e-mail</a>
+    e depois usa Recuperar senha. Nenhuma senha e exibida ao operador.</p>
 </section>
 {% endif %}
 <script>

@@ -105,8 +105,8 @@ INSERT INTO care_patient_intakes
 
 def verify(db):
     tables = int(mysql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_type='BASE TABLE';", db=db))
-    if tables < 33:
-        raise AssertionError(f"Expected at least 33 tables, found {tables}")
+    if tables < 35:
+        raise AssertionError(f"Expected at least 35 tables, found {tables}")
     if mysql("SELECT verification_status FROM care_client_contacts LIMIT 1;", db=db) != "unverified":
         raise AssertionError("Guardian should start UNVERIFIED")
     for query, expected in [
@@ -258,6 +258,28 @@ UPDATE care_portal_consents
     if mysql("SELECT COUNT(*) FROM saas_account_rights;",db=db)!="0":
         raise AssertionError("Admin rights implicitly granted")
     print("MFA_HOMOLOGATION_OK first_login_required=1 trusted_devices=0 explicit_rights=0")
+
+    # Email identity: newly enrolled accounts start unverified and challenges
+    # cannot be shared across user IDs, even on the same destination mailbox.
+    mysql("INSERT INTO saas_email_verifications(user_id,required) VALUES(104,1);",db=db)
+    if mysql("""SELECT COUNT(*) FROM saas_email_verifications
+              WHERE user_id=104 AND required=1 AND verified_at IS NULL;""",db=db)!="1":
+        raise AssertionError("New account must await mailbox proof")
+    mysql("""INSERT INTO saas_email_challenges
+            (user_id,requested_email,purpose,nonce,digest,expires_at)
+            VALUES(104,'guardtest@example.invalid','registration',
+              UNHEX(REPEAT('ab',16)),UNHEX(REPEAT('cd',32)),
+              UTC_TIMESTAMP()+INTERVAL 10 MINUTE);""",db=db)
+    mysql("""INSERT INTO saas_email_challenges
+            (user_id,requested_email,purpose,nonce,digest,expires_at)
+            VALUES(105,'guardtest@example.invalid','registration',
+              UNHEX(REPEAT('ef',16)),UNHEX(REPEAT('12',32)),
+              UTC_TIMESTAMP()+INTERVAL 10 MINUTE);""",db=db,expect_error=True)
+    mysql("UPDATE saas_email_verifications SET verified_at=UTC_TIMESTAMP() WHERE user_id=104;",db=db)
+    if mysql("""SELECT COUNT(*) FROM saas_email_verifications
+              WHERE user_id=104 AND verified_at IS NOT NULL;""",db=db)!="1":
+        raise AssertionError("Verified timestamp not stored")
+    print("EMAIL_HOMOLOGATION_OK pending_before_proof=1 exclusive_code=1 verified_after=1 legacy_unmodified=1")
     print(f"MYSQL_HOMOLOGATION_OK tables={tables} tenants=2 blocked_invariants={len(rejections)} guardian_unverified=1")
 
 
@@ -282,7 +304,8 @@ def main():
                  "mysql_saas_account_rights_migration.sql",
                  "mysql_saas_mfa_migration.sql",
                  "mysql_saas_login_recovery_migration.sql",
-                 "mysql_saas_smtp_settings_migration.sql")
+                 "mysql_saas_smtp_settings_migration.sql",
+                 "mysql_saas_email_verification_migration.sql")
         for filename in names:
             apply_file(filename, db)
         for filename in names[1:]:

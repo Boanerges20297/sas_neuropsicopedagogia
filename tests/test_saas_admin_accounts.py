@@ -50,6 +50,24 @@ class AdminCreationTests(unittest.TestCase):
                 **kwargs)
         return uid,cursor.queries
 
+    def test_all_new_roles_require_email_ownership_proof(self):
+        synthetic_details=dict(practice_area="psicologia",
+                               cpf_digest="synthetic",cpf_encrypted=b"cipher",
+                               birth_date="1990-03-01",phone="85999999999")
+        with patch.object(provisioning,"validate_details",
+                          return_value=synthetic_details):
+            for role in ("patient","professional","admin","superadmin"):
+                with self.subTest(role=role):
+                    opts=(dict(cpf="synthetic",profession="psicologia",
+                               birth_date="1990-03-01",phone="85999999999")
+                          if role=="professional" else {})
+                    uid,sql=self.create(role,**opts)
+                    self.assertTrue(any(
+                        "INSERT INTO saas_email_verifications" in statement
+                        and args==(uid,)
+                        for statement,args in sql),
+                        "Email proof missing for "+role)
+
     def test_new_admin_gets_explicit_limits_and_mfa(self):
         uid,sql=self.create("admin")
         self.assertEqual(uid,101)

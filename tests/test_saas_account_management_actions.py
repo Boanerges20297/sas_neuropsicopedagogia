@@ -220,6 +220,51 @@ class AdminAccountRouteTests(unittest.TestCase):
             self.user.role="admin"
             self.assertEqual(self.client.get("/saas/admin/testes").status_code,403)
 
+    def test_bootstrap_email_form_only_for_eligible_initial_admin(self):
+        import saas_email_verification as verify
+        account=dict(id=50,nome="Initial Admin",email="unknown@example.invalid",
+                     global_role="admin",active=1,rights_id=None,
+                     allow_accounts=0,allow_professionals=0,
+                     allow_activations=0,allow_clinic=0,is_bootstrap=1)
+        with (patch.object(account_routes,"can_admin",return_value=True),
+              patch.object(account_routes,"account_detail",return_value=account),
+              patch.object(verify,"bootstrap_eligible",return_value=True)):
+            html=self.client.get("/saas/contas/50/editar").get_data(as_text=True)
+            self.assertIn("Regularizar e-mail do administrador inicial",html)
+        with (patch.object(account_routes,"can_admin",return_value=True),
+              patch.object(account_routes,"account_detail",return_value=account),
+              patch.object(verify,"bootstrap_eligible",return_value=False)):
+            html=self.client.get("/saas/contas/50/editar").get_data(as_text=True)
+            self.assertNotIn("Regularizar e-mail do administrador inicial",html)
+
+    def test_bootstrap_email_request_requires_superadmin_and_operator_password(self):
+        import saas_email_verification as verify
+        pwd="SuperAdminPassword12!"
+        path="/saas/contas/50/regularizar-email"
+        with (patch("saas_email_routes.login_fresh",return_value=True),
+              patch.object(store,"user_by_email",return_value={
+                  "password_hash":bcrypt.generate_password_hash(pwd).decode()}),
+              patch.object(verify,"request_bootstrap_code",return_value=True) as send):
+            self.assertEqual(self.client.post(path,data={
+                "csrf_token":"invalid","senha_atual":pwd,
+                "novo_email":"new@example.invalid"}).status_code,400)
+            self.assertEqual(self.client.post(path,data={
+                "csrf_token":"safe-csrf","senha_atual":"wrong",
+                "novo_email":"new@example.invalid"}).status_code,302)
+            send.assert_not_called()
+            result=self.client.post(path,data={
+                "csrf_token":"safe-csrf","senha_atual":pwd,
+                "novo_email":"new@example.invalid"})
+            self.assertEqual(result.status_code,302)
+            send.assert_called_once_with(9,50,"new@example.invalid")
+        self.user.role="admin"
+        with patch.object(verify,"request_bootstrap_code") as send:
+            result=self.client.post(path,data={
+                "csrf_token":"safe-csrf","senha_atual":pwd,
+                "novo_email":"new@example.invalid"})
+        self.assertEqual(result.status_code,403)
+        send.assert_not_called()
+
     def test_superadmin_can_start_email_reset_without_seeing_credentials(self):
         import saas_login_recovery as recovery
         pwd="OperatorPassword1234!"

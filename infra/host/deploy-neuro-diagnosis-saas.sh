@@ -59,6 +59,9 @@ docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWO
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_login_recovery_migration.sql"
 # Encrypted SMTP credential storage; never write secrets into deploy logs.
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_smtp_settings_migration.sql"
+# Email ownership verification (new accounts only), additive and idempotent.
+# Required before the new application starts referencing these tables.
+docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_saas_email_verification_migration.sql"
 docker compose -f "$COMPOSE" up -d web
 ok=0
 for _ in $(seq 1 24); do

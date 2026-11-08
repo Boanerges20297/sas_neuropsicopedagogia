@@ -15,12 +15,46 @@
     <input type="hidden" name="csrf_token" value="{{csrf_token}}">
     <input type="hidden" name="profile_action" value="personal">
     <label for="nome">Nome completo</label><input id="nome" name="nome" required maxlength="160" autocomplete="name" value="{{profile.nome}}">
-    <label for="email">E-mail</label><input id="email" name="email" required type="email" maxlength="254" autocomplete="email" value="{{profile.email}}">
+    <label for="email">E-mail de acesso</label><input id="email" name="email" required type="email" readonly maxlength="254" autocomplete="email" value="{{profile.email}}">
+    <p class="saas-hint">Para trocar o endereço de acesso, confirme a nova caixa postal na seção abaixo.</p>
     <label for="senha_atual">Senha atual para confirmar a alteração</label>
     <input id="senha_atual" name="senha_atual" type="password" autocomplete="current-password" required>
     <button class="saas-btn" type="submit">Salvar dados pessoais</button>
   </form>
 </section>
+{% if profile.email_verified %}
+<p class="saas-hint">E-mail de acesso confirmado por codigo.</p>
+{% elif not profile.email_pending %}
+<details class="saas-card saas-profile-panel">
+  <summary>Confirmar e-mail atual (cadastro legado)</summary>
+  <p class="saas-hint">Seu cadastro e anterior ao controle de e-mail. Confirme
+    que voce recebe mensagens neste endereco. Isso nao altera seu e-mail.</p>
+  <form method="post" action="{{url_for('saas.request_current_email_verification')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label for="confirm-email-password">Senha atual para enviar codigo</label>
+    <input id="confirm-email-password" name="senha_atual" type="password"
+           required autocomplete="current-password">
+    <button class="saas-btn" type="submit">Enviar codigo ao e-mail atual</button>
+  </form>
+</details>
+{% else %}
+<p class="saas-hint">E-mail ainda aguardando confirmacao. O acesso depende do codigo recebido.</p>
+{% endif %}
+<details class="saas-card saas-profile-panel">
+  <summary>Trocar e-mail de acesso</summary>
+  <p class="saas-hint">O endereco antigo continua ativo ate o codigo enviado
+    ao novo e-mail ser confirmado.</p>
+  <form method="post" action="{{url_for('saas.request_own_email_change')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label for="novo_email">Novo e-mail</label>
+    <input id="novo_email" name="novo_email" type="email" required maxlength="254"
+           autocomplete="email">
+    <label for="troca-email-senha">Senha atual para autorizar a troca</label>
+    <input id="troca-email-senha" name="senha_atual" type="password" required
+           autocomplete="current-password">
+    <button class="saas-btn" type="submit">Enviar codigo ao novo e-mail</button>
+  </form>
+</details>
 {% if profile.global_role == "professional" or (profile.global_role in ("admin", "superadmin") and profile.practice_area) %}
 <details class="saas-card saas-profile-panel">
   <summary>Dados profissionais <span class="saas-hint">Abrir para editar</span></summary>

@@ -1,0 +1,38 @@
+{% extends "saas_base.html" %}
+{% block title %}Confirmar e-mail | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro">
+  <span class="saas-kicker">Identidade digital</span>
+  <h1>Confirme seu e-mail</h1>
+  <p>Digite o código de seis dígitos enviado à caixa postal. Validade: 10 minutos.</p>
+</div>
+<section class="saas-card saas-form-card">
+  <h2>Verificar endereço</h2>
+  <form method="post" action="{{url_for('saas.verify_email')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label for="email-to-verify">E-mail que recebeu o código</label>
+    <input id="email-to-verify" name="email" type="email" required
+           maxlength="254" autocomplete="email" value="{{suggested_email}}">
+    <label for="email-code">Código de confirmação (6 dígitos)</label>
+    <input id="email-code" name="code" type="text" required inputmode="numeric"
+           pattern="[0-9]{6}" maxlength="6" minlength="6" autocomplete="one-time-code">
+    <button class="saas-btn" type="submit">Confirmar e-mail</button>
+  </form>
+  <p class="saas-hint">A confirmação apenas valida o recebimento neste endereço.
+    Aprovação profissional, licença e autorização para acessar prontuários
+    são processos separados.</p>
+</section>
+<details class="saas-card saas-profile-panel">
+  <summary>Não recebi o código</summary>
+  <p>Confira a caixa de spam ou solicite outro código. Há limites de envio.</p>
+  <form method="post" action="{{url_for('saas.resend_verification_email')}}">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <label for="resend-email">E-mail do cadastro pendente</label>
+    <input id="resend-email" name="email" type="email" required
+           maxlength="254" value="{{suggested_email}}">
+    <button class="saas-btn saas-btn--ghost" type="submit">Reenviar código</button>
+  </form>
+  <p class="saas-hint">Se o endereço cadastrado estiver inacessível, não
+    tente reutilizar o código de outro usuário. Solicite regularização assistida.</p>
+</details>
+{% endblock %}

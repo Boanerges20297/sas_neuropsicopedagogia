@@ -95,6 +95,20 @@ def send_code(recipient, code):
           "Neuro-Diagnosis | Recuperação de senha")
 
 
+def send_verification_code(recipient, code):
+    """Email proof differs from password recovery: six digits, ten minutes."""
+    config = _configuration()
+    if not config:
+        raise EmailOtpUnavailable("Verificacao por e-mail indisponivel")
+    if not isinstance(code,str) or not re.fullmatch(r"[0-9]{6}",code):
+        raise ValueError("Codigo invalido")
+    _send(config,recipient,
+          "Seu codigo de verificacao Neuro-Diagnosis e: "+code+
+          "\nExpira em 10 minutos, funciona uma vez e nao deve ser compartilhado."+
+          "\nSe nao solicitou cadastro ou alteracao de e-mail, ignore.",
+          "Neuro-Diagnosis | Confirmacao de e-mail")
+
+
 def send_setup_test(code):
     """Send exclusively to the fixed sender's mailbox, not arbitrary addresses."""
     if not isinstance(code,str) or not re.fullmatch(r"[0-9]{6}",code):

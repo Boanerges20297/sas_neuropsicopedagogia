@@ -46,7 +46,14 @@ def managed_accounts():
                 allow_activations=request.form.get("allow_activations") == "on",
             )
             one_time_password = password
-            flash("Conta criada. Entregue as credenciais por canal seguro.", "success")
+            import saas_email_verification as verification
+            sent = verification.request_registration_code(request.form.get("email", ""))
+            flash("Conta criada. " + (
+                  "Enviado codigo para confirmar o e-mail antes do acesso."
+                  if sent else
+                  "E-mail ainda nao confirmado: transporte indisponivel ou limite de envio. "
+                  "O usuario deve solicitar reenvio na tela Confirmar e-mail."),
+                  "success" if sent else "warning")
         except PermissionError:
             abort(403)
         except ValueError as exc:
@@ -114,9 +121,15 @@ def edit_managed_account(account_id):
             except pymysql.err.IntegrityError:
                 flash("E-mail ja vinculado a outra conta.","danger")
         record=account_detail(int(current_user.id),account_id)
+    can_regularize_bootstrap=False
+    if (current_user.role=="superadmin" and record.get("is_bootstrap")
+            and record["global_role"]=="admin" and account_id!=int(current_user.id)):
+        import saas_email_verification as verification
+        can_regularize_bootstrap=verification.bootstrap_eligible(account_id)
     response=make_response(render_template(
         "saas_account_edit.html", account=record,csrf_token=csrf(),
         actor_superadmin=current_user.role=="superadmin",
+        can_regularize_bootstrap=can_regularize_bootstrap,
         actor_id=int(current_user.id)))
     response.headers["Cache-Control"]="private, no-store"
     response.headers["Referrer-Policy"]="no-referrer"

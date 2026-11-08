@@ -82,6 +82,8 @@ def create_managed_account(actor_id, *, nome, email, role, password_hash,
             (name, mail, password_hash, role, int(role != "patient")),
         )
         new_id = cur.lastrowid
+        from saas_email_verification import enrollment_required
+        enrollment_required(cur,new_id)
         # First access requires a verified authenticator for every new account.
         cur.execute(
             "INSERT INTO saas_mfa_factors(user_id,required) VALUES(%s,1)",
@@ -166,7 +168,13 @@ def list_managed_accounts(actor_id, *, page=1, search="", role=""):
                          JOIN tenant_members m ON m.tenant_id=t.id
                           AND m.user_id=u.id AND m.membership_role='owner'
                          WHERE t.owner_user_id=u.id AND t.status='active'
-                           AND m.status='active') AS clinical_workspace
+                           AND m.status='active') AS clinical_workspace,
+                  EXISTS(SELECT 1 FROM saas_email_verifications v
+                    WHERE v.user_id=u.id AND v.verified_at IS NOT NULL)
+                    AS email_verified,
+                  EXISTS(SELECT 1 FROM saas_email_verifications v
+                    WHERE v.user_id=u.id AND v.required=1 AND v.verified_at IS NULL)
+                    AS email_pending
            FROM users u""" + where + """
            ORDER BY u.created_at DESC,u.id DESC LIMIT %s OFFSET %s"""
     params.extend([26,(page-1)*25])

@@ -39,6 +39,12 @@
         <strong>{{u.nome}}</strong>
         <p>{{u.email}} · {{u.global_role}} · {{'Ativa' if u.active else 'Pendente/inativa'}}</p>
         <p class="saas-hint">{{'Com espaço clínico' if u.clinical_workspace else 'Sem espaço clínico próprio'}} · {{'Troca de senha pendente' if u.must_change_password else 'Senha pessoal definida'}}</p>
+        <p class="saas-hint">
+          E-mail:
+          {{'Confirmado' if u.email_verified else
+            'Aguardando codigo' if u.email_pending else
+            'Legado sem comprovacao'}}
+        </p>
       </div>
       <div class="saas-actions">
         {% if u.global_role!='superadmin' or allow_superadmin %}

@@ -92,12 +92,15 @@ def get_user(user_id):
                   COALESCE(f.required,0) AS mfa_required,
                   (f.enabled_at IS NOT NULL) AS mfa_enabled,
                   r.user_id AS rights_id,r.allow_accounts,r.allow_professionals,
-                  r.allow_activations,r.allow_clinic
+                  r.allow_activations,r.allow_clinic,
+                  EXISTS(SELECT 1 FROM saas_email_verifications v
+                     WHERE v.user_id=u.id AND v.required=1 AND v.verified_at IS NULL)
+                     AS email_verification_pending
            FROM users u
            LEFT JOIN saas_mfa_factors f ON f.user_id=u.id
            LEFT JOIN saas_account_rights r ON r.user_id=u.id WHERE u.id=%s""",
         (uid,))
-    return SaaSUser(row) if row and row["active"] else None
+    return SaaSUser(row) if row and row["active"] and not row["email_verification_pending"] else None
 
 
 def user_by_email(email):
@@ -105,7 +108,10 @@ def user_by_email(email):
         """SELECT u.*,COALESCE(f.required,0) AS mfa_required,
                   (f.enabled_at IS NOT NULL) AS mfa_enabled,
                   r.user_id AS rights_id,r.allow_accounts,r.allow_professionals,
-                  r.allow_activations,r.allow_clinic
+                  r.allow_activations,r.allow_clinic,
+                  EXISTS(SELECT 1 FROM saas_email_verifications v
+                    WHERE v.user_id=u.id AND v.required=1 AND v.verified_at IS NULL)
+                    AS email_verification_pending
            FROM users u
            LEFT JOIN saas_mfa_factors f ON f.user_id=u.id
            LEFT JOIN saas_account_rights r ON r.user_id=u.id WHERE u.email=%s""",
@@ -133,6 +139,9 @@ def register_professional(nome, email, password_hash, profession, registry_code=
                VALUES (%s,%s,%s,'professional',0,0)""",
             (name, mail, password_hash))
         user_id = cur.lastrowid
+        # Registration cannot become an authenticated identity without mailbox proof.
+        from saas_email_verification import enrollment_required
+        enrollment_required(cur,user_id)
         # Require choice and confirmation of a TOTP authenticator at first access.
         cur.execute(
             "INSERT INTO saas_mfa_factors(user_id,required) VALUES(%s,1)",
@@ -277,7 +286,13 @@ def get_account_profile(user_id):
     from saas_profile_data import masked_cpf, phone_display
     profile = one(
         """SELECT u.id,u.nome,u.email,u.global_role,u.must_change_password,
-                  d.practice_area,d.birth_date,d.phone,d.cpf_encrypted
+                  d.practice_area,d.birth_date,d.phone,d.cpf_encrypted,
+                  EXISTS(SELECT 1 FROM saas_email_verifications v
+                    WHERE v.user_id=u.id AND v.verified_at IS NOT NULL)
+                    AS email_verified,
+                  EXISTS(SELECT 1 FROM saas_email_verifications v
+                    WHERE v.user_id=u.id AND v.required=1 AND v.verified_at IS NULL)
+                    AS email_pending
            FROM users u LEFT JOIN professional_details d ON d.user_id=u.id
            WHERE u.id=%s AND u.active=1""", (user_id,))
     if not profile:
@@ -295,11 +310,13 @@ def update_account_profile(user_id, nome, email, *, cpf="", practice_area="",
     if not name or len(name)>160 or len(mail)>254 or not EMAIL_RE.fullmatch(mail):
         raise ValueError("Nome ou e-mail inválido")
     with transaction() as cur:
-        cur.execute("SELECT id,global_role FROM users WHERE id=%s AND active=1 FOR UPDATE",
+        cur.execute("SELECT id,global_role,email FROM users WHERE id=%s AND active=1 FOR UPDATE",
                     (user_id,))
         user = cur.fetchone()
         if not user:
             raise PermissionError("Conta inativa")
+        if mail != user["email"].strip().lower():
+            raise ValueError("A troca de e-mail exige codigo de verificacao; use a secao E-mail")
         cur.execute("SELECT 1 FROM professional_details WHERE user_id=%s FOR UPDATE",
                     (user_id,))
         has_details = bool(cur.fetchone())

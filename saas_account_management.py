@@ -10,7 +10,13 @@ def account_detail(actor_id,target_id):
     return store.one("""SELECT u.id,u.nome,u.email,u.global_role,u.active,
            u.must_change_password,r.user_id AS rights_id,
            r.allow_accounts,r.allow_professionals,r.allow_activations,r.allow_clinic,
-           EXISTS(SELECT 1 FROM tenants t WHERE t.owner_user_id=u.id) AS has_tenant
+           EXISTS(SELECT 1 FROM tenants t WHERE t.owner_user_id=u.id) AS has_tenant,
+           EXISTS(SELECT 1 FROM audit_events a WHERE a.actor_id=u.id
+             AND a.action='admin_saas_bootstrap') AS is_bootstrap,
+           EXISTS(SELECT 1 FROM saas_email_verifications v WHERE v.user_id=u.id
+             AND v.verified_at IS NOT NULL) AS email_verified,
+           EXISTS(SELECT 1 FROM saas_email_verifications v WHERE v.user_id=u.id
+             AND v.required=1 AND v.verified_at IS NULL) AS email_pending
            FROM users u LEFT JOIN saas_account_rights r ON r.user_id=u.id
            WHERE u.id=%s""",(target_id,))
 
