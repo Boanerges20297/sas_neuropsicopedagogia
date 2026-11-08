@@ -85,10 +85,15 @@
                     </div>
                     <div class="neuro-access__options">
                         <label class="neuro-remember"><input type="checkbox" name="remember"><span>Lembrar meu acesso</span></label>
-                        <a href="#neuro-ajuda" class="neuro-forgot">Esqueci minha senha</a>
+                        <a href="{{url_for('saas.request_password_reset') if saas_mode|default(false) else '#neuro-ajuda'}}" class="neuro-forgot">Esqueci minha senha</a>
                     </div>
                     <button class="neuro-submit" type="submit"><span>Entrar</span><span aria-hidden="true">→</span></button>
                 </form>
+                {% if saas_mode|default(false) %}
+                <p class="neuro-code-entry">Já recebeu um código de recuperação?
+                  <a href="{{url_for('saas.confirm_password_reset')}}">Informar código e definir nova senha</a>
+                </p>
+                {% endif %}
                 <div class="neuro-access__bottom">
                     <div class="neuro-access__trust"><span aria-hidden="true">♢</span> Privacidade e cuidado em cada acesso</div>
                     <p class="neuro-access__register">Não tem conta? <a href="{{ url_for('saas.register') if saas_mode|default(false) else url_for('register') }}">{{ 'Cadastro profissional' if saas_mode|default(false) else 'Criar cadastro' }}</a></p>

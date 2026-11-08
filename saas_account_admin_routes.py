@@ -170,8 +170,10 @@ def admin_request_password_reset(account_id):
         with store.transaction() as cur:
             store.audit(cur, int(current_user.id), None,
                         "admin_password_recovery_requested", "user", account_id)
-        flash("Código enviado ao e-mail cadastrado. O titular deve concluir a "
-              "recuperação e definir sua nova senha em até 3 minutos.", "success")
+        flash("Código enviado ao e-mail cadastrado. O titular deve abrir "
+              "'Já recebi um código' na página de login, informar o e-mail, "
+              "o código e escolher uma nova senha em até 3 minutos. "
+              "O SuperAdmin não deve receber esse código.", "success")
     else:
         flash("Não foi possível enviar o código agora. Verifique a configuração "
               "do e-mail e os limites de envio, sem alterar a senha existente.", "warning")

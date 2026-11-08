@@ -91,6 +91,9 @@ def send_code(recipient, code):
     _send(config,recipient,
           "Seu código de recuperação é: "+code+
           "\nExpira em 3 minutos e funciona apenas uma vez."+
+          "\nPara informar o codigo e escolher sua nova senha, acesse:"+
+          "\nhttps://neuro-diagnosis.tech/saas/recuperar-senha/confirmar"+
+          "\nEste codigo NAO entra na sua conta; o autenticador segue exigido."+
           "\nSe não solicitou, ignore esta mensagem.",
           "Neuro-Diagnosis | Recuperação de senha")
 

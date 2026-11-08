@@ -320,6 +320,9 @@ body.neuro-login {
 .neuro-submit:hover { transform: translateY(-2px); box-shadow: 0 16px 27px rgba(2,113,110,.23); filter: brightness(1.04); }
 .neuro-submit:active { transform: translateY(0); }
 .neuro-submit span:last-child { font-size: 28px; line-height: 1; font-weight: 500; }
+.neuro-code-entry { margin: 18px 0 0; text-align: center; font-size: 13px; line-height: 1.6; color: #4b6974; }
+.neuro-code-entry a { display: block; color: #056d70; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.neuro-code-entry a:focus-visible { outline: 3px solid #79cfc4; outline-offset: 3px; }
 .neuro-access__bottom { margin-top: 30px; text-align: center; }
 .neuro-access__trust {
     color: #6b838c;

@@ -1215,6 +1215,11 @@ def isolate_saas_sessions_from_legacy_sqlite():
             and isinstance(current_user._get_current_object(), SaaSUser)
             and request.blueprint != 'saas'
             and request.endpoint not in ('static', 'logout', 'health_live', 'health_ready')):
+        # The SaaS hostname root and old /login must not strand a signed-in
+        # administrator on a legacy 403. Re-enter the SaaS guard instead.
+        if (request.method in ('GET', 'HEAD')
+                and request.endpoint in ('index', 'login')):
+            return redirect(url_for('saas.dashboard'))
         return ('Acesso exclusivo ao espaço SaaS.', 403)
 
 @app.before_request
