@@ -1,7 +1,1 @@
-{
-    "schemaVersion":  1,
-    "requestId":  "neuro-prod-otp-smtp-20261107-02",
-    "action":  "release",
-    "versionName":  "0.1.0",
-    "versionCode":  1
-}
+{"schemaVersion":1,"requestId":"neuro-prod-admin-mfa-20261108-01","action":"release","versionName":"0.1.0","versionCode":1}
