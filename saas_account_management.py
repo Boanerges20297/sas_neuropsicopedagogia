@@ -32,6 +32,11 @@ def update_managed_account(actor_id,target_id,*,nome,email,role,active,rights):
         old=cur.fetchone()
         if not old: raise ValueError("Conta nao encontrada")
         old_role=old["global_role"]
+        # Administrators must not redirect recovery messages by replacing
+        # the address of an existing account, whether active or suspended.
+        # The titular may change the email through authenticated self-service.
+        if mail != old["email"].strip().lower():
+            raise ValueError("E-mail só pode ser alterado pelo titular autenticado ou por fluxo verificado")
         if (role=="superadmin" or old_role=="superadmin") and actor["global_role"]!="superadmin":
             raise PermissionError("Somente superadmin gerencia superadmins")
         if actor_id==target_id and (role!=old_role or not active):

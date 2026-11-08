@@ -54,7 +54,7 @@ class AdminManagementBoundaryTests(unittest.TestCase):
              patch("saas_account_management.actor_can_grant",return_value=True), \
              patch.object(store,"audit") as audit:
             result=management.update_managed_account(
-                9,50,nome="After",email="after@example.invalid",
+                9,50,nome="After",email=kwargs.get("email","before@example.invalid"),
                 role=kwargs.get("role","admin"),
                 active=kwargs.get("active",True),
                 rights=kwargs.get("rights",{"accounts":True} if kwargs.get("role","admin")=="admin" else {}))
@@ -76,6 +76,12 @@ class AdminManagementBoundaryTests(unittest.TestCase):
         self.assertTrue(any("INSERT INTO saas_account_rights" in q for q,_ in queries))
         self.assertFalse(any("assessment" in q.lower() or "care_encounters" in q.lower() for q,_ in queries))
         audit.assert_called_once()
+
+    def test_admin_cannot_redirect_account_recovery_email(self):
+        c=Recorder(target_role="professional")
+        with self.assertRaisesRegex(ValueError,"titular autenticado"):
+            self.update(c,role="professional",email="attacker@example.invalid")
+        self.assertFalse(any("UPDATE users SET" in q for q,_ in c.sql))
 
     def test_professional_reactivation_cannot_skip_bta(self):
         c=Recorder(target_role="professional",target_active=0)
@@ -159,6 +165,10 @@ class AdminAccountRouteTests(unittest.TestCase):
             active=1,must_change_password=False,mfa_required=True,mfa_enabled=True))
         self.loader=patch.object(store,"get_user",return_value=self.user)
         self.loader.start()
+        # The synthetic session intentionally lacks Flask-Login's browser
+        # identifier. Mock freshness only for this route-level test fixture.
+        self.fresh=patch.object(account_routes,"login_fresh",return_value=True)
+        self.fresh.start()
         with self.client.session_transaction() as sess:
             sess["_user_id"]="saas:9"
             sess["_fresh"]=True
@@ -166,6 +176,7 @@ class AdminAccountRouteTests(unittest.TestCase):
             sess["saas_mfa_passed"]=True
             sess["saas_csrf"]="safe-csrf"
     def tearDown(self):
+        self.fresh.stop()
         self.loader.stop()
         app.config["TESTING"]=self.old
 
@@ -208,6 +219,79 @@ class AdminAccountRouteTests(unittest.TestCase):
             self.assertEqual(self.client.get("/saas/admin/testes").status_code,200)
             self.user.role="admin"
             self.assertEqual(self.client.get("/saas/admin/testes").status_code,403)
+
+    def test_superadmin_can_start_email_reset_without_seeing_credentials(self):
+        import saas_login_recovery as recovery
+        pwd="OperatorPassword1234!"
+        target=dict(id=50,nome="Synthetic",email="patient@example.invalid",
+                    global_role="patient",active=1,rights_id=None,
+                    allow_accounts=0,allow_professionals=0,
+                    allow_activations=0,allow_clinic=0)
+        with patch.object(account_routes,"can_admin",return_value=True):
+            with patch.object(account_routes,"account_detail",return_value=target):
+                with patch.object(store,"user_by_email",return_value={
+                        "password_hash":bcrypt.generate_password_hash(pwd).decode()}):
+                    with patch.object(recovery,"request_reset",return_value=True) as send:
+                        with patch.object(store,"transaction",return_value=fake_tx(Recorder())):
+                            with patch.object(store,"audit") as audit:
+                                result=self.client.post("/saas/contas/50/recuperar-senha",
+                                    data={"csrf_token":"safe-csrf",
+                                          "senha_atual":pwd,
+                                          "email":"redirect@example.invalid"})
+        self.assertEqual(result.status_code,302)
+        send.assert_called_once_with("patient@example.invalid")
+        audit.assert_called_once()
+        self.assertEqual(audit.call_args.args[3],"admin_password_recovery_requested")
+        self.assertEqual(audit.call_args.args[5],50)
+
+    def test_password_reset_requires_superadmin_role(self):
+        import saas_login_recovery as recovery
+        self.user.role="admin"
+        with patch.object(recovery,"request_reset") as send:
+            result=self.client.post("/saas/contas/50/recuperar-senha",
+                data={"csrf_token":"safe-csrf","senha_atual":"anything"})
+        self.assertEqual(result.status_code,403)
+        send.assert_not_called()
+
+    def test_password_reset_requires_csrf_and_second_factor(self):
+        import saas_login_recovery as recovery
+        with patch.object(recovery,"request_reset") as send:
+            self.assertEqual(self.client.post("/saas/contas/50/recuperar-senha",
+                data={"csrf_token":"invalid","senha_atual":"anything"}).status_code,400)
+            with self.client.session_transaction() as sess:
+                sess.pop("saas_mfa_passed",None)
+            result=self.client.post("/saas/contas/50/recuperar-senha",
+                data={"csrf_token":"safe-csrf","senha_atual":"anything"})
+        self.assertEqual(result.status_code,302)
+        self.assertIn("/saas/entrar",result.location)
+        send.assert_not_called()
+
+    def test_password_reset_wrong_operator_password_never_sends(self):
+        import saas_login_recovery as recovery
+        target=dict(id=50,nome="Synthetic",email="patient@example.invalid",
+                    global_role="patient",active=1)
+        with patch.object(account_routes,"account_detail",return_value=target):
+            with patch.object(store,"user_by_email",return_value={
+                    "password_hash":bcrypt.generate_password_hash("RightPassword1234!").decode()}):
+                with patch.object(recovery,"request_reset") as send:
+                    result=self.client.post("/saas/contas/50/recuperar-senha",
+                        data={"csrf_token":"safe-csrf","senha_atual":"WRONG"})
+        self.assertEqual(result.status_code,302)
+        send.assert_not_called()
+
+    def test_reset_form_is_visible_only_to_superadmin(self):
+        target=dict(id=50,nome="Synthetic",email="patient@example.invalid",
+                    global_role="patient",active=1,rights_id=None,
+                    allow_accounts=0,allow_professionals=0,
+                    allow_activations=0,allow_clinic=0)
+        with patch.object(account_routes,"can_admin",return_value=True):
+            with patch.object(account_routes,"account_detail",return_value=target):
+                html=self.client.get("/saas/contas/50/editar").get_data(as_text=True)
+                self.assertIn("Enviar código de recuperação ao titular",html)
+                self.user.role="admin"
+                with patch("saas_routes.own_admin_workspace",return_value=None):
+                    html=self.client.get("/saas/contas/50/editar").get_data(as_text=True)
+                self.assertNotIn("Enviar código de recuperação ao titular",html)
 
     def test_personal_update_does_not_send_professional_fields(self):
         pwd="SyntheticPassword1234!"

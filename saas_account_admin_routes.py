@@ -121,3 +121,45 @@ def edit_managed_account(account_id):
     response.headers["Cache-Control"]="private, no-store"
     response.headers["Referrer-Policy"]="no-referrer"
     return response
+
+
+@bp.route("/contas/<int:account_id>/recuperar-senha", methods=["POST"])
+@admin_only
+def admin_request_password_reset(account_id):
+    """Only a superadmin may initiate owner-verified password recovery.
+
+    The operator never receives the OTP or a replacement password.
+    """
+    from flask import session
+    if current_user.role != "superadmin":
+        abort(403)
+    check_csrf()
+    if (not login_fresh() or not current_user.mfa_enabled
+            or session.get("saas_mfa_passed") is not True):
+        abort(403)
+    record = account_detail(int(current_user.id), account_id)
+    if not record:
+        abort(404)
+    if not record["active"]:
+        flash("Conta inativa. Resolva a situação antes de solicitar recuperação.", "warning")
+        return redirect(url_for("saas.edit_managed_account", account_id=account_id))
+    from app import bcrypt
+    operator = store.user_by_email(current_user.email)
+    if not operator or not bcrypt.check_password_hash(
+            operator["password_hash"], request.form.get("senha_atual", "")):
+        flash("Confirme sua senha de SuperAdmin para solicitar a redefinição.", "danger")
+        return redirect(url_for("saas.edit_managed_account", account_id=account_id))
+    import saas_login_recovery as recovery
+    # Existing OTP transport enforces readiness, throttles and user possession
+    # of the mailbox. Never return the code or a reset password to the operator.
+    sent = recovery.request_reset(record["email"])
+    if sent:
+        with store.transaction() as cur:
+            store.audit(cur, int(current_user.id), None,
+                        "admin_password_recovery_requested", "user", account_id)
+        flash("Código enviado ao e-mail cadastrado. O titular deve concluir a "
+              "recuperação e definir sua nova senha em até 3 minutos.", "success")
+    else:
+        flash("Não foi possível enviar o código agora. Verifique a configuração "
+              "do e-mail e os limites de envio, sem alterar a senha existente.", "warning")
+    return redirect(url_for("saas.edit_managed_account", account_id=account_id))
