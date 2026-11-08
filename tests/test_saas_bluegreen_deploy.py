@@ -1,4 +1,7 @@
 """Production blue/green deployment must never stop primary before canary is ready."""
+import os
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -40,6 +43,31 @@ class BlueGreenContractTests(unittest.TestCase):
         self.assertIn('neuro-general-limit',script)
         self.assertNotIn('docker restart',script)
         self.assertNotIn('docker compose down',script)
+
+    def test_real_bash_renders_traefik_rules_without_substitution(self):
+        # bash -n alone does not detect accidental command substitution in
+        # an unquoted heredoc; execute the exact renderer, without host writes.
+        bash = shutil.which("bash")
+        if not bash and os.name == "nt":
+            candidate = Path(os.environ.get("ProgramFiles", r"C:\\Program Files")) / "Git" / "bin" / "bash.exe"
+            if candidate.is_file():
+                bash = str(candidate)
+        if not bash:
+            self.skipTest("Bash not installed")
+        template = self.router.split('cat > "$TMP" <<YAML\n', 1)[1].split('\nYAML\n', 1)[0]
+        for slot, port in (("primary", "8781"), ("stage", "8782")):
+            with self.subTest(slot=slot):
+                command = "set -euo pipefail\nSLOT=" + slot + "\nPORT=" + port + "\ncat <<YAML\n" + template + "\nYAML\n"
+                run = subprocess.run([bash, "-c", command], text=True, capture_output=True, timeout=8)
+                self.assertEqual(run.returncode, 0, run.stderr)
+                self.assertEqual(run.stderr, "", "Unescaped Traefik backticks executed as shell commands")
+                self.assertIn("Host(`neuro-diagnosis.tech`)", run.stdout)
+                self.assertIn("Host(`www.neuro-diagnosis.tech`)", run.stdout)
+                self.assertIn("PathPrefix(`/saas/entrar`)", run.stdout)
+                self.assertIn("Path(`/saas/cadastro`)", run.stdout)
+                self.assertIn("PathPrefix(`/saas/recuperar-senha`)", run.stdout)
+                self.assertIn('X-Neuro-Deploy-Slot: "' + slot + '"', run.stdout)
+                self.assertIn('url: "http://127.0.0.1:' + port + '"', run.stdout)
 
     def test_rollout_validates_stage_before_recreating_primary(self):
         script=self.deploy

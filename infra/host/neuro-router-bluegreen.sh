@@ -24,7 +24,7 @@ cat > "$TMP" <<YAML
 http:
   routers:
     neuro-bluegreen-auth:
-      rule: "(Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)) && (PathPrefix(`/saas/entrar`) || Path(`/saas/cadastro`) || PathPrefix(`/saas/recuperar-senha`))"
+      rule: "(Host(\`neuro-diagnosis.tech\`) || Host(\`www.neuro-diagnosis.tech\`)) && (PathPrefix(\`/saas/entrar\`) || Path(\`/saas/cadastro\`) || PathPrefix(\`/saas/recuperar-senha\`))"
       entryPoints: [websecure]
       priority: 2100
       tls:
@@ -32,7 +32,7 @@ http:
       service: neuro-bluegreen
       middlewares: [neuro-auth-limit, neuro-deploy-marker]
     neuro-bluegreen:
-      rule: "Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)"
+      rule: "Host(\`neuro-diagnosis.tech\`) || Host(\`www.neuro-diagnosis.tech\`)"
       entryPoints: [websecure]
       priority: 2000
       tls:
