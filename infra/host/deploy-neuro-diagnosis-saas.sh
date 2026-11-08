@@ -19,6 +19,14 @@ REMOTE="$(git remote get-url origin)"
    "$REMOTE" == "git@github.com:Boanerges20297/sas_neuropsicopedagogia.git" ]] || exit 70
 git fetch --quiet origin main
 [[ "$(git rev-parse origin/main)" == "$SHA" ]] || { echo NEURO_SHA_NOT_MAIN >&2; exit 70; }
+# The root-owned executable is installed independently of Git. Refuse the
+# release BEFORE changing code when the installed deployment logic is stale.
+# Compare with the requested Git commit, not the previous checkout.
+if ! git show "$SHA:infra/host/deploy-neuro-diagnosis-saas.sh" |
+    cmp -s - /usr/local/sbin/deploy-neuro-diagnosis; then
+  echo NEURO_HOST_SCRIPT_STALE >&2
+  exit 73
+fi
 PREVIOUS="$(git rev-parse HEAD)"
 ROLLBACK=0
 restore() {

@@ -439,6 +439,10 @@ def health():
         store.one("SELECT 1 FROM saas_mfa_factors LIMIT 1")
         store.one("SELECT 1 FROM saas_mfa_recovery_codes LIMIT 1")
         store.one("SELECT 1 FROM saas_mfa_trusted_devices LIMIT 1")
+        # Registration and login require these tables. Never report ready
+        # before migrations reached the live production MySQL instance.
+        store.one("SELECT 1 FROM saas_email_verifications LIMIT 1")
+        store.one("SELECT 1 FROM saas_email_challenges LIMIT 1")
         return jsonify({"database":"mysql","status":"ready"})
     except (pymysql.MySQLError,RuntimeError):
         return jsonify({"database":"mysql","status":"not_ready"}),503

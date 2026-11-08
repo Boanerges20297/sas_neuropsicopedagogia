@@ -34,6 +34,20 @@ class RunnerSecurityContractTests(unittest.TestCase):
         self.assertIn("mysql_saas_profile_migration.sql", deploy)
         self.assertIn("mysqldump", deploy)
 
+    def test_release_rejects_stale_privileged_host_script_before_checkout(self):
+        deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(encoding="utf-8")
+        self.assertIn("NEURO_HOST_SCRIPT_STALE", deploy)
+        self.assertIn('git show "$SHA:infra/host/deploy-neuro-diagnosis-saas.sh"', deploy)
+        self.assertIn("cmp -s - /usr/local/sbin/deploy-neuro-diagnosis", deploy)
+        self.assertLess(deploy.index("NEURO_HOST_SCRIPT_STALE"),
+                        deploy.index('git merge --ff-only "$SHA"'))
+        self.assertIn("mysql_saas_email_verification_migration.sql", deploy)
+
+    def test_health_gate_checks_new_email_schema(self):
+        source = (ROOT / "saas_routes.py").read_text(encoding="utf-8")
+        self.assertIn('store.one("SELECT 1 FROM saas_email_verifications LIMIT 1")', source)
+        self.assertIn('store.one("SELECT 1 FROM saas_email_challenges LIMIT 1")', source)
+
     def test_public_route_has_bounded_retries_before_rollback(self):
         deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(encoding="utf-8")
         self.assertIn('for _ in $(seq 1 12); do', deploy)
