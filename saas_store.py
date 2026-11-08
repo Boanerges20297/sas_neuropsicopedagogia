@@ -61,7 +61,7 @@ class SaaSUser(UserMixin):
         self.role = row["global_role"]
         self.active = bool(row["active"])
         self.must_change_password = bool(row["must_change_password"])
-        self.mfa_required = bool(row.get("mfa_required", False))
+        self.mfa_required = self.is_admin() or bool(row.get("mfa_required", False))
         self.mfa_enabled = bool(row.get("mfa_enabled", False))
         self.admin_rights = (
             {feature: bool(row.get("allow_" + feature, False))

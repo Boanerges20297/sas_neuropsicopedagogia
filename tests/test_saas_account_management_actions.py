@@ -119,6 +119,21 @@ class TestGovernanceBoundaryTests(unittest.TestCase):
         self.assertFalse(any("assessments" in q or "assessment_responses" in q for q,_ in queries))
         audit.assert_called_once()
 
+    def test_catalog_filters_and_pagination_are_parameterized(self):
+        with patch.object(store,"all_rows",return_value=[]) as query:
+            self.assertEqual(
+                governance.list_catalog_for_review(
+                    page=3,search="instrumento",status="pending"),[])
+        sql,args=query.call_args.args
+        self.assertIn("LIMIT %s OFFSET %s",sql)
+        self.assertNotIn("assessments",sql)
+        self.assertNotIn("assessment_responses",sql)
+        self.assertEqual(args,("%instrumento%","%instrumento%","pending",26,50))
+        with self.assertRaises(ValueError):
+            governance.list_catalog_for_review(page=0)
+        with self.assertRaises(ValueError):
+            governance.list_catalog_for_review(status="invalid")
+
     def test_request_changes_returns_catalog_to_draft(self):
         queries,audit=self.decide(Recorder(),decision="request_changes")
         self.assertTrue(any("UPDATE tests SET status='draft'" in q for q,_ in queries))
@@ -148,6 +163,7 @@ class AdminAccountRouteTests(unittest.TestCase):
             sess["_user_id"]="saas:9"
             sess["_fresh"]=True
             sess["saas_auth"]=True
+            sess["saas_mfa_passed"]=True
             sess["saas_csrf"]="safe-csrf"
     def tearDown(self):
         self.loader.stop()

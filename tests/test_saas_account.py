@@ -101,7 +101,7 @@ class SaaSAccountFlowTests(unittest.TestCase):
                 csrf_token=self.current_csrf(),senha_atual="TemporaryAccess123!",
                 nova_senha="DifferentPassword1234!",confirmar_senha="DifferentPassword1234!"))
             self.assertEqual(valid.status_code,302)
-            self.assertIn("/saas/painel",valid.location)
+            self.assertIn("/saas/seguranca/totp",valid.location)
             self.assertEqual(called[0][0],9876)
             self.assertTrue(bcrypt.check_password_hash(called[0][1],"DifferentPassword1234!"))
 

@@ -12,9 +12,10 @@
            inputmode="text" maxlength="20" spellcheck="false" autofocus>
     <label class="saas-check" for="trust-device">
       <input id="trust-device" type="checkbox" name="trust_device" value="on">
-      Confiar neste aparelho por 30 dias
+      Reconhecer este dispositivo por 30 dias
     </label>
-    <p class="saas-hint">Em aparelho compartilhado ou público, não marque a opção. Um código de recuperação não autoriza cadastrar aparelho confiável.</p>
+    <p class="saas-hint">Se marcar, este dispositivo poderá entrar somente com a senha por até 30 dias, inclusive nas contas administrativas. Outros dispositivos continuarão exigindo senha e código TOTP.</p>
+    <p class="saas-hint">Se não marcar, o aparelho não receberá a confiança de 30 dias e a sessão será encerrada após 15 minutos de inatividade. Não marque em aparelhos compartilhados. Um código de recuperação não autoriza confiar no dispositivo.</p>
     <button class="saas-btn" type="submit">Confirmar acesso</button>
   </form>
   <p class="saas-hint">Tentativas restantes nesta sessão: {{attempts_left}}.</p>

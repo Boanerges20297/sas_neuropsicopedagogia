@@ -121,6 +121,51 @@ class FirstAccessFlowTests(unittest.TestCase):
             self.assertNotIn("_user_id",s)
             self.assertEqual(s["saas_mfa_pending"],37)
 
+    def test_trusted_superadmin_uses_password_only_on_recognized_device(self):
+        with self.client.session_transaction() as s:
+            s.clear()
+            s["saas_csrf"] = "trusted-login-csrf"
+        account = dict(
+            id=37, nome="Superadmin", email="mfa@example.invalid",
+            global_role="superadmin", active=1, must_change_password=0,
+            mfa_enabled=True,
+            password_hash=bcrypt.generate_password_hash("Valid1234!").decode())
+        with patch.object(store, "user_by_email", return_value=account), \
+             patch.object(factors, "trusted", return_value=True) as check:
+            response = self.client.post("/saas/entrar", data={
+                "csrf_token": "trusted-login-csrf",
+                "email": "mfa@example.invalid", "senha": "Valid1234!"})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/saas/painel", response.location)
+        check.assert_called_once()
+        with self.client.session_transaction() as s:
+            self.assertTrue(s["saas_auth"])
+            self.assertTrue(s["saas_mfa_passed"])
+            self.assertNotIn("saas_mfa_pending", s)
+            self.assertNotIn("saas_temporary", s)
+
+    def test_unrecognized_superadmin_must_use_totp(self):
+        with self.client.session_transaction() as s:
+            s.clear()
+            s["saas_csrf"] = "unknown-device-csrf"
+        account = dict(
+            id=37, nome="Superadmin", email="mfa@example.invalid",
+            global_role="superadmin", active=1, must_change_password=0,
+            mfa_enabled=True,
+            password_hash=bcrypt.generate_password_hash("Valid1234!").decode())
+        with patch.object(store, "user_by_email", return_value=account), \
+             patch.object(factors, "trusted", return_value=False) as check:
+            response = self.client.post("/saas/entrar", data={
+                "csrf_token": "unknown-device-csrf",
+                "email": "mfa@example.invalid", "senha": "Valid1234!"})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/saas/entrar/totp", response.location)
+        check.assert_called_once()
+        with self.client.session_transaction() as s:
+            self.assertEqual(s["saas_mfa_pending"], 37)
+            self.assertNotIn("saas_auth", s)
+            self.assertNotIn("_user_id", s)
+
     def test_challenge_succeeds_only_after_valid_factor(self):
         with self.client.session_transaction() as s:
             s.clear()
@@ -141,6 +186,51 @@ class FirstAccessFlowTests(unittest.TestCase):
         self.assertIn("/saas/painel",ok.location)
         with self.client.session_transaction() as s:
             self.assertTrue(s["saas_auth"])
+
+    def test_manual_totp_key_available_when_qr_cannot_be_scanned(self):
+        import saas_routes
+        seed = otp.new_seed()
+        with patch.object(factors, "enabled", return_value=False), \
+             patch.object(factors, "pending_seed", return_value=seed), \
+             patch.object(factors, "enrollment_required", return_value=True), \
+             patch.object(saas_routes, "own_admin_workspace", return_value=None):
+            response = self.client.get("/saas/seguranca/totp")
+        self.assertEqual(response.status_code, 200)
+        content = response.get_data(as_text=True)
+        self.assertIn('id="totp-manual-key"', content)
+        self.assertIn('id="copy-totp-key"', content)
+        self.assertIn("navigator.clipboard", content)
+        self.assertIn("SHA-1", content)
+        self.assertIn(seed, content)
+        self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+
+    def test_temporary_login_has_no_remembered_device(self):
+        with self.client.session_transaction() as s:
+            s.clear()
+            s["saas_mfa_pending"] = 37
+            s["saas_mfa_pending_at"] = __import__("time").time()
+            s["saas_mfa_attempts"] = 0
+            s["saas_csrf"] = "confirm-csrf"
+        with patch.object(factors, "verify_login_factor", return_value=(True, True)), \
+             patch.object(factors, "trust_device") as trusted:
+            response = self.client.post("/saas/entrar/totp", data={
+                "csrf_token": "confirm-csrf", "code": "123456"})
+        self.assertEqual(response.status_code, 302)
+        trusted.assert_not_called()
+        self.assertNotIn("neuro_mfa_device=", response.headers.get("Set-Cookie", ""))
+        with self.client.session_transaction() as s:
+            self.assertTrue(s["saas_temporary"])
+            self.assertIsInstance(s["saas_last_seen"], (float, int))
+
+    def test_temporary_login_expires_after_idle_timeout(self):
+        with self.client.session_transaction() as s:
+            s["saas_temporary"] = True
+            s["saas_last_seen"] = __import__("time").time() - 901
+        response = self.client.get("/saas/painel")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/saas/entrar", response.location)
+        with self.client.session_transaction() as s:
+            self.assertNotIn("saas_auth", s)
 
     def test_before_first_login_account_provision_marks_mfa_required(self):
         from pathlib import Path

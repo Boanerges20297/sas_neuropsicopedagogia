@@ -58,6 +58,27 @@ def guard_saas_identity():
         return None
     if current_user.is_authenticated and not is_saas_account():
         abort(403)
+    if is_saas_account() and session.get("saas_temporary"):
+        # Temporary devices never gain a 30-day trust token.
+        # Expire their browser session after 15 minutes without activity.
+        last = session.get("saas_last_seen")
+        now = time.time()
+        if (not isinstance(last, (float, int))
+                or last > now + 5 or now - last > 15 * 60):
+            logout_user()
+            session.clear()
+            return redirect(url_for("saas.login"))
+        session["saas_last_seen"] = now
+    if is_saas_account() and current_user.is_admin():
+        # Existing admins also require a real MFA challenge. Legacy sessions
+        # without step-up are invalid, even when their device was trusted.
+        if current_user.mfa_enabled and session.get("saas_mfa_passed") is not True:
+            logout_user()
+            session.clear()
+            return redirect(url_for("saas.login"))
+        if (not current_user.mfa_enabled and not current_user.must_change_password
+                and request.endpoint not in ("saas.mfa_settings", "saas.logout")):
+            return redirect(url_for("saas.mfa_settings"))
     if (is_saas_account() and current_user.must_change_password
             and request.endpoint not in ("saas.profile", "saas.profile_password", "saas.logout")):
         return redirect(url_for("saas.profile"))
@@ -178,12 +199,18 @@ def login():
         if row and row["active"] and bcrypt.check_password_hash(row["password_hash"],password):
             import saas_mfa_store as mfa
             from saas_mfa_routes import TRUST_COOKIE
+            trusted_device = False
             if row.get("mfa_enabled", False):
+                # A verified 30-day trust token is valid for every role.
+                # A different or unrecognized device must complete TOTP.
                 token = request.cookies.get(TRUST_COOKIE)
-                if not mfa.trusted(int(row["id"]), token, request.headers.get("User-Agent")):
+                trusted_device = mfa.trusted(
+                    int(row["id"]), token, request.headers.get("User-Agent"))
+                if not trusted_device:
                     # Signed pending session, with no authenticated user yet.
                     session.clear()
                     session["saas_mfa_pending"] = int(row["id"])
+                    session["saas_mfa_is_admin"] = row["global_role"] in ("admin", "superadmin")
                     session["saas_mfa_pending_at"] = time.time()
                     session["saas_mfa_attempts"] = 0
                     session["saas_csrf"] = secrets.token_urlsafe(32)
@@ -192,6 +219,13 @@ def login():
             session.clear()
             login_user(user,fresh=True)
             session["saas_auth"]=True
+            if trusted_device:
+                # The trusted-device cookie was verified against the MFA DB.
+                session["saas_mfa_passed"]=True
+            else:
+                # Without a trusted token, require a fresh login after idle.
+                session["saas_temporary"]=True
+                session["saas_last_seen"]=time.time()
             session["saas_csrf"]=secrets.token_urlsafe(32)
             recovery.clear_failures(email)
             return redirect(url_for("saas.profile" if user.must_change_password else "saas.dashboard"))

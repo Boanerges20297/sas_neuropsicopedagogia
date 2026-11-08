@@ -66,7 +66,7 @@ class ActivationQueueRouteTests(unittest.TestCase):
         self.user=store.SaaSUser({
             "id":33,"nome":"Admin synthetic","email":"admin@example.invalid",
             "global_role":"superadmin","active":1,
-            "must_change_password":False})
+            "must_change_password":False,"mfa_enabled":True})
         self.get_user=patch.object(store,"get_user",side_effect=lambda uid:self.user)
         self.get_user.start()
         # Admins can review activations without creating a clinical tenant.
@@ -78,6 +78,7 @@ class ActivationQueueRouteTests(unittest.TestCase):
             s["_user_id"]="saas:33"
             s["_fresh"]=True
             s["saas_auth"]=True
+            s["saas_mfa_passed"]=True
             s["saas_csrf"]="activation-queue-test-csrf"
 
     def tearDown(self):

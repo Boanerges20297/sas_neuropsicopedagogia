@@ -2,18 +2,34 @@
 import saas_store as store
 
 
-def list_catalog_for_review():
-    return store.all_rows(
-        """SELECT t.id,t.title,t.description,t.status,t.visibility,t.active,
+def list_catalog_for_review(*,page=1,search="",status=""):
+    if type(page) is not int or not 1 <= page <= 100000:
+        raise ValueError("Página inválida")
+    search=(search or "").strip()[:100]
+    if status not in ("","draft","pending","approved","archived"):
+        raise ValueError("Situação inválida")
+    conditions=[]
+    args=[]
+    if search:
+        conditions.append("(t.title LIKE %s OR t.description LIKE %s)")
+        args.extend(["%"+search+"%","%"+search+"%"])
+    if status:
+        conditions.append("t.status=%s")
+        args.append(status)
+    where=" WHERE "+" AND ".join(conditions) if conditions else ""
+    sql="""SELECT t.id,t.title,t.description,t.status,t.visibility,t.active,
                   t.created_at,t.tenant_id,u.nome AS author_name,
                   v.id AS version_id,v.version_number,v.status AS version_status
            FROM tests t
            JOIN users u ON u.id=t.created_by
            LEFT JOIN test_versions v ON v.id=(
                SELECT v2.id FROM test_versions v2 WHERE v2.test_id=t.id
-               ORDER BY v2.version_number DESC,v2.id DESC LIMIT 1)
+               ORDER BY v2.version_number DESC,v2.id DESC LIMIT 1)""" + where + """
            ORDER BY CASE WHEN t.status='pending' THEN 0 ELSE 1 END,
-                    t.updated_at DESC,t.id DESC LIMIT 100""")
+                    t.updated_at DESC,t.id DESC LIMIT %s OFFSET %s"""
+    args.extend([26,(page-1)*25])
+    return store.all_rows(sql,tuple(args))
+
 
 
 def catalog_item(test_id):

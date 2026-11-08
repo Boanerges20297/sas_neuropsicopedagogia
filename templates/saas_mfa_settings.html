@@ -45,10 +45,40 @@
            style="width:100%;height:auto;border-radius:8px;background:white;padding:8px">
     </div>
   {% endif %}
-  <p>Se estiver usando o mesmo celular, cadastre manualmente:</p>
-  <p><strong>Chave secreta — não compartilhe:</strong></p>
-  <p><code style="overflow-wrap:anywhere;letter-spacing:.1em">{{seed}}</code></p>
-  <p><a href="{{uri}}">Abrir aplicativo compatível neste dispositivo</a></p>
+  <div class="saas-manual-totp">
+    <h3>Não consegue escanear o QR Code?</h3>
+    <p>Cadastre o autenticador manualmente. No aplicativo, escolha <strong>Adicionar conta</strong> e depois <strong>Inserir chave de configuração</strong>.</p>
+    <label for="totp-manual-key">Chave de configuração manual (secreta)</label>
+    <div class="saas-actions" style="align-items:center">
+      <code id="totp-manual-key" style="overflow-wrap:anywhere;word-break:break-all;letter-spacing:.08em;user-select:all">{{seed}}</code>
+      <button class="saas-btn saas-btn--ghost" type="button" id="copy-totp-key">Copiar chave</button>
+    </div>
+    <p id="copy-totp-feedback" class="saas-hint" role="status" aria-live="polite">Nome da conta: Neuro-Diagnosis ({{current_user.email}}). Tipo: baseado em tempo (TOTP), 6 dígitos a cada 30 segundos.</p>
+    <p class="saas-hint">Se o app pedir um algoritmo, use SHA-1. Guarde essa chave em segredo: ela permite gerar códigos de acesso.</p>
+    <p><a href="{{uri}}">Abrir aplicativo compatível neste dispositivo</a></p>
+  </div>
+  <script>
+    (() => {
+      const button = document.getElementById("copy-totp-key");
+      const key = document.getElementById("totp-manual-key");
+      const feedback = document.getElementById("copy-totp-feedback");
+      if (!button || !key || !feedback) return;
+      button.addEventListener("click", async () => {
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error("clipboard unavailable");
+          await navigator.clipboard.writeText(key.textContent.trim());
+          feedback.textContent = "Chave copiada. Cole no aplicativo autenticador; não a compartilhe.";
+        } catch (_) {
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          const range = document.createRange();
+          range.selectNodeContents(key);
+          selection?.addRange(range);
+          feedback.textContent = "Chave selecionada. Use Copiar no menu do navegador.";
+        }
+      });
+    })();
+  </script>
   <p class="saas-hint">O código muda a cada 30 segundos. Esta configuração expira em 15 minutos; enquanto não confirmar, o login atual permanece sem segundo fator.</p>
   <form method="post" action="{{url_for('saas.mfa_settings')}}">
     <input type="hidden" name="csrf_token" value="{{csrf_token}}">
@@ -56,6 +86,11 @@
     <label for="setup-code">Código exibido no aplicativo</label>
     <input id="setup-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
            minlength="6" maxlength="6" pattern="[0-9]{6}" required>
+    <label class="saas-check" for="setup-trust-device">
+      <input id="setup-trust-device" name="trust_device" type="checkbox" value="on">
+      Confiar neste dispositivo por 30 dias
+    </label>
+    <p class="saas-hint">Opcional, desmarcado por padrão. Nos próximos acessos a partir deste aparelho, será suficiente informar a senha. Outros dispositivos continuarão exigindo TOTP; nunca marque em aparelhos compartilhados.</p>
     <button class="saas-btn" type="submit">Ativar autenticação em duas etapas</button>
   </form>
 </section>

@@ -216,9 +216,10 @@ class ActivationRouteTests(unittest.TestCase):
             licensed.assert_called_once()
         self.user = store.SaaSUser(dict(
             id=33,nome="Admin",email="admin@example.invalid",
-            global_role="superadmin",active=True,must_change_password=False))
+            global_role="superadmin",active=True,must_change_password=False,mfa_enabled=True))
         with self.browser.session_transaction() as s:
             s["_user_id"] = "saas:33"
+            s["saas_mfa_passed"] = True
         with patch.object(activation_routes,"activate_client_account",
                           return_value=True) as act, \
              patch.object(activation_routes,"licensed_tenant") as licensed, \

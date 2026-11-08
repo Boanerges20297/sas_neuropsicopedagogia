@@ -79,6 +79,7 @@ class SmtpAdminRouteTests(unittest.TestCase):
             session["_user_id"]="saas:945"
             session["_fresh"]=True
             session["saas_auth"]=True
+            session["saas_mfa_passed"]=True
             session["saas_csrf"]="synthetic-csrf"
 
     def tearDown(self):
@@ -102,7 +103,9 @@ class SmtpAdminRouteTests(unittest.TestCase):
             self.assertEqual(self.client.get("/saas/admin/seguranca/email").status_code,403)
             self.identity.role="superadmin"
             self.identity.mfa_enabled=False
-            self.assertEqual(self.client.get("/saas/admin/seguranca/email").status_code,403)
+            enrollment=self.client.get("/saas/admin/seguranca/email")
+            self.assertEqual(enrollment.status_code,302)
+            self.assertIn("/saas/seguranca/totp",enrollment.location)
 
     def test_csrf_required_and_reauthentication(self):
         with patch.object(settings,"save_password") as save, \

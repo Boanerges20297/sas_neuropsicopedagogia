@@ -50,6 +50,11 @@ def register_mfa_routes(bp):
                 session.clear()
                 login_user(user, fresh=True)
                 session["saas_auth"] = True
+                session["saas_mfa_passed"] = True
+                if not save_trust:
+                    # Temporary device: short idle expiry and no remembered token.
+                    session["saas_temporary"] = True
+                    session["saas_last_seen"] = time.time()
                 session["saas_csrf"] = secrets.token_urlsafe(32)
                 target = "saas.profile" if user.must_change_password else "saas.dashboard"
                 response = make_response(redirect(url_for(target)))
@@ -64,7 +69,8 @@ def register_mfa_routes(bp):
             flash("Código inválido, já utilizado ou temporariamente bloqueado.", "warning")
         response = make_response(render_template(
             "saas_mfa_challenge.html", csrf_token=csrf(),
-            attempts_left=max(0, 5 - int(session.get("saas_mfa_attempts", 0)))))
+            attempts_left=max(0, 5 - int(session.get("saas_mfa_attempts", 0))),
+            is_admin=bool(session.get("saas_mfa_is_admin", False))))
         response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -76,6 +82,7 @@ def register_mfa_routes(bp):
             abort(403)
         uid = int(current_user.id)
         codes_once = None
+        trust_token = None
         if request.method == "POST":
             check_csrf()
             action = request.form.get("action")
@@ -100,6 +107,18 @@ def register_mfa_routes(bp):
                 try:
                     codes_once = factors.finish_enrollment(
                         uid, request.form.get("code", "").strip())
+                    # The first valid TOTP also completes MFA in this session.
+                    session["saas_mfa_passed"] = True
+                    if (request.form.get("trust_device") == "on"
+                            and not current_user.must_change_password):
+                        trust_token = factors.trust_device(
+                            uid, request.headers.get("User-Agent"))
+                        session.pop("saas_temporary", None)
+                        session.pop("saas_last_seen", None)
+                    else:
+                        # Non-trusted devices never gain a persistent trust token.
+                        session["saas_temporary"] = True
+                        session["saas_last_seen"] = time.time()
                     session.pop("saas_mfa_setup_failures", None)
                     flash("Autenticação de dois fatores ativada.", "success")
                 except ValueError as exc:
@@ -120,11 +139,16 @@ def register_mfa_routes(bp):
         response = make_response(render_template(
             "saas_mfa_settings.html", csrf_token=csrf(),
             enabled=is_enabled, seed=seed,
-            mandatory=factors.enrollment_required(uid),
+            mandatory=(current_user.is_admin() and not is_enabled)
+                      or factors.enrollment_required(uid),
             uri=crypto.provisioning_uri(seed, current_user.email) if seed else None,
             qr_image=crypto.provisioning_qr_data_uri(seed, current_user.email) if seed else None,
             codes_once=codes_once,
         ))
         response.headers["Cache-Control"] = "private, no-store"
         response.headers["Referrer-Policy"] = "no-referrer"
+        if trust_token:
+            response.set_cookie(
+                TRUST_COOKIE, trust_token, max_age=TRUST_MAX_AGE,
+                httponly=True, secure=True, samesite="Strict", path="/saas")
         return response

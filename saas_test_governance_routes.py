@@ -11,8 +11,17 @@ def register_test_governance_routes(bp):
         from saas_routes import is_saas_account
         if not is_saas_account() or current_user.role!="superadmin":
             abort(403)
+        q=request.args.get("q","").strip()[:100]
+        status=request.args.get("status","")
+        if status not in ("","draft","pending","approved","archived"):
+            abort(400)
+        raw_page=request.args.get("page","1")
+        if not raw_page.isdecimal(): abort(400)
+        page=max(1,min(int(raw_page),100000))
+        results=governance.list_catalog_for_review(page=page,search=q,status=status)
         result=make_response(render_template(
-            "saas_test_catalog_admin.html",tests=governance.list_catalog_for_review()))
+            "saas_test_catalog_admin.html",tests=results[:25],
+            search=q,status_filter=status,page=page,has_next=len(results)>25))
         result.headers["Cache-Control"]="private, no-store"
         result.headers["Referrer-Policy"]="no-referrer"
         return result

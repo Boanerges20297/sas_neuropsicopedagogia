@@ -15,6 +15,7 @@ class AdminWorkspaceRouteTests(unittest.TestCase):
         self.admin = store.SaaSUser({
             "id": 9, "nome": "Admin Sintético", "email": "admin@example.invalid",
             "global_role": "admin", "active": True, "must_change_password": False,
+            "mfa_enabled": True,
         })
         self.loader = patch.object(store, "get_user", return_value=self.admin)
         self.loader.start()
@@ -24,6 +25,7 @@ class AdminWorkspaceRouteTests(unittest.TestCase):
             sess["_user_id"] = "saas:9"
             sess["_fresh"] = True
             sess["saas_auth"] = True
+            sess["saas_mfa_passed"] = True
             sess["saas_csrf"] = "admin-csrf"
 
     def tearDown(self):
