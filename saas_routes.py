@@ -34,7 +34,8 @@ def saas_workspace_navigation():
             rights = {key: (current_user.role == "superadmin"
                             or limits is None or limits.get(key, False))
                       for key in rights}
-            available = rights["clinic"] and bool(own_admin_workspace(current_user.id))
+            available = (current_user.role != "superadmin" and rights["clinic"]
+                         and bool(own_admin_workspace(current_user.id)))
         else:
             available = True
             rights["activations"] = True
@@ -101,6 +102,9 @@ def practitioner_only(f):
 
 
 def licensed_tenant():
+    # Superadmin can govern catalog metadata, never patient records.
+    if is_saas_account() and getattr(current_user,"role",None) == "superadmin":
+        abort(403)
     if (is_saas_account() and current_user.is_admin()
             and not can_admin(int(current_user.id), "clinic")):
         abort(403)
@@ -341,6 +345,8 @@ def tests():
 
 from saas_profile_routes import register_profile_routes
 register_profile_routes(bp)
+from saas_test_governance_routes import register_test_governance_routes
+register_test_governance_routes(bp)
 
 from saas_neurocore_routes import register_neurocore_routes
 register_neurocore_routes(bp)

@@ -303,10 +303,10 @@ def update_account_profile(user_id, nome, email, *, cpf="", practice_area="",
         cur.execute("SELECT 1 FROM professional_details WHERE user_id=%s FOR UPDATE",
                     (user_id,))
         has_details = bool(cur.fetchone())
-        # Administrators imported before this schema have no mandatory professional
-        # identity yet. Existing professionals must provide complete updated details.
+        # The personal profile is independent of professional registration.
+        # Validate clinical fields only when that separate section is submitted.
         requested = any((cpf, practice_area, birth_date, phone))
-        if has_details or requested:
+        if requested:
             if not all((practice_area, birth_date, phone)) or (not has_details and not cpf):
                 raise ValueError("Preencha todos os dados profissionais")
             from saas_profile_data import validate_area, validate_birth_date, validate_phone, prepare_cpf

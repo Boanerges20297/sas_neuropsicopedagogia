@@ -28,18 +28,31 @@ def register_profile_routes(bp):
                 flash("Confirme sua senha atual para editar o perfil.", "danger")
             else:
                 try:
-                    store.update_account_profile(
-                        int(current_user.id), request.form.get("nome"), request.form.get("email"),
-                        cpf=request.form.get("cpf", ""),
-                        practice_area=request.form.get("profession", ""),
-                        birth_date=request.form.get("birth_date", ""),
-                        phone=request.form.get("phone", ""))
-                    flash("Dados pessoais atualizados.", "success")
+                    action = request.form.get("profile_action", "personal")
+                    if action == "personal":
+                        store.update_account_profile(
+                            int(current_user.id),
+                            request.form.get("nome"), request.form.get("email"))
+                        flash("Dados pessoais atualizados.", "success")
+                    elif action == "professional" and current_user.role in ("professional","admin","superadmin"):
+                        if not all(request.form.get(key, "").strip()
+                                   for key in ("profession", "birth_date", "phone")):
+                            raise ValueError("Preencha todos os dados profissionais")
+                        original = store.get_account_profile(int(current_user.id))
+                        store.update_account_profile(
+                            int(current_user.id), original["nome"], original["email"],
+                            cpf=request.form.get("cpf", ""),
+                            practice_area=request.form.get("profession", ""),
+                            birth_date=request.form.get("birth_date", ""),
+                            phone=request.form.get("phone", ""))
+                        flash("Dados profissionais atualizados.", "success")
+                    else:
+                        abort(403)
                     return redirect(url_for("saas.profile"))
                 except (PermissionError, ValueError) as exc:
                     flash(str(exc), "danger")
                 except pymysql.err.IntegrityError:
-                    flash("E-mail ou CPF já cadastrado.", "danger")
+                    flash("E-mail ou CPF j\u00e1 cadastrado.", "danger")
         profile_data = store.get_account_profile(int(current_user.id))
         return render_template("saas_profile.html", profile=profile_data,
                                areas=AREAS, forced=forced, csrf_token=csrf())

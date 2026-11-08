@@ -53,7 +53,13 @@ def create_managed_account(actor_id, *, nome, email, role, password_hash,
         raise ValueError("Conta de paciente não possui espaço clínico")
 
     clinical = role == "professional" or bool(clinical_workspace)
-    details = validate_details(cpf, profession, birth_date, phone) if clinical else None
+    supplied_details = any((cpf, profession, birth_date, phone))
+    # A clinical workspace for admins does NOT require professional credentials.
+    # Complete professional identity is required only for actual professionals.
+    if supplied_details and not clinical:
+        raise ValueError("Dados profissionais exigem um espaco clinico")
+    details = (validate_details(cpf, profession, birth_date, phone)
+               if role == "professional" or supplied_details else None)
 
     with store.transaction() as cur:
         cur.execute(
@@ -99,7 +105,7 @@ def create_managed_account(actor_id, *, nome, email, role, password_hash,
                  int(admin_flags["clinic"]), actor_id),
             )
 
-        if clinical:
+        if details:
             cur.execute(
                 """INSERT INTO professional_profiles
                    (user_id,profession,verification_status,verified_by,verified_at)
@@ -113,6 +119,7 @@ def create_managed_account(actor_id, *, nome, email, role, password_hash,
                 (new_id, details["cpf_digest"], details["cpf_encrypted"],
                  details["practice_area"], details["birth_date"], details["phone"]),
             )
+        if clinical:
             slug = ("prof-" + uuid4().hex if role == "professional"
                     else "admin-clinic-" + str(new_id))
             cur.execute(
@@ -135,18 +142,32 @@ def create_managed_account(actor_id, *, nome, email, role, password_hash,
         return new_id
 
 
-def list_managed_accounts(actor_id):
-    """Only account metadata; no passwords or clinical records."""
+def list_managed_accounts(actor_id, *, page=1, search="", role=""):
+    """Paginated administrative metadata. Never join patient clinical records."""
     if not can_admin(actor_id, "accounts"):
         raise PermissionError("Gerenciamento de contas não autorizado")
-    return store.all_rows(
-        """SELECT u.id,u.nome,u.email,u.global_role,u.active,
+    if type(page) is not int or not 1 <= page <= 100000:
+        raise ValueError("Página inválida")
+    search=(search or "").strip()[:100]
+    if role and role not in ACCOUNT_ROLES:
+        raise ValueError("Perfil inválido")
+    filters=[]
+    params=[]
+    if search:
+        filters.append("(u.nome LIKE %s OR u.email LIKE %s)")
+        params.extend(["%"+search+"%","%"+search+"%"])
+    if role:
+        filters.append("u.global_role=%s")
+        params.append(role)
+    where=(" WHERE "+" AND ".join(filters)) if filters else ""
+    sql="""SELECT u.id,u.nome,u.email,u.global_role,u.active,
                   u.must_change_password,u.created_at,
                   EXISTS(SELECT 1 FROM tenants t
                          JOIN tenant_members m ON m.tenant_id=t.id
                           AND m.user_id=u.id AND m.membership_role='owner'
                          WHERE t.owner_user_id=u.id AND t.status='active'
                            AND m.status='active') AS clinical_workspace
-           FROM users u
-           ORDER BY u.created_at DESC,u.id DESC LIMIT 100"""
-    )
+           FROM users u""" + where + """
+           ORDER BY u.created_at DESC,u.id DESC LIMIT %s OFFSET %s"""
+    params.extend([26,(page-1)*25])
+    return store.all_rows(sql,tuple(params))

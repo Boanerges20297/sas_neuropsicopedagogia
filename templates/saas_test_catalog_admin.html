@@ -1,0 +1,24 @@
+{% extends "saas_base.html" %}
+{% block title %}Revisão de testes | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro"><span class="saas-kicker">Superadministração</span>
+<h1>Revisão dos instrumentos</h1>
+<p>Audite o conteúdo, a versão e o estado de publicação de cada teste cadastrado. Esta área não consulta aplicações, respostas, relatórios ou prontuários de pacientes.</p></div>
+<section class="saas-card">
+<h2>Catálogo de testes cadastrados</h2>
+<div class="saas-list">
+{% for t in tests %}
+<article class="saas-person">
+<div>
+<strong>{{t.title}}</strong>
+<p>{{t.author_name}} · v{{t.version_number or 'sem versão'}} · {{t.status}} · {{'Compartilhado' if t.visibility=='global' else 'Privado no espaço de origem'}}</p>
+<p class="saas-hint">{{t.description or 'Descrição não informada.'}}</p>
+</div>
+<div class="saas-actions"><a class="saas-btn saas-btn--ghost" href="{{url_for('saas.admin_test_review',test_id=t.id)}}">Ver instrumento{% if t.status=='pending' %} / revisar{% endif %}</a></div>
+</article>
+{% else %}
+<p>Não há instrumentos cadastrados.</p>
+{% endfor %}
+</div>
+</section>
+{% endblock %}

@@ -16,7 +16,54 @@
 </section>
 {% endif %}
 
-<section class="saas-card saas-form-card">
+<section class="saas-card">
+  <h2>Contas cadastradas</h2>
+  <form method="get" action="{{url_for('saas.managed_accounts')}}" class="saas-account-search">
+    <div><label for="account-search">Buscar por nome ou e-mail</label>
+    <input id="account-search" name="q" value="{{search}}" maxlength="100" autocomplete="off"></div>
+    <div><label for="account-filter-role">Perfil</label>
+    <select id="account-filter-role" name="role">
+      <option value="">Todos</option>
+      {% for key,label in [('patient','Paciente / responsável'),('professional','Profissional'),('admin','Administrador'),('superadmin','Superadministrador')] %}
+      <option value="{{key}}" {% if role_filter==key %}selected{% endif %}>{{label}}</option>
+      {% endfor %}
+    </select></div>
+    <button class="saas-btn" type="submit">Buscar</button>
+    {% if search or role_filter %}<a class="saas-btn saas-btn--ghost" href="{{url_for('saas.managed_accounts')}}">Limpar filtros</a>{% endif %}
+  </form>
+  <p class="saas-hint">Página {{page}} · até 25 contas por página.</p>
+  <div class="saas-list">
+    {% for u in accounts %}
+    <article class="saas-person">
+      <div>
+        <strong>{{u.nome}}</strong>
+        <p>{{u.email}} · {{u.global_role}} · {{'Ativa' if u.active else 'Pendente/inativa'}}</p>
+        <p class="saas-hint">{{'Com espaço clínico' if u.clinical_workspace else 'Sem espaço clínico próprio'}} · {{'Troca de senha pendente' if u.must_change_password else 'Senha pessoal definida'}}</p>
+      </div>
+      <div class="saas-actions">
+        {% if u.global_role!='superadmin' or allow_superadmin %}
+        <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.edit_managed_account',account_id=u.id)}}">Editar / permissões</a>
+        {% endif %}
+        {% if u.global_role=='professional' and can_manage_professionals %}
+        <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.professionals')}}">Homologação BTA</a>
+        {% endif %}
+        {% if u.global_role=='patient' and can_manage_activations %}
+        <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.activation_queue')}}">Verificar ativação</a>
+        {% endif %}
+      </div>
+    </article>
+    {% else %}
+    <p>Não há contas cadastradas.</p>
+    {% endfor %}
+  </div>
+  <nav class="saas-actions" aria-label="Paginação de contas">
+  {% if page>1 %}<a class="saas-btn saas-btn--ghost" href="{{url_for('saas.managed_accounts',page=page-1,q=search,role=role_filter)}}">Página anterior</a>{% endif %}
+  {% if has_next %}<a class="saas-btn saas-btn--ghost" href="{{url_for('saas.managed_accounts',page=page+1,q=search,role=role_filter)}}">Próxima página</a>{% endif %}
+  </nav>
+</section>
+
+<details class="saas-card saas-profile-panel">
+  <summary>Criar nova conta</summary>
   <h2>Criar uma conta</h2>
   <form method="post" action="{{url_for('saas.managed_accounts')}}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -66,24 +113,7 @@
     <p class="saas-hint">A senha será exibida uma única vez depois da criação para entrega por canal seguro. Troca obrigatória no primeiro acesso.</p>
     <button type="submit" class="saas-btn">Criar conta</button>
   </form>
-</section>
-
-<section class="saas-card">
-  <h2>Contas recentes</h2>
-  <div class="saas-list">
-    {% for u in accounts %}
-    <article class="saas-person">
-      <div>
-        <strong>{{u.nome}}</strong>
-        <p>{{u.email}} · {{u.global_role}} · {{'Ativa' if u.active else 'Pendente/inativa'}}</p>
-        <p class="saas-hint">{{'Com espaço clínico' if u.clinical_workspace else 'Sem espaço clínico próprio'}} · {{'Troca de senha pendente' if u.must_change_password else 'Senha pessoal definida'}}</p>
-      </div>
-    </article>
-    {% else %}
-    <p>Não há contas cadastradas.</p>
-    {% endfor %}
-  </div>
-</section>
+</details>
 
 <script>
 (() => {
@@ -92,7 +122,7 @@
  const fields = document.getElementById('professional-fields');
  function update() {
    const r = role.value;
-   const needs = r === 'professional' || (r !== 'patient' && clinical.checked);
+   const needs = r === 'professional';
    clinical.disabled = (r === 'patient' || r === 'professional');
    if (r === 'patient' || r === 'professional') clinical.checked = r === 'professional';
    fields.hidden = !needs;

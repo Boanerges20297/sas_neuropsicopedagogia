@@ -1,0 +1,38 @@
+{% extends "saas_base.html" %}
+{% block title %}Editar conta | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro"><span class="saas-kicker">Administração de acessos</span><h1>Editar conta</h1>
+<p>Dados, perfil, permissões e situação, sem acesso a prontuários.</p></div>
+<section class="saas-card saas-form-card"><h2>{{account.nome}}</h2>
+<form method="post" action="{{url_for('saas.edit_managed_account',account_id=account.id)}}">
+<input type="hidden" name="csrf_token" value="{{csrf_token}}">
+<label for="nome">Nome completo</label><input id="nome" name="nome" required maxlength="160" value="{{account.nome}}">
+<label for="email">E-mail</label><input id="email" name="email" type="email" required maxlength="254" value="{{account.email}}">
+<label for="role">Perfil de acesso</label>
+<select id="role" name="role" {% if account.id==actor_id %}disabled{% endif %}>
+<option value="patient" {% if account.global_role=='patient' %}selected{% endif %}>Paciente / responsável</option>
+<option value="professional" {% if account.global_role=='professional' %}selected{% endif %}>Profissional</option>
+<option value="admin" {% if account.global_role=='admin' %}selected{% endif %}>Administrador</option>
+{% if actor_superadmin %}<option value="superadmin" {% if account.global_role=='superadmin' %}selected{% endif %}>Superadministrador</option>{% endif %}
+</select>
+{% if account.id==actor_id %}<input type="hidden" name="role" value="{{account.global_role}}">{% endif %}
+<p class="saas-hint">Responsável e paciente usam o mesmo perfil. Conversão em profissional exige cadastro clínico completo.</p>
+<fieldset id="managed-rights"><legend>Permissões administrativas</legend>
+{% for key,label in [('accounts','Contas'),('professionals','Profissionais e BTA'),('activations','Ativações'),('clinic','Espaço clínico próprio')] %}
+<label class="saas-check"><input type="checkbox" name="allow_{{key}}" {% if account['allow_'+key] or account.global_role=='admin' and account.rights_id is none %}checked{% endif %}> {{label}}</label>
+{% endfor %}<p class="saas-hint">Não concede acesso a prontuários de outros profissionais.</p></fieldset>
+<fieldset><legend>Situação</legend>
+<label class="saas-check"><input type="checkbox" name="active" {% if account.active %}checked{% endif %} {% if account.id==actor_id %}disabled{% endif %}> Conta ativa</label>
+{% if account.id==actor_id %}<input type="hidden" name="active" value="on">{% endif %}
+<p class="saas-hint">Ativações profissionais seguem homologação/BTA. Paciente ou responsável: validação clínica.</p></fieldset>
+<label for="senha_atual">Sua senha atual para confirmar</label>
+<input id="senha_atual" name="senha_atual" type="password" required autocomplete="current-password">
+<div class="saas-actions"><button class="saas-btn" type="submit">Salvar alterações</button>
+<a class="saas-btn saas-btn--ghost" href="{{url_for('saas.managed_accounts')}}">Cancelar</a></div>
+</form></section>
+<script>
+(()=>{const role=document.getElementById("role"), rights=document.getElementById("managed-rights");
+function sync(){const on=role.value==="admin";rights.hidden=!on;rights.querySelectorAll("input").forEach(x=>x.disabled=!on);}
+role.addEventListener("change",sync);sync()})();
+</script>
+{% endblock %}

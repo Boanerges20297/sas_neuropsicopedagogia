@@ -72,10 +72,23 @@ class AdminCreationTests(unittest.TestCase):
                  "cpf_encrypted":b"ciphertext", "birth_date":"1990-01-01",
                  "phone":"85988888888"}
         with patch.object(provisioning,"validate_details",return_value=details):
-            _,sql=self.create("admin",clinical_workspace=True)
+            _,sql=self.create("admin",clinical_workspace=True,cpf="synthetic",profession="psicologia",birth_date="1990-01-01",phone="85988888888")
         self.assertTrue(any("INSERT INTO professional_profiles" in q for q,_ in sql))
         self.assertTrue(any("INSERT INTO tenants" in q for q,_ in sql))
         self.assertTrue(any("INSERT INTO tenant_members" in q for q,_ in sql))
+
+    def test_admin_private_workspace_does_not_require_professional_profile(self):
+        _,queries=self.create("admin",clinical_workspace=True)
+        self.assertTrue(any("INSERT INTO tenants" in sql for sql,_ in queries))
+        self.assertFalse(any("INSERT INTO professional_details" in sql for sql,_ in queries))
+        self.assertFalse(any("INSERT INTO professional_profiles" in sql for sql,_ in queries))
+
+    def test_professional_profile_is_required_only_for_professionals(self):
+        with self.assertRaises(ValueError):
+            self.create("professional")
+        self.assertEqual(
+            provisioning.ACCOUNT_ROLES,
+            frozenset(("patient","professional","admin","superadmin")))
 
     def test_admin_cannot_escalate_privileges(self):
         limits={"allow_accounts":1,"allow_professionals":0,

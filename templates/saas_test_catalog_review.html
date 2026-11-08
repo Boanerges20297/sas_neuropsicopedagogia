@@ -1,0 +1,34 @@
+{% extends "saas_base.html" %}
+{% block title %}Analisar instrumento | Neuro-Diagnosis{% endblock %}
+{% block content %}
+<div class="saas-intro"><span class="saas-kicker">Revisão editorial e técnica</span>
+<h1>{{item.title}}</h1><p>Consulte somente a definição do instrumento. Não são disponibilizados dados de pacientes ou aplicações individuais.</p>
+<a href="{{url_for('saas.admin_test_catalog')}}">Voltar ao catálogo</a></div>
+<section class="saas-card">
+<p><strong>Autor:</strong> {{item.author_name}}</p>
+<p><strong>Estado:</strong> {{item.status}} · <strong>Versão:</strong> {{item.version_number or 'não cadastrada'}} · <strong>Visibilidade:</strong> {{item.visibility}}</p>
+<p><strong>Descrição:</strong> {{item.description or 'Não informada'}}</p>
+<h2>Definição cadastrada</h2>
+{% if item.version_id %}
+<details class="saas-profile-panel"><summary>Ver definição da versão {{item.version_number}}</summary>
+<pre class="saas-test-definition">{{item.definition_json}}</pre></details>
+{% else %}<p>Nenhuma versão cadastrada. A aprovação não é possível.</p>{% endif %}
+</section>
+{% if item.status=='pending' and item.version_status=='draft' %}
+<section class="saas-card saas-form-card">
+<h2>Decisão sobre publicação</h2>
+<p class="saas-hint">Aprovação administrativa de catálogo não é validação científica, autorização profissional nem diagnóstico. Verifique previamente procedência, direitos de uso e revisão de especialista habilitado.</p>
+<form method="post">
+<input type="hidden" name="csrf_token" value="{{csrf_token}}">
+<label for="decision">Decisão</label>
+<select id="decision" name="decision" required>
+<option value="">Selecione</option><option value="approve">Aprovar publicação do instrumento</option>
+<option value="request_changes">Solicitar correções (retornar a rascunho)</option></select>
+<label for="reason">Parecer técnico e justificativa</label>
+<textarea id="reason" name="reason" rows="4" minlength="10" maxlength="500" required></textarea>
+<label for="senha_atual">Sua senha de superadministrador</label>
+<input id="senha_atual" name="senha_atual" type="password" autocomplete="current-password" required>
+<button class="saas-btn" type="submit">Registrar decisão auditada</button>
+</form></section>
+{% endif %}
+{% endblock %}
