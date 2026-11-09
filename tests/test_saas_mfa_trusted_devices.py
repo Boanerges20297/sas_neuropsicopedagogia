@@ -23,6 +23,8 @@ class TrustedDeviceLoginTests(unittest.TestCase):
         self.patches = [
             patch.object(store,"user_by_email",return_value=self.account),
             patch.object(store,"get_user",return_value=self.user),
+            # MFA tests have no database-backed clinical workspace.
+            patch("saas_routes.own_admin_workspace",return_value=None),
             patch("saas_login_recovery.cooldown_remaining",return_value=0),
             patch("saas_login_recovery.clear_failures",return_value=None),
         ]

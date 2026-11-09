@@ -34,7 +34,7 @@ def saas_workspace_navigation():
             rights = {key: (current_user.role == "superadmin"
                             or limits is None or limits.get(key, False))
                       for key in rights}
-            available = (current_user.role != "superadmin" and rights["clinic"]
+            available = (rights["clinic"]
                          and bool(own_admin_workspace(current_user.id)))
         else:
             available = True
@@ -124,9 +124,8 @@ def practitioner_only(f):
 
 
 def licensed_tenant():
-    # Superadmin can govern catalog metadata, never patient records.
-    if is_saas_account() and getattr(current_user,"role",None) == "superadmin":
-        abort(403)
+    # Administrative clinical access remains private to the admin-owned tenant.
+    # Superadmins cannot browse records belonging to other professionals.
     if (is_saas_account() and current_user.is_admin()
             and not can_admin(int(current_user.id), "clinic")):
         abort(403)

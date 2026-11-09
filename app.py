@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, abort
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 from functools import wraps
@@ -1204,6 +1204,53 @@ def user_area():
 # SaaS MySQL routes remain separate from existing SQLite paths during migration.
 from saas_routes import bp as saas_blueprint
 app.register_blueprint(saas_blueprint)
+
+# Human-readable HTTP errors without disclosing internal permissions or stack traces.
+# JSON clients keep machine-readable errors and the original HTTP status.
+_PUBLIC_HTTP_ERRORS = {
+    400: ('Não foi possível concluir a solicitação',
+          'A solicitação não pôde ser validada.',
+          'Atualize a página e tente novamente. Se você estava preenchendo um formulário, confira os dados e a sessão.'),
+    401: ('Identificação necessária',
+          'É preciso entrar na plataforma para continuar.',
+          'Entre com sua conta e tente novamente.'),
+    403: ('Este recurso não está disponível para sua conta',
+          'Sua conta não tem autorização para acessar esta área.',
+          'Se você deveria ter acesso, confira se está no espaço correto ou solicite uma revisão de permissões.'),
+    404: ('Página não encontrada',
+          'Não foi possível encontrar a página ou o registro solicitado.',
+          'Confira o endereço ou retorne ao painel. Registros de outros profissionais não são exibidos.'),
+    405: ('Ação indisponível',
+          'Esta operação não está disponível por esse caminho.',
+          'Retorne ao painel e utilize os controles da própria plataforma.'),
+    429: ('Muitas tentativas',
+          'Você realizou várias solicitações em pouco tempo.',
+          'Aguarde antes de tentar novamente para proteger sua conta.'),
+    500: ('Não foi possível carregar esta área',
+          'Ocorreu uma falha temporária ao processar sua solicitação.',
+          'Nenhum detalhe interno foi exibido. Se persistir, informe o horário e a operação ao suporte.'),
+}
+
+def _render_safe_http_error(error):
+    code = getattr(error, 'code', 500) or 500
+    title, message, guidance = _PUBLIC_HTTP_ERRORS.get(code, _PUBLIC_HTTP_ERRORS[500])
+    accepts_json = (request.is_json or request.path.startswith(('/api/', '/saas/api/'))
+                    or request.accept_mimetypes.best == 'application/json')
+    if accepts_json:
+        return jsonify({'erro': message, 'codigo': code}), code
+    is_saas = request.path == '/saas' or request.path.startswith('/saas/')
+    home_url = url_for('saas.dashboard') if is_saas else url_for('index')
+    support_url = url_for('saas.login') if is_saas else url_for('login')
+    # Direct Jinja render avoids database-dependent navigation context processors
+    # when the error itself was caused by unavailable account or tenant state.
+    html = app.jinja_env.get_template('saas_error.html').render(
+        code=code, title=title, message=message, guidance=guidance,
+        home_url=home_url, home_label='Voltar ao painel' if is_saas else 'Página inicial',
+        support_url=support_url)
+    return html, code, {'Cache-Control': 'no-store'}
+
+for _http_status in _PUBLIC_HTTP_ERRORS:
+    app.register_error_handler(_http_status, _render_safe_http_error)
 if os.getenv('SAAS_PRIMARY', 'false').lower() == 'true':
     login_manager.login_view = 'saas.login'
 
@@ -1220,7 +1267,7 @@ def isolate_saas_sessions_from_legacy_sqlite():
         if (request.method in ('GET', 'HEAD')
                 and request.endpoint in ('index', 'login')):
             return redirect(url_for('saas.dashboard'))
-        return ('Acesso exclusivo ao espaço SaaS.', 403)
+        abort(403)
 
 @app.before_request
 def restrict_legacy_routes_in_saas_primary_mode():
@@ -1235,7 +1282,7 @@ def restrict_legacy_routes_in_saas_primary_mode():
         return None
     if request.method in ("GET", "HEAD"):
         return redirect(url_for("saas.login"))
-    return ("Rota desativada no modo SaaS.", 404)
+    abort(404)
 
 
 # ==================== INICIALIZAÇÃO ====================

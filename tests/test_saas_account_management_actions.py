@@ -169,6 +169,9 @@ class AdminAccountRouteTests(unittest.TestCase):
         # identifier. Mock freshness only for this route-level test fixture.
         self.fresh=patch.object(account_routes,"login_fresh",return_value=True)
         self.fresh.start()
+        # This fixture has no private clinic; new dual-role tests cover activation.
+        self.workspace=patch("saas_routes.own_admin_workspace",return_value=None)
+        self.workspace.start()
         with self.client.session_transaction() as sess:
             sess["_user_id"]="saas:9"
             sess["_fresh"]=True
@@ -176,6 +179,7 @@ class AdminAccountRouteTests(unittest.TestCase):
             sess["saas_mfa_passed"]=True
             sess["saas_csrf"]="safe-csrf"
     def tearDown(self):
+        self.workspace.stop()
         self.fresh.stop()
         self.loader.stop()
         app.config["TESTING"]=self.old
@@ -211,8 +215,9 @@ class AdminAccountRouteTests(unittest.TestCase):
              patch.object(account_routes,"account_detail",return_value=sample):
             self.assertEqual(self.client.get("/saas/contas/50/editar").status_code,403)
 
-    def test_superadmin_cannot_browse_patient_workspace(self):
-        self.assertEqual(self.client.get("/saas/pacientes").status_code,403)
+    def test_superadmin_without_private_clinic_cannot_browse_patient_workspace(self):
+        with patch("saas_routes.can_admin", return_value=True):
+            self.assertEqual(self.client.get("/saas/pacientes").status_code,403)
 
     def test_test_catalog_is_superadmin_only(self):
         with patch.object(governance,"list_catalog_for_review",return_value=[]):
