@@ -1,0 +1,59 @@
+{% extends "saas_base.html" %}
+{% block title %}Indicar instrumento | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-clinical.css')}}">{% endblock %}
+{% block content %}
+<div class="clinic-shell">
+  <nav class="clinic-breadcrumb"><a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span><a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><span>Indicar instrumento</span></nav>
+  <header class="clinic-hero"><div><span class="clinic-kicker">Instrumentos versionados</span><h1>Indicar para {{client.nome}}</h1>
+    <p>Selecione um instrumento aprovado, incluindo anamnese, e decida quem preencherá as respostas.</p></div></header>
+  <div class="clinic-two">
+    <section class="clinic-panel">
+      <h2>Nova aplicação</h2>
+      {% if available %}
+      <form method="post" class="clinic-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        {% if encounter %}<input type="hidden" name="encounter_id" value="{{encounter.id}}">{% endif %}
+        <label for="version_id">Instrumento e versão</label>
+        <select id="version_id" name="version_id" required>
+          <option value="">Selecione um instrumento</option>
+          {% for test in available %}
+          <option value="{{test.version_id}}">{{test.title}} · v{{test.version_number}} · {{'Global' if test.visibility=='global' else 'Privado'}}</option>
+          {% endfor %}
+        </select>
+        <label for="mode">Modo de aplicação</label>
+        <select id="mode" name="mode" required>
+          <option value="professional">Profissional lê e registra as respostas</option>
+          <option value="portal">Paciente ou responsável responde no portal</option>
+        </select>
+        <p id="modeInfo" class="clinic-muted">As perguntas serão abertas no espaço profissional, com campo de observações do atendimento.</p>
+        <button type="submit" class="clinic-button">Indicar instrumento</button>
+      </form>
+      {% else %}
+      <div class="clinic-empty">Ainda não há instrumentos com versão aprovada e questionário configurado. A anamnese também precisa integrar o catálogo versionado. Nenhum instrumento fictício será apresentado como validado.</div>
+      {% endif %}
+    </section>
+    <aside>
+      <section class="clinic-panel"><h2>Segurança da aplicação</h2>
+        <p class="clinic-muted">O teste utiliza exatamente a versão aprovada selecionada. O modo não altera perguntas, opções ou regras de resposta.</p>
+        <div class="clinic-warning"><strong>Portal do paciente:</strong> a atribuição é registrada como aguardando acesso. O questionário só poderá ser liberado após validação de identidade, representação legal, autorização e consentimento. Nesta etapa, não haverá link público de preenchimento.</div>
+        {% if encounter %}<a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=encounter.id)}}">Voltar ao atendimento</a>{% endif %}
+      </section>
+    </aside>
+  </div>
+  <section class="clinic-panel"><h2>Instrumentos já indicados</h2>
+    <div class="clinic-list">
+    {% for item in assigned %}
+    <div class="clinic-list-item"><div><strong>{{item.title}}</strong><div class="clinic-muted">Versão {{item.version_number}} · {{'Aplicação profissional' if item.mode=='professional' else 'Aguardando portal'}} · {{item.status}}</div></div>
+      <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=item.id)}}">Abrir</a></div>
+    {% else %}<p class="clinic-empty">Nenhuma aplicação atribuída a este paciente.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+<script>
+(()=>{const mode=document.getElementById('mode'),info=document.getElementById('modeInfo');
+if(!mode)return;
+mode.addEventListener('change',()=>{info.textContent=mode.value==='portal'
+?'O instrumento será reservado e aguardará verificação e autorização do portal. Nenhum convite será enviado agora.'
+:'As perguntas serão abertas no espaço profissional, com campo de observações do atendimento.';});})();
+</script>
+{% endblock %}

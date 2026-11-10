@@ -283,6 +283,50 @@ UPDATE care_portal_consents
     print(f"MYSQL_HOMOLOGATION_OK tables={tables} tenants=2 blocked_invariants={len(rejections)} guardian_unverified=1")
 
 
+def verify_clinical(db):
+    """Real InnoDB checks for visit creation, patient scope, and encrypted answers."""
+    mysql("""INSERT INTO care_encounters
+      (id,tenant_id,appointment_id,client_id,professional_user_id,status)
+      VALUES(502,201,NULL,303,101,'draft');""",db=db)
+    # Cross-client mismatch must fail at the database, not just in Python.
+    mysql("""INSERT INTO care_encounter_starts
+      (tenant_id,client_id,professional_user_id,encounter_id,request_id)
+      VALUES(201,301,101,502,'55555555-5555-4555-8555-555555555555');""",
+      db=db,expect_error=True)
+    mysql("""INSERT INTO care_diagnosis_records
+      (tenant_id,client_id,professional_user_id,encounter_id,label)
+      VALUES(201,301,101,502,'Synthetic mismatch');""",db=db,expect_error=True)
+    mysql("""INSERT INTO care_encounter_starts
+      (tenant_id,client_id,professional_user_id,encounter_id,request_id)
+      VALUES(201,303,101,502,'55555555-5555-4555-8555-555555555555');
+    INSERT INTO care_encounter_notes(encounter_id,revision,ciphertext,edited_by)
+      VALUES(502,1,UNHEX('aabbcc'),101);""", db=db)
+    if mysql("SELECT COUNT(*) FROM care_encounter_notes WHERE encounter_id=502;",db=db)!="1":
+        raise AssertionError("Private clinical note not saved")
+    mysql("""INSERT INTO tests(id,tenant_id,title,created_by,visibility,status)
+      VALUES(2001,201,'Synthetic Questionnaire',101,'private','approved');
+    INSERT INTO test_versions
+      (id,test_id,version_number,definition_json,status,created_by)
+      VALUES(2002,2001,1,'{"kind":"assessment","questions":[]}','approved',101);
+    INSERT INTO assessments
+      (id,tenant_id,client_id,test_version_id,responsible_user_id)
+      VALUES(2003,201,303,2002,101);""",db=db)
+    mysql("""INSERT INTO care_assessment_workflows
+      (assessment_id,tenant_id,client_id,professional_user_id,mode)
+      VALUES(2003,201,301,101,'professional');""",db=db,expect_error=True)
+    mysql("""INSERT INTO care_assessment_workflows
+      (assessment_id,tenant_id,client_id,professional_user_id,encounter_id,mode)
+      VALUES(2003,201,303,101,502,'professional');
+    INSERT INTO care_assessment_private_answers
+      (tenant_id,assessment_id,question_key,ciphertext,edited_by)
+      VALUES(201,2003,'q1',UNHEX('ff00'),101);""",db=db)
+    mysql("""INSERT INTO care_assessment_private_answers
+      (tenant_id,assessment_id,question_key,ciphertext,edited_by)
+      VALUES(202,2003,'q2',UNHEX('ffaa'),101);""",db=db,expect_error=True)
+    print("CLINICAL_MYSQL_HOMOLOGATION_OK direct_visit=1 notes=1 "
+          "scoped_encounter=1 scoped_assessment=1 private_answers=1")
+
+
 def main():
     if sys.platform != "win32":
         raise RuntimeError("This harness must run on the STI Windows host")
@@ -297,6 +341,7 @@ def main():
         created = True
         names = ("mysql_saas_schema.sql", "mysql_saas_profile_migration.sql",
                  "mysql_neurocore_review_migration.sql", "mysql_care_workflow_migration.sql",
+                 "mysql_care_encounters_assessments_migration.sql",
                  "mysql_care_portal_access_migration.sql",
                  "mysql_care_patient_intake_migration.sql",
                  "mysql_care_portal_self_access_migration.sql",
@@ -312,6 +357,7 @@ def main():
             apply_file(filename, db)
         fixtures(db)
         verify(db)
+        verify_clinical(db)
     finally:
         if created:
             mysql("DROP DATABASE " + db + ";")

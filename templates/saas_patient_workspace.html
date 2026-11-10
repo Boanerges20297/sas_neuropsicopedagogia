@@ -20,6 +20,17 @@
     <p>Consulte a idade, a representação por adulto ou responsável e as observações fornecidas no cadastro.</p>
     <a class="saas-btn" href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Ver dados iniciais</a>
   </section>
+  <section class="saas-card" aria-label="Iniciar atendimento">
+    <h2>Iniciar novo atendimento</h2>
+    <p>Abra a ficha inicial, o editor clínico e os instrumentos para este paciente.</p>
+    <form action="{{url_for('saas.clinical_start')}}" method="post">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+      <input type="hidden" name="client_id" value="{{client.id}}">
+      <input type="hidden" name="request_id" value="{{start_request_id}}">
+      <button class="saas-btn" type="submit">Iniciar atendimento</button>
+    </form>
+    <a class="saas-btn" href="{{url_for('saas.clinical_assign_test',client_id=client.id)}}">Indicar teste ou anamnese</a>
+  </section>
   <section class="saas-card" aria-label="Atendimentos do paciente">
     <h2>Agenda e sessões</h2>
     <p>Planeje atendimentos, confirme presença e acompanhe o histórico deste paciente.</p>

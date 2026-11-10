@@ -1,0 +1,100 @@
+{% extends "saas_base.html" %}
+{% block title %}Atendimento de {{client.nome}} | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-clinical.css')}}">{% endblock %}
+{% block content %}
+<div class="clinic-shell">
+  <nav class="clinic-breadcrumb"><a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span><a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><span>Sessão {{encounter.id}}</span></nav>
+  <header class="clinic-hero"><div><span class="clinic-kicker">Sessão clínica · acesso restrito</span>
+    <h1>Atendimento de {{client.nome}}</h1>
+    <p>Iniciado em {{encounter.opened_at.strftime('%d/%m/%Y %H:%M')}} · {{'Em edição' if encounter.status=='draft' else 'Registro assinado'}}</p>
+  </div><a class="clinic-button clinic-button--light" href="{{url_for('saas.clinical_assign_test',client_id=client.id,encounter_id=encounter.id)}}">+ Indicar instrumento</a></header>
+  <div class="clinic-two clinic-two--notes">
+    <div>
+      <section class="clinic-panel">
+        <h2>Evolução e observações</h2>
+        <p class="clinic-muted">Editor clínico: títulos, negrito, itálico, listas e parágrafos. Conteúdo criptografado no banco, histórico de revisões e sem envio para serviços externos.</p>
+        <form id="clinicNoteForm" method="post" class="clinic-form" action="{{url_for('saas.clinical_save_note',client_id=client.id,encounter_id=encounter.id)}}">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <input type="hidden" name="revision" value="{{note.revision}}">
+          <input type="hidden" name="html" id="clinicHTML">
+          <div role="toolbar" class="clinic-editor-toolbar" aria-label="Formatação das observações">
+            <button type="button" data-command="bold" aria-label="Negrito"><strong>B</strong></button>
+            <button type="button" data-command="italic" aria-label="Itálico"><em>I</em></button>
+            <button type="button" data-command="underline" aria-label="Sublinhado"><u>U</u></button>
+            <button type="button" data-command="formatBlock" data-value="h3" aria-label="Título">H</button>
+            <button type="button" data-command="insertUnorderedList" aria-label="Lista com marcadores">•</button>
+            <button type="button" data-command="insertOrderedList" aria-label="Lista numerada">1.</button>
+            <button type="button" data-command="removeFormat" aria-label="Remover formatação">Tx</button>
+          </div>
+          <div id="clinicEditor" class="clinic-editor" contenteditable="{{'true' if encounter.status=='draft' else 'false'}}" role="textbox" aria-label="Observações clínicas" aria-multiline="true" data-placeholder="Descreva o atendimento aqui...">{{note.html|safe}}</div>
+          <div class="clinic-inline">
+            <span class="clinic-muted">Versão {{note.revision}}{% if note.created_at %} · Salva em {{note.created_at.strftime('%d/%m/%Y %H:%M')}}{% endif %}</span>
+            <button type="submit" class="clinic-button" {% if encounter.status!='draft' %}disabled{% endif %}>Salvar observações</button>
+          </div>
+        </form>
+      </section>
+      <section class="clinic-panel">
+        <h2>Instrumentos deste paciente</h2>
+        <p class="clinic-muted">Uma versão aprovada por aplicação. O mesmo questionário pode ser respondido pelo profissional ou reservado para o portal do usuário.</p>
+        <div class="clinic-list">
+          {% for item in assigned %}
+          <div class="clinic-list-item"><div><strong>{{item.title}}</strong><div class="clinic-muted">Versão {{item.version_number}} · {{'Profissional' if item.mode=='professional' else 'Portal do paciente'}} · {{item.status}}</div></div>
+          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=item.id)}}">Abrir</a></div>
+          {% else %}<p class="clinic-empty">Nenhum instrumento atribuído ainda.</p>{% endfor %}
+        </div>
+      </section>
+      <section class="clinic-panel">
+        <h2>Hipóteses e diagnósticos</h2>
+        <p class="clinic-muted">Registro exclusivamente profissional. Apenas diagnósticos confirmados entram na estatística; testes não geram diagnóstico automático.</p>
+        <div class="clinic-list">
+          {% for record in diagnoses %}
+          <div class="clinic-list-item"><div><strong>{{record.label}}</strong><div class="clinic-muted">{{record.code or 'Sem código'}} · {{'Confirmado' if record.certainty=='confirmed' else 'Hipótese' if record.certainty=='hypothesis' else 'Descartado'}}</div></div></div>
+          {% endfor %}
+        </div>
+        {% if encounter.status=='draft' %}
+        <form class="clinic-form" method="post" action="{{url_for('saas.clinical_record_diagnosis',client_id=client.id,encounter_id=encounter.id)}}">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <label for="diag-label">Descrição clínica</label><input id="diag-label" name="label" maxlength="160" required>
+          <div class="clinic-inline">
+            <div><label for="diag-code">Código de classificação (opcional)</label><input id="diag-code" name="code" maxlength="32"></div>
+            <div><label for="diag-certainty">Situação</label><select id="diag-certainty" name="certainty">
+              <option value="hypothesis">Hipótese em avaliação</option><option value="confirmed">Confirmado pelo profissional</option><option value="excluded">Descartado</option></select></div>
+          </div>
+          <button class="clinic-button clinic-button--ghost" type="submit">Adicionar registro clínico</button>
+        </form>{% endif %}
+      </section>
+    </div>
+    <aside>
+      <section class="clinic-panel">
+        <h2>Dados iniciais</h2>
+        <p><strong>Paciente:</strong> {{client.nome}}</p>
+        {% if intake %}
+        <p><strong>Idade:</strong> {{intake.age}} anos</p>
+        <p><strong>Vínculo:</strong> {{'Adulto' if intake.representation_mode=='self' else 'Menor com responsável'}}</p>
+        {% if intake.guardian_name %}<p><strong>Responsável informado:</strong> {{intake.guardian_name}}</p>{% endif %}
+        <h3>Relato inicial</h3>
+        <p style="white-space:pre-wrap">{{intake.initial_report or 'Não informado'}}</p>
+        {% else %}<p class="clinic-muted">Cadastro anterior: dados complementares ainda não preenchidos.</p>{% endif %}
+        <a href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Ver ficha completa</a>
+      </section>
+      <section class="clinic-panel">
+        <h2>Próximos passos</h2>
+        <div class="clinic-list">
+          <a class="clinic-button" href="{{url_for('saas.clinical_assign_test',client_id=client.id,encounter_id=encounter.id)}}">Selecionar teste ou anamnese</a>
+          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.client_appointments',client_id=client.id)}}">Ver agenda e histórico</a>
+          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_dashboard')}}">Voltar aos indicadores</a>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script>
+(()=>{const editor=document.getElementById('clinicEditor'),form=document.getElementById('clinicNoteForm'),output=document.getElementById('clinicHTML');
+if(!editor||!form||editor.getAttribute('contenteditable')!=='true')return;
+document.querySelectorAll('#clinicNoteForm [data-command]').forEach(button=>button.addEventListener('click',()=>{
+  editor.focus();document.execCommand(button.dataset.command,false,button.dataset.value||null);
+}));
+form.addEventListener('submit',()=>{output.value=editor.innerHTML;});
+})();
+</script>
+{% endblock %}

@@ -400,6 +400,9 @@ register_neurocore_routes(bp)
 from saas_care_routes import register_care_routes
 register_care_routes(bp)
 
+from saas_clinical_routes import register_clinical_routes
+register_clinical_routes(bp)
+
 from saas_patient_intake_routes import register_patient_intake_routes
 register_patient_intake_routes(bp)
 

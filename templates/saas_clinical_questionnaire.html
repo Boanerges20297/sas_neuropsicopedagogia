@@ -1,0 +1,98 @@
+{% extends "saas_base.html" %}
+{% block title %}{{assessment.title}} | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-clinical.css')}}">{% endblock %}
+{% block content %}
+<div class="clinic-shell">
+  <nav class="clinic-breadcrumb"><a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span><a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><a href="{{url_for('saas.clinical_assign_test',client_id=client.id)}}">Instrumentos</a><span>/</span><span>Aplicação</span></nav>
+  <header class="clinic-hero"><div>
+    <span class="clinic-kicker">Instrumento aprovado · Versão {{assessment.version_number}}</span>
+    <h1>{{assessment.title}}</h1><p>{{client.nome}} · {{'Profissional aplicador' if assessment.mode=='professional' else 'Destinado ao portal do paciente'}} · {{assessment.status}}</p>
+  </div></header>
+
+  {% if assessment.mode=='portal' %}
+  <section class="clinic-warning"><strong>Aguardando liberação no portal.</strong>
+    O preenchimento pelo paciente ou responsável ainda não está disponível. É necessária confirmação de identidade, vínculo, autorização específica e consentimento; nenhum link público foi criado.</section>
+  {% endif %}
+  <div class="clinic-two clinic-two--notes">
+    <section class="clinic-panel" aria-labelledby="questions-title">
+      <h2 id="questions-title">{{'Anamnese' if assessment.definition.kind=='anamnesis' else 'Questionário'}}</h2>
+      <p class="clinic-muted">{{assessment.definition.questions|length}} perguntas · Respostas criptografadas · Edição permitida apenas enquanto não enviado.</p>
+      <form method="post" class="clinic-form" id="questions-form">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="revision" value="{{assessment.revision}}">
+        {% set readonly = assessment.mode!='professional' or assessment.status not in ['pending','in_progress'] %}
+        {% for q in assessment.definition.questions %}
+        {% set value = answers.get(q.key) %}
+        <fieldset class="clinic-question" {% if readonly %}disabled{% endif %}>
+          <legend>{{loop.index}}. {{q.label}}{% if q.required %} <span title="Obrigatória">*</span>{% endif %}</legend>
+          {% if q.help %}<p class="clinic-muted">{{q.help}}</p>{% endif %}
+          {% if q.type in ['single','yes_no'] %}
+            {% for option in q.options %}
+            <label class="clinic-option">
+              <input type="radio" name="answer_{{q.key}}" value="{{option.value}}" {% if value==option.value %}checked{% endif %}>
+              <span>{{option.label}}</span>
+            </label>
+            {% endfor %}
+          {% elif q.type=='multiple' %}
+            {% for option in q.options %}
+            <label class="clinic-option">
+              <input type="checkbox" name="answer_{{q.key}}" value="{{option.value}}" {% if value and option.value in value %}checked{% endif %}>
+              <span>{{option.label}}</span>
+            </label>
+            {% endfor %}
+          {% elif q.type=='text' %}
+          <label for="answer_{{q.key}}" class="clinic-muted">Resposta descritiva</label>
+          <textarea id="answer_{{q.key}}" name="answer_{{q.key}}" maxlength="5000" rows="4">{{value or ''}}</textarea>
+          {% elif q.type=='number' %}
+          <label for="answer_{{q.key}}" class="clinic-muted">Resposta numérica</label>
+          <input id="answer_{{q.key}}" type="number" step="any" name="answer_{{q.key}}" value="{{value if value is not none else ''}}">
+          {% endif %}
+        </fieldset>
+        {% endfor %}
+        {% if not readonly %}
+        <div class="clinic-inline">
+          <button type="submit" name="action" value="save" class="clinic-button clinic-button--ghost">Salvar rascunho</button>
+          <button type="submit" name="action" value="submit" class="clinic-button">Enviar respostas para revisão</button>
+        </div>
+        {% else %}<p class="clinic-muted">Formulário em modo de leitura. Estado: {{assessment.status}}.</p>{% endif %}
+      </form>
+    </section>
+    <aside>
+      {% if encounter and note %}
+      <section class="clinic-panel">
+        <h2>Observações do atendimento</h2>
+        <p class="clinic-muted">Continue registrando suas observações sem sair da aplicação do instrumento.</p>
+        <form id="sideNoteForm" class="clinic-form" action="{{url_for('saas.clinical_save_note',client_id=client.id,encounter_id=encounter.id)}}" method="post">
+          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+          <input type="hidden" name="revision" value="{{note.revision}}">
+          <input type="hidden" name="next_assessment" value="{{assessment.id}}">
+          <input type="hidden" name="html" id="sideNoteValue">
+          <div class="clinic-editor-toolbar" role="toolbar" aria-label="Formatação das observações">
+            <button type="button" data-command="bold" aria-label="Negrito"><strong>B</strong></button>
+            <button type="button" data-command="italic" aria-label="Itálico"><em>I</em></button>
+            <button type="button" data-command="insertUnorderedList" aria-label="Lista">•</button>
+          </div>
+          <div id="sideNoteEditor" class="clinic-editor" style="min-height:160px" role="textbox" aria-label="Observações da consulta" aria-multiline="true" contenteditable="{{'true' if encounter.status=='draft' else 'false'}}">{{note.html|safe}}</div>
+          <p class="clinic-muted">Versão {{note.revision}}. Salvar observações não envia as respostas do teste.</p>
+          <button type="submit" class="clinic-button clinic-button--ghost" {% if encounter.status!='draft' %}disabled{% endif %}>Salvar observações</button>
+        </form>
+        <a href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=encounter.id)}}">Abrir registro completo</a>
+      </section>
+      {% endif %}
+      <section class="clinic-panel">
+        <h2>Orientações</h2>
+        <p class="clinic-muted">Questões e opções seguem a versão aprovada. O resultado não equivale a diagnóstico automático.</p>
+        <p class="clinic-muted">As respostas podem ser salvas parcialmente; ao enviar, ficam protegidas contra alterações acidentais.</p>
+        <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_assign_test',client_id=client.id)}}">Outros instrumentos</a>
+      </section>
+    </aside>
+  </div>
+</div>
+<script>
+(()=>{const form=document.getElementById('sideNoteForm'),editor=document.getElementById('sideNoteEditor'),value=document.getElementById('sideNoteValue');
+if(!form||!editor||editor.getAttribute('contenteditable')!=='true')return;
+form.querySelectorAll('[data-command]').forEach(button=>button.addEventListener('click',()=>{
+editor.focus();document.execCommand(button.dataset.command,false,null);}));
+form.addEventListener('submit',()=>{value.value=editor.innerHTML;});})();
+</script>
+{% endblock %}

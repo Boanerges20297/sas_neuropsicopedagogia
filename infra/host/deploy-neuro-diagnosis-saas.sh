@@ -142,6 +142,8 @@ docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWO
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_neurocore_review_migration.sql"
 # Additive care workflow tables: appointments, encounter metadata and contacts.
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_care_workflow_migration.sql"
+# Private clinical notes and versioned questionnaire application (no public portal).
+docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_care_encounters_assessments_migration.sql"
 # Future guardian portal metadata and time-bounded grants; portal routes remain disabled.
 docker exec -i neuro-diagnosis-db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" neuro_diagnosis' < "$ROOT/scripts/mysql_care_portal_access_migration.sql"
 # Adult-self vs minor/guardian intake, additive after patient and contact tables.

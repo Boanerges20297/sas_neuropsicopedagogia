@@ -1,10 +1,11 @@
 """TEA/TDAH clinical evidence organization — no diagnosis, no scoring."""
 from flask import abort, flash, redirect, render_template, request, url_for
+from uuid import uuid4
 from flask_login import current_user, login_required
 
 from neurocore import evaluate_evidence
 from neurocore.engine import load_knowledge
-from saas_routes import licensed_tenant, practitioner_only, check_csrf
+from saas_routes import licensed_tenant, practitioner_only, check_csrf, csrf
 import saas_neurocore_store as nc_store
 
 
@@ -22,6 +23,7 @@ def register_neurocore_routes(bp):
             "saas_patient_workspace.html", tenant=tenant, client=client,
             reviews=nc_store.list_reviews(int(current_user.id), tenant["id"], client_id),
             topics=load_knowledge()["topics"],
+            csrf_token=csrf(), start_request_id=str(uuid4()),
         )
 
     @bp.route("/pacientes/<int:client_id>/neurocore/<topic>", methods=["GET", "POST"])

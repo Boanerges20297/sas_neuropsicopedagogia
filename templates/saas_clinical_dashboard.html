@@ -1,0 +1,94 @@
+{% extends "saas_base.html" %}
+{% block title %}Atendimentos | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-clinical.css')}}">{% endblock %}
+{% block content %}
+<div class="clinic-shell">
+  <header class="clinic-hero">
+    <div><span class="clinic-kicker">Espaço profissional · {{tenant.nome}}</span>
+      <h1>Atendimentos e indicadores</h1>
+      <p>Panorama da sua prática, sem expor prontuários de outros profissionais.</p></div>
+    <a class="clinic-button clinic-button--light" href="#novo">+ Novo atendimento</a>
+  </header>
+
+  <section class="clinic-panel" aria-labelledby="filter-title">
+    <h2 id="filter-title">Período de análise</h2>
+    <form method="get" class="clinic-filter" id="periodForm">
+      <div><label for="period">Visualização</label><select id="period" name="period">
+        <option value="day" {% if stats.period=='day' %}selected{% endif %}>Por dia (horários)</option>
+        <option value="month" {% if stats.period=='month' %}selected{% endif %}>Por mês (dias)</option>
+        <option value="year" {% if stats.period=='year' %}selected{% endif %}>Por ano (meses)</option>
+      </select></div>
+      <div><label for="anchor">Data de referência</label><input id="anchor" name="anchor" type="{{'date' if stats.period=='day' else 'month' if stats.period=='month' else 'number'}}" value="{{stats.anchor}}" {% if stats.period=='year' %}min="2020" max="2100" step="1"{% endif %} required></div>
+      <button type="submit" class="clinic-button">Aplicar filtro</button>
+    </form>
+  </section>
+
+  <section class="clinic-grid" aria-label="Indicadores do período">
+    <article class="clinic-kpi"><span>Atendimentos iniciados</span><strong>{{stats.total}}</strong></article>
+    <article class="clinic-kpi"><span>Pacientes atendidos</span><strong>{{stats.unique_clients}}</strong></article>
+    <article class="clinic-kpi"><span>Instrumentos indicados</span><strong>{{stats.tests}}</strong></article>
+    <article class="clinic-kpi"><span>Questionários respondidos</span><strong>{{stats.tests_answered}}</strong></article>
+  </section>
+
+  <div class="clinic-two">
+    <section class="clinic-panel">
+      <h2>Distribuição de atendimentos</h2>
+      {% if stats.timeline %}
+      {% set max_count=(stats.timeline|map(attribute='quantity')|max) or 1 %}
+      <div class="clinic-mini-bars" role="img" aria-label="Atendimentos agrupados no período">
+        {% for row in stats.timeline %}
+        <div class="clinic-bar-row"><span>{{row.bucket}}</span><div class="clinic-track"><i style="width:{{(row.quantity/max_count*100)|round|int}}%"></i></div><strong>{{row.quantity}}</strong></div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="clinic-empty">Nenhum atendimento neste período. Assim que houver sessões, a distribuição será exibida aqui.</p>{% endif %}
+    </section>
+    <section class="clinic-panel">
+      <h2>Diagnósticos confirmados</h2>
+      <p class="clinic-muted">Número de pacientes distintos com confirmação registrada pelo profissional neste período. Hipóteses não entram na contagem.</p>
+      {% if stats.diagnoses %}
+      <table class="clinic-table"><thead><tr><th>Diagnóstico</th><th>Pacientes</th></tr></thead><tbody>
+        {% for diag in stats.diagnoses %}<tr><td>{{diag.label}}</td><td>{{diag.quantity}}</td></tr>{% endfor %}
+      </tbody></table>
+      {% else %}<p class="clinic-empty">Nenhum diagnóstico confirmado registrado no período.</p>{% endif %}
+    </section>
+  </div>
+
+  <div class="clinic-two">
+    <section class="clinic-panel" id="novo">
+      <h2>Iniciar novo atendimento</h2>
+      <p class="clinic-muted">Escolha o paciente. Os dados cadastrais e o editor clínico serão abertos juntos. Não exige agendamento anterior.</p>
+      <form class="clinic-form" action="{{url_for('saas.clinical_start')}}" method="post">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="request_id" value="{{request_id}}">
+        <label for="client_id">Paciente</label>
+        <select id="client_id" name="client_id" required>
+          <option value="">Selecione um paciente</option>
+          {% for client in clients if client.status=='active' %}
+          <option value="{{client.id}}">{{client.nome}}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="clinic-button" {% if not clients %}disabled{% endif %}>Abrir atendimento</button>
+      </form>
+      {% if not clients %}<p class="clinic-muted">Cadastre um paciente para começar. <a href="{{url_for('saas.patients')}}">Ir para pacientes</a>.</p>{% endif %}
+    </section>
+    <section class="clinic-panel">
+      <h2>Atendimentos recentes</h2>
+      <div class="clinic-list">
+      {% for item in encounters %}
+        <div class="clinic-list-item"><div><strong>{{item.client_name}}</strong><div class="clinic-muted">{{item.opened_at.strftime('%d/%m/%Y %H:%M')}} · {{'Rascunho' if item.status=='draft' else 'Assinado'}}</div></div>
+          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_encounter',client_id=item.client_id,encounter_id=item.id)}}">Abrir</a></div>
+      {% else %}<p class="clinic-empty">Nenhum atendimento iniciado.</p>{% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+(()=>{const select=document.getElementById('period');const input=document.getElementById('anchor');select.addEventListener('change',()=>{
+  const mode=select.value;const now=new Date();const year=now.getFullYear();
+  input.type=mode==='day'?'date':mode==='month'?'month':'number';
+  input.value=mode==='day'?'' : mode==='month'?'':String(year);
+  if(mode==='year'){input.min='2020';input.max='2100';input.step='1';}
+  else{input.removeAttribute('min');input.removeAttribute('max');input.removeAttribute('step');}
+});})();
+</script>
+{% endblock %}

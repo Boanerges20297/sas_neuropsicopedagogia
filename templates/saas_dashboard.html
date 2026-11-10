@@ -108,6 +108,7 @@
         <div class="nd-shortcut-list">
           {% if tenant and license and license.allowed %}
           <a class="nd-shortcut" href="{{ url_for('saas.patients') }}"><span class="nd-shortcut-icon nd-shortcut-icon--mint" aria-hidden="true">♡</span><span><strong>Pacientes</strong><small>Acessar seus registros</small></span><b aria-hidden="true">↗</b></a>
+          <a class="nd-shortcut" href="{{ url_for('saas.clinical_dashboard') }}"><span class="nd-shortcut-icon nd-shortcut-icon--mint" aria-hidden="true">+</span><span><strong>Atendimentos</strong><small>Indicadores, consulta e evolução clínica</small></span><b aria-hidden="true">↗</b></a>
           <a class="nd-shortcut" href="{{ url_for('saas.tests') }}"><span class="nd-shortcut-icon nd-shortcut-icon--blue" aria-hidden="true">✦</span><span><strong>Instrumentos</strong><small>Consultar testes disponíveis</small></span><b aria-hidden="true">↗</b></a>
           {% endif %}
           {% if current_user.is_admin() %}
