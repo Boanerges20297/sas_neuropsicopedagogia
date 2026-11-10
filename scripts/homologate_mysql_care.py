@@ -356,7 +356,6 @@ def main():
                  "mysql_care_encounters_assessments_migration.sql",
                  "mysql_care_portal_access_migration.sql",
                  "mysql_care_patient_intake_migration.sql",
-                 "mysql_patient_portal_access_request_migration.sql",
                  "mysql_care_portal_self_access_migration.sql",
                  "mysql_care_client_activation_migration.sql",
                  "mysql_saas_account_rights_migration.sql",

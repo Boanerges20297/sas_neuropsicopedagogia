@@ -143,7 +143,7 @@ class PatientIntakeModelTests(TestCase):
 
     def test_portal_request_migration_has_patient_fk(self):
         sql = (Path(__file__).resolve().parents[1] / "scripts" /
-               "mysql_patient_portal_access_request_migration.sql").read_text(encoding="utf-8")
+               "mysql_care_patient_intake_migration.sql").read_text(encoding="utf-8")
         self.assertIn("CREATE TABLE IF NOT EXISTS care_portal_access_requests", sql)
         self.assertIn("FOREIGN KEY (client_id,tenant_id)", sql)
 
