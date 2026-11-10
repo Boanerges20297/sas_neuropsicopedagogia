@@ -338,7 +338,7 @@ def professional_dashboard(user_id, tenant_id, period="month", anchor=""):
     # Input format is fixed in this module (not interpolated from HTTP).
     timeline = store.all_rows(
         """SELECT DATE_FORMAT(DATE_SUB(e.opened_at,INTERVAL 3 HOUR),'"""
-        + group_fmt + """') AS bucket,COUNT(*) AS quantity
+        + group_fmt.replace("%", "%%") + """') AS bucket,COUNT(*) AS quantity
            FROM care_encounters e
            WHERE e.tenant_id=%s AND e.professional_user_id=%s
              AND e.opened_at >= %s AND e.opened_at < %s

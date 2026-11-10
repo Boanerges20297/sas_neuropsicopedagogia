@@ -107,6 +107,39 @@ class ClinicalContracts(unittest.TestCase):
         self.assertEqual(data["tests_answered"], 1)
         self.assertEqual(data["diagnoses"][0]["quantity"], 1)
 
+    def test_dashboard_timeline_sql_uses_pymysql_escaping_in_every_period(self):
+        # A DATE_FORMAT('%d/%m') without escaping raises ProgrammingError
+        # during Cursor.mogrify, before MySQL even sees the query.
+        from pymysql.connections import Connection
+        from pymysql.cursors import Cursor
+        cursor = Cursor(Connection(host="localhost", user="synthetic",
+                                   defer_connect=True))
+        expected = {
+            ("day", "2026-11-10"): "%H:00",
+            ("month", "2026-11"): "%d/%m",
+            ("year", "2026"): "%m/%Y",
+        }
+        for (period, anchor), date_format in expected.items():
+            with self.subTest(period=period):
+                compiled = []
+
+                def check_sql(sql, args):
+                    rendered = cursor.mogrify(sql, args)
+                    compiled.append(rendered)
+                    return []
+
+                with patch.object(clinical.store, "one", side_effect=[
+                    {"total": 0, "unique_clients": 0},
+                    {"total": 0, "answered": 0},
+                ]), patch.object(clinical.store, "all_rows", side_effect=check_sql):
+                    data = clinical.professional_dashboard(7, 11, period, anchor)
+                self.assertEqual(data["total"], 0)
+                self.assertEqual(len(compiled), 2)
+                self.assertIn("DATE_FORMAT(", compiled[1])
+                self.assertIn("'" + date_format + "'", compiled[1])
+                self.assertIn("e.tenant_id=11", compiled[1])
+                self.assertIn("e.professional_user_id=7", compiled[1])
+
     def test_diagnostic_hypotheses_follow_patient_across_encounters(self):
         with patch.object(clinical, "scoped_encounter", return_value=None), \
              patch.object(clinical.store, "all_rows") as rows:
