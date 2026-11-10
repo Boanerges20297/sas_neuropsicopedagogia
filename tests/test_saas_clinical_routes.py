@@ -1,5 +1,6 @@
 """Synthetic HTTP checks of clinical routes: authenticated scope and CSRF."""
 import unittest
+from datetime import datetime
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -36,6 +37,34 @@ class ClinicalHTTPTests(unittest.TestCase):
     def tearDown(self):
         for p in reversed(self.patches): p.stop()
         app.config["TESTING"] = self.old_testing
+
+    def test_encounter_displays_longitudinal_hypothesis_not_auto_diagnosis(self):
+        opened = datetime(2026, 11, 9, 10, 30)
+        visit = {"id": 67, "status": "draft", "opened_at": opened}
+        history = [{"id": 88, "label": "Hipótese sintética",
+                    "code": None, "certainty": "hypothesis",
+                    "encounter_id": 60, "recorded_at": opened}]
+        sessions = [{"id": 67, "opened_at": opened}, {"id": 60, "opened_at": opened}]
+        with patch.object(routes.clinical, "scoped_encounter", return_value=visit), \
+             patch.object(routes.clinical, "latest_note",
+                          return_value={"html": "", "revision": 0, "created_at": None}), \
+             patch.object(routes.clinical, "list_diagnoses",
+                          return_value=history) as records, \
+             patch.object(routes.clinical, "list_encounters",
+                          return_value=sessions) as encounter_list, \
+             patch.object(routes.intake, "scoped_summary", return_value=None), \
+             patch.object(routes.assessments, "list_for_patient", return_value=[]):
+            response = self.client.get("/saas/pacientes/21/atendimentos/67")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Registrar hipótese diagnóstica", html)
+        self.assertIn('name="certainty" value="hypothesis"', html)
+        self.assertIn("Histórico de hipóteses e decisões", html)
+        self.assertIn("/saas/pacientes/21/atendimentos/60", html)
+        self.assertIn("Histórico de atendimentos", html)
+        self.assertEqual(response.headers.get("Cache-Control"), "private, no-store")
+        records.assert_called_once_with(7, 11, 21, 67)
+        encounter_list.assert_called_once_with(7, 11, client_id=21, limit=20)
 
     def test_dashboard_renders_filters_and_own_metrics(self):
         stats = {"period": "month", "anchor": "2026-11",

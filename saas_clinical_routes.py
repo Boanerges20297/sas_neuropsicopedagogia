@@ -83,6 +83,8 @@ def register_clinical_routes(bp):
             intake=intake.scoped_summary(uid, tenant["id"], client_id),
             note=clinical.latest_note(uid, tenant["id"], client_id, encounter_id),
             diagnoses=clinical.list_diagnoses(uid, tenant["id"], client_id, encounter_id),
+            patient_encounters=clinical.list_encounters(
+                uid, tenant["id"], client_id=client_id, limit=20),
             assigned=assessments.list_for_patient(uid, tenant["id"], client_id),
             csrf_token=csrf())
 
@@ -125,7 +127,9 @@ def register_clinical_routes(bp):
                 uid, tenant["id"], client_id, encounter_id,
                 request.form.get("label"), request.form.get("code"),
                 request.form.get("certainty"))
-            flash("Classificação clínica registrada.", "success")
+            flash("Hipótese diagnóstica registrada para acompanhamento." if
+                  request.form.get("certainty") == "hypothesis" else
+                  "Evolução da classificação clínica registrada.", "success")
         except PermissionError:
             abort(404)
         except ValueError as exc:

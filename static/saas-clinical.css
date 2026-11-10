@@ -58,5 +58,9 @@
 .clinic-question legend,.clinic-question h3{font-size:1rem;font-weight:700}
 .clinic-warning{background:#fff7e7;border-left:4px solid #e4a43a;padding:.8rem 1rem;border-radius:9px;color:#7e5011;margin:1rem 0}
 .clinic-divider{border:0;border-top:1px solid #e4ecee;margin:1.4rem 0}
+.clinic-follow-up{margin-top:1rem;border:1px solid #dce7e8;border-radius:12px;padding:.85rem 1rem;background:#f8fbfb}
+.clinic-follow-up summary{font-weight:700;color:#24565a;cursor:pointer}
+.clinic-follow-up[open] summary{margin-bottom:.75rem}
+.clinic-follow-up .clinic-form{margin-top:.75rem}
 @media(max-width:860px){.clinic-two,.clinic-two--notes{grid-template-columns:1fr}}
 @media(max-width:560px){.clinic-shell{padding:.2rem 0 2rem}.clinic-hero{border-radius:15px}.clinic-table{display:block;overflow-x:auto}.clinic-bar-row{grid-template-columns:55px 1fr 25px}.clinic-form input,.clinic-form select{font-size:16px}}

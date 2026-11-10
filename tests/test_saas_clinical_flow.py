@@ -107,6 +107,24 @@ class ClinicalContracts(unittest.TestCase):
         self.assertEqual(data["tests_answered"], 1)
         self.assertEqual(data["diagnoses"][0]["quantity"], 1)
 
+    def test_diagnostic_hypotheses_follow_patient_across_encounters(self):
+        with patch.object(clinical, "scoped_encounter", return_value=None), \
+             patch.object(clinical.store, "all_rows") as rows:
+            with self.assertRaises(PermissionError):
+                clinical.list_diagnoses(7, 11, 23, 67)
+            rows.assert_not_called()
+        prior = [{"id": 88, "encounter_id": 61, "certainty": "hypothesis"}]
+        with patch.object(clinical, "scoped_encounter", return_value={"id": 67}), \
+             patch.object(clinical.store, "all_rows", return_value=prior) as rows:
+            self.assertEqual(clinical.list_diagnoses(7, 11, 23, 67), prior)
+        sql, args = rows.call_args.args
+        for filter_clause in ("d.tenant_id=%s", "d.client_id=%s",
+                              "d.professional_user_id=%s",
+                              "e.professional_user_id=d.professional_user_id"):
+            self.assertIn(filter_clause, sql)
+        self.assertNotIn("AND d.encounter_id=%s", sql)
+        self.assertEqual(args, (11, 23, 7))
+
     def test_read_scope_includes_owner_tenant_and_active_membership(self):
         with patch.object(clinical.store, "one", return_value=None) as query:
             self.assertIsNone(clinical.scoped_encounter(7, 11, 23, 99))

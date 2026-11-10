@@ -253,13 +253,24 @@ def record_diagnosis(user_id, tenant_id, client_id, encounter_id,
 
 
 def list_diagnoses(user_id, tenant_id, client_id, encounter_id):
+    """Longitudinal clinical history, restricted to the same professional/patient.
+
+    A hypothesis belongs to the patient's assessment over several visits,
+    not to an automatically completed single appointment.
+    """
     if not scoped_encounter(user_id, tenant_id, client_id, encounter_id):
         raise PermissionError("Atendimento não localizado")
     return store.all_rows(
-        """SELECT id,label,code,certainty,recorded_at FROM care_diagnosis_records
-           WHERE tenant_id=%s AND client_id=%s AND professional_user_id=%s
-             AND encounter_id=%s ORDER BY recorded_at DESC,id DESC""",
-        (tenant_id, client_id, user_id, encounter_id))
+        """SELECT d.id,d.label,d.code,d.certainty,d.recorded_at,
+                  d.encounter_id,e.opened_at AS encounter_opened_at
+           FROM care_diagnosis_records d
+           JOIN care_encounters e ON e.id=d.encounter_id
+             AND e.tenant_id=d.tenant_id AND e.client_id=d.client_id
+             AND e.professional_user_id=d.professional_user_id
+           WHERE d.tenant_id=%s AND d.client_id=%s
+             AND d.professional_user_id=%s
+           ORDER BY d.recorded_at DESC,d.id DESC LIMIT 100""",
+        (tenant_id, client_id, user_id))
 
 
 def _range(period, anchor):

@@ -43,25 +43,40 @@
           {% else %}<p class="clinic-empty">Nenhum instrumento atribuído ainda.</p>{% endfor %}
         </div>
       </section>
-      <section class="clinic-panel">
-        <h2>Hipóteses e diagnósticos</h2>
-        <p class="clinic-muted">Registro exclusivamente profissional. Apenas diagnósticos confirmados entram na estatística; testes não geram diagnóstico automático.</p>
-        <div class="clinic-list">
-          {% for record in diagnoses %}
-          <div class="clinic-list-item"><div><strong>{{record.label}}</strong><div class="clinic-muted">{{record.code or 'Sem código'}} · {{'Confirmado' if record.certainty=='confirmed' else 'Hipótese' if record.certainty=='hypothesis' else 'Descartado'}}</div></div></div>
-          {% endfor %}
-        </div>
+      <section class="clinic-panel" id="hipoteses-diagnosticas">
+        <h2>Hipóteses diagnósticas e acompanhamento</h2>
+        <p class="clinic-muted">A avaliação é longitudinal: uma consulta não encerra o processo diagnóstico. Registre hipóteses provisórias e acompanhe a evolução nas próximas sessões. Testes não geram diagnósticos automaticamente.</p>
         {% if encounter.status=='draft' %}
         <form class="clinic-form" method="post" action="{{url_for('saas.clinical_record_diagnosis',client_id=client.id,encounter_id=encounter.id)}}">
           <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-          <label for="diag-label">Descrição clínica</label><input id="diag-label" name="label" maxlength="160" required>
-          <div class="clinic-inline">
-            <div><label for="diag-code">Código de classificação (opcional)</label><input id="diag-code" name="code" maxlength="32"></div>
-            <div><label for="diag-certainty">Situação</label><select id="diag-certainty" name="certainty">
-              <option value="hypothesis">Hipótese em avaliação</option><option value="confirmed">Confirmado pelo profissional</option><option value="excluded">Descartado</option></select></div>
-          </div>
-          <button class="clinic-button clinic-button--ghost" type="submit">Adicionar registro clínico</button>
-        </form>{% endif %}
+          <input type="hidden" name="certainty" value="hypothesis">
+          <label for="diag-label">Hipótese diagnóstica em avaliação</label>
+          <input id="diag-label" name="label" maxlength="160" required>
+          <label for="diag-code">Código de classificação (opcional)</label><input id="diag-code" name="code" maxlength="32">
+          <button class="clinic-button" type="submit">Registrar hipótese diagnóstica</button>
+        </form>
+        <details class="clinic-follow-up">
+          <summary>Registrar confirmação ou descarte após avaliação</summary>
+          <p class="clinic-muted">Decisão fundamentada exclusivamente pelo profissional habilitado. O registro não encerra o acompanhamento do paciente.</p>
+          <form class="clinic-form" method="post" action="{{url_for('saas.clinical_record_diagnosis',client_id=client.id,encounter_id=encounter.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <label for="diag-review-label">Condição reavaliada</label><input id="diag-review-label" name="label" maxlength="160" required>
+            <div class="clinic-inline">
+              <div><label for="diag-review-code">Código (opcional)</label><input id="diag-review-code" name="code" maxlength="32"></div>
+              <div><label for="diag-review-certainty">Decisão profissional</label><select id="diag-review-certainty" name="certainty" required><option value="confirmed">Confirmado</option><option value="excluded">Descartado</option></select></div>
+            </div>
+            <button class="clinic-button clinic-button--ghost" type="submit">Registrar decisão clínica</button>
+          </form>
+        </details>
+        {% endif %}
+        <h3>Histórico de hipóteses e decisões</h3>
+        <div class="clinic-list">
+          {% for record in diagnoses %}
+          <div class="clinic-list-item"><div><strong>{{record.label}}</strong>
+            <div class="clinic-muted"><span class="clinic-pill {{'clinic-pill--warn' if record.certainty=='hypothesis' else 'clinic-pill--gray' if record.certainty=='excluded' else ''}}">{{'Hipótese em avaliação' if record.certainty=='hypothesis' else 'Confirmado pelo profissional' if record.certainty=='confirmed' else 'Descartado'}}</span> · {{record.code or 'Sem código'}} · {{record.recorded_at.strftime('%d/%m/%Y')}} · <a href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=record.encounter_id)}}">Sessão {{record.encounter_id}}</a></div>
+          </div></div>
+          {% else %}<p class="clinic-empty">Nenhuma hipótese registrada. O acompanhamento pode prosseguir sem diagnóstico definido.</p>{% endfor %}
+        </div>
       </section>
     </div>
     <aside>
@@ -76,6 +91,16 @@
         <p style="white-space:pre-wrap">{{intake.initial_report or 'Não informado'}}</p>
         {% else %}<p class="clinic-muted">Cadastro anterior: dados complementares ainda não preenchidos.</p>{% endif %}
         <a href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Ver ficha completa</a>
+      </section>
+      <section class="clinic-panel">
+        <h2>Histórico de atendimentos</h2>
+        <p class="clinic-muted">Evoluções de cada sessão permanecem separadas, vinculadas ao mesmo paciente e profissional.</p>
+        <div class="clinic-list">
+          {% for session in patient_encounters %}
+          <div class="clinic-list-item"><div><strong>{{session.opened_at.strftime('%d/%m/%Y')}}</strong><div class="clinic-muted">Sessão {{session.id}}{{' · atual' if session.id==encounter.id else ''}}</div></div>
+          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=session.id)}}">Ver evolução</a></div>
+          {% else %}<p class="clinic-empty">Sem atendimentos anteriores.</p>{% endfor %}
+        </div>
       </section>
       <section class="clinic-panel">
         <h2>Próximos passos</h2>
