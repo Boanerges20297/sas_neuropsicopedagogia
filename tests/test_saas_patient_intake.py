@@ -120,6 +120,33 @@ class PatientIntakeModelTests(TestCase):
         self.assertFalse(any("INSERT INTO users" in sql for sql, _ in cursor.calls))
         self.assertEqual(cursor.calls[-1][1][-1], None)
 
+    def test_portal_request_requires_contact_and_does_not_create_login(self):
+        cursor = FakeCursor([{"allowed": 1}])
+        with patch.object(intake.store, "transaction", return_value=Transaction(cursor)), \
+             patch.object(intake.store, "audit") as audit:
+            with self.assertRaisesRegex(ValueError, "e-mail"):
+                intake.register_intake(
+                    7, 11, mode="self", name="Adulto",
+                    birth_date="1992-03-01", portal_access_mode="prepare",
+                )
+            self.assertFalse(cursor.calls)
+            cid = intake.register_intake(
+                7, 11, mode="self", name="Adulto",
+                birth_date="1992-03-01", email="adult@example.invalid",
+                portal_access_mode="prepare",
+            )
+        self.assertEqual(cid, 310)
+        self.assertTrue(any("INSERT INTO care_portal_access_requests" in query
+                            for query, _ in cursor.calls))
+        self.assertFalse(any("INSERT INTO users" in query for query, _ in cursor.calls))
+        self.assertEqual(audit.call_count, 2)
+
+    def test_portal_request_migration_has_patient_fk(self):
+        sql = (Path(__file__).resolve().parents[1] / "scripts" /
+               "mysql_patient_portal_access_request_migration.sql").read_text(encoding="utf-8")
+        self.assertIn("CREATE TABLE IF NOT EXISTS care_portal_access_requests", sql)
+        self.assertIn("FOREIGN KEY (client_id,tenant_id)", sql)
+
     def test_no_unauthorized_tenant_writes(self):
         cursor = FakeCursor([None])
         with patch.object(intake.store, "transaction", return_value=Transaction(cursor)):
@@ -172,14 +199,33 @@ class PatientIntakeRouteTests(TestCase):
             p.stop()
         app.config["TESTING"] = self.previous
 
-    def test_new_form_contains_both_paths_and_report(self):
+    def test_list_is_primary_page_and_form_is_separate(self):
         page = self.browser.get("/saas/pacientes")
+        self.assertEqual(page.status_code, 200)
+        html = page.get_data(as_text=True)
+        self.assertEqual(page.headers["Cache-Control"], "private, no-store")
+        self.assertIn('href="/saas/pacientes/novo"', html)
+        self.assertIn('id="patients_search"', html)
+        self.assertNotIn('name="birth_date"', html)
+
+        page = self.browser.get("/saas/pacientes/novo")
         self.assertEqual(page.status_code, 200)
         html = page.get_data(as_text=True)
         self.assertIn('value="guardian"', html)
         self.assertIn('value="self"', html)
         self.assertIn('name="birth_date"', html)
         self.assertIn('name="initial_report"', html)
+        self.assertIn('name="portal_access_mode"', html)
+
+    def test_portal_access_request_is_explicit(self):
+        with patch.object(intake, "register_intake", return_value=310) as create:
+            result = self.browser.post("/saas/pacientes/novo", data={
+                "csrf_token": "intake-csrf", "representation_mode": "self",
+                "nome": "Adulto", "birth_date": "1992-03-01",
+                "email": "adult@example.invalid", "portal_access_mode": "prepare"
+            })
+        self.assertEqual(result.status_code, 302)
+        self.assertEqual(create.call_args.kwargs["portal_access_mode"], "prepare")
 
     def test_post_one_minor_not_two_accounts(self):
         with patch.object(intake, "register_intake", return_value=310) as create:

@@ -1,0 +1,70 @@
+{% extends "saas_base.html" %}
+{% block title %}Novo paciente | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-patients.css')}}">
+<script defer src="{{url_for('static',filename='saas-patient-intake.js')}}"></script>
+<style>#guardian_fields[hidden],#adult_contact[hidden]{display:none!important}</style>
+{% endblock %}
+{% block content %}
+<div class="patient-new">
+  <a class="patient-new__back" href="{{url_for('saas.patients')}}">← Voltar aos pacientes</a>
+  <header class="patients-head">
+    <div><span class="saas-kicker">{{tenant.nome}}</span>
+      <h1>Novo paciente</h1>
+      <p>Cadastre quem será atendido. A conta para responder testes no portal é um vínculo independente.</p>
+    </div>
+  </header>
+  <section class="saas-card saas-form-card">
+    <form method="post" action="{{url_for('saas.patient_new')}}">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+      <h2>1. Dados clínicos iniciais</h2>
+      <label for="representation_mode">Quem responderá pelo paciente?</label>
+      <select id="representation_mode" name="representation_mode" required>
+        <option value="self" {% if request.form.get('representation_mode','self')=='self' %}selected{% endif %}>O próprio paciente (adulto)</option>
+        <option value="guardian" {% if request.form.get('representation_mode')=='guardian' %}selected{% endif %}>Responsável legal (menor de idade)</option>
+      </select>
+
+      <label for="nome">Nome completo do paciente</label>
+      <input id="nome" name="nome" maxlength="180" value="{{request.form.get('nome','')}}" required autocomplete="off">
+
+      <label for="birth_date">Data de nascimento do paciente</label>
+      <input id="birth_date" name="birth_date" type="date" value="{{request.form.get('birth_date','')}}" required>
+      <p class="saas-hint" id="intake_age" aria-live="polite">A idade é calculada com base na data de nascimento.</p>
+
+      <div id="adult_contact">
+        <label for="email">E-mail do paciente adulto (opcional para cadastro clínico)</label>
+        <input type="email" id="email" name="email" maxlength="254" value="{{request.form.get('email','')}}">
+      </div>
+
+      <fieldset id="guardian_fields" class="saas-card" {% if request.form.get('representation_mode','self')!='guardian' %}hidden{% endif %}>
+        <legend><strong>Responsável pelo menor</strong></legend>
+        <p class="saas-hint">O menor terá seu próprio prontuário, mas não precisa de login individual. Uma conta do responsável pode representar mais de um filho.</p>
+        <label for="guardian_name">Nome do responsável legal</label>
+        <input id="guardian_name" name="guardian_name" maxlength="160" value="{{request.form.get('guardian_name','')}}">
+        <label for="guardian_email">E-mail do responsável (opcional para cadastro clínico)</label>
+        <input type="email" id="guardian_email" name="guardian_email" maxlength="254" value="{{request.form.get('guardian_email','')}}">
+      </fieldset>
+
+      <label for="initial_report">Observações iniciais — sinais e dificuldades relatados</label>
+      <textarea id="initial_report" name="initial_report" rows="4" maxlength="2000" aria-describedby="initial_report_help">{{request.form.get('initial_report','')}}</textarea>
+      <p class="saas-hint" id="initial_report_help">Relato inicial, não diagnóstico. O conteúdo é restrito ao profissional.</p>
+
+      <fieldset class="patient-new__access">
+        <legend>2. Acesso ao portal do paciente</legend>
+        <p>É no portal que o adulto ou responsável poderá receber e responder instrumentos liberados pelo profissional. <strong>Cadastrar o paciente não cria automaticamente uma conta.</strong></p>
+        <label for="portal_access_mode">Deseja iniciar o acesso ao portal para este paciente?</label>
+        <select id="portal_access_mode" name="portal_access_mode">
+          <option value="later" {% if request.form.get('portal_access_mode','later')=='later' %}selected{% endif %}>Não agora — somente cadastro clínico</option>
+          <option value="prepare" {% if request.form.get('portal_access_mode')=='prepare' %}selected{% endif %}>Sim — registrar solicitação de criação ou vínculo de conta</option>
+        </select>
+        <p class="patient-new__hint">A solicitação será registrada, mas não enviará um convite ou liberará testes automaticamente. A ativação requer conta verificada, vínculo e autorização.</p>
+      </fieldset>
+      <div class="patient-new__actions">
+        <button class="saas-btn" type="submit">Cadastrar paciente</button>
+        <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patients')}}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

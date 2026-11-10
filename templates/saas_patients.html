@@ -1,64 +1,84 @@
 {% extends "saas_base.html" %}
-{% block title %}Pacientes | Neuro-Diagnosis{% endblock %}
+{% block title %}Meus pacientes | Neuro-Diagnosis{% endblock %}
 {% block dashboard_styles %}
 <link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
-<script defer src="{{url_for('static',filename='saas-patient-intake.js')}}"></script>
-<style>#guardian_fields[hidden],#adult_contact[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="{{url_for('static',filename='saas-patients.css')}}">
+<script defer src="{{url_for('static',filename='saas-patients.js')}}"></script>
 {% endblock %}
 {% block content %}
-<div class="saas-intro">
-  <span class="saas-kicker">{{tenant.nome}}</span>
-  <h1>Meus pacientes</h1>
-  <p>O paciente é quem recebe o atendimento. A conta de acesso pode pertencer ao próprio adulto ou ao responsável por um menor.</p>
-</div>
-<div class="nc-grid">
-  <section class="saas-card saas-form-card">
-    <h2>Novo paciente</h2>
-    <p class="saas-hint">O cadastro clínico não cria uma segunda conta. O acesso ao portal depende de verificação e autorização.</p>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-      <label for="representation_mode">Quem responderá pelo paciente?</label>
-      <select id="representation_mode" name="representation_mode" required>
-        <option value="self" {% if request.form.get('representation_mode','self')=='self' %}selected{% endif %}>O próprio paciente (adulto)</option>
-        <option value="guardian" {% if request.form.get('representation_mode')=='guardian' %}selected{% endif %}>Responsável legal (menor de idade)</option>
-      </select>
-      <label for="nome">Nome completo do paciente</label>
-      <input id="nome" name="nome" maxlength="180" value="{{request.form.get('nome','')}}" required autocomplete="off">
-      <label for="birth_date">Data de nascimento do paciente</label>
-      <input id="birth_date" name="birth_date" type="date" value="{{request.form.get('birth_date','')}}" required>
-      <p class="saas-hint" id="intake_age" aria-live="polite">A idade é calculada com base na data de nascimento.</p>
-      <div id="adult_contact">
-        <label for="email">E-mail do adulto (opcional)</label>
-        <input type="email" id="email" name="email" maxlength="254" value="{{request.form.get('email','')}}">
-      </div>
-      <fieldset id="guardian_fields" class="saas-card" {% if request.form.get('representation_mode','self')!='guardian' %}hidden{% endif %}>
-        <legend><strong>Responsável pelo menor</strong></legend>
-        <p class="saas-hint">Informe o titular da conta. O menor não precisa de login próprio.</p>
-        <label for="guardian_name">Nome do responsável legal</label>
-        <input id="guardian_name" name="guardian_name" maxlength="160" value="{{request.form.get('guardian_name','')}}">
-        <label for="guardian_email">E-mail do responsável (opcional)</label>
-        <input type="email" id="guardian_email" name="guardian_email" maxlength="254" value="{{request.form.get('guardian_email','')}}">
-      </fieldset>
-      <label for="initial_report">Observações iniciais — sinais e dificuldades relatados</label>
-      <textarea id="initial_report" name="initial_report" rows="4" maxlength="2000" aria-describedby="initial_report_help">{{request.form.get('initial_report','')}}</textarea>
-      <p class="saas-hint" id="initial_report_help">Relato inicial fornecido no cadastro. Não representa diagnóstico e ficará restrito ao profissional.</p>
-      <button class="saas-btn" type="submit">Cadastrar paciente</button>
-    </form>
+<div class="patients-shell">
+  <header class="patients-head">
+    <div>
+      <span class="saas-kicker">Espaço clínico · {{tenant.nome}}</span>
+      <h1>Meus pacientes</h1>
+      <p>Consulte quem será atendido hoje, continue um acompanhamento ou abra o cadastro de um novo paciente.</p>
+    </div>
+    <a class="saas-btn" href="{{url_for('saas.patient_new')}}">+ Novo paciente</a>
+  </header>
+
+  <section class="patients-summary" aria-label="Resumo dos pacientes">
+    <button type="button" class="patients-stat" data-filter="active" aria-pressed="true">
+      <strong>{{summary.active}}</strong><span>Pacientes ativos</span>
+    </button>
+    <button type="button" class="patients-stat" data-filter="today" aria-pressed="false">
+      <strong>{{summary.today}}</strong><span>Com horário hoje</span>
+    </button>
+    <button type="button" class="patients-stat" data-filter="portal" aria-pressed="false">
+      <strong>{{summary.portal}}</strong><span>Acesso solicitado</span>
+    </button>
   </section>
-  <section class="saas-card">
-    <h2>Pacientes cadastrados</h2>
-    <div class="saas-list">
+
+  <section aria-label="Lista de pacientes">
+    <div class="patients-toolbar">
+      <div class="patient-search">
+        <label for="patients_search">Buscar paciente</label>
+        <input type="search" id="patients_search" autocomplete="off" placeholder="Digite o nome do paciente">
+      </div>
+      <div class="patient-filters" role="group" aria-label="Filtrar pacientes">
+        <button type="button" class="patient-filter" data-filter="active" aria-pressed="true">Ativos</button>
+        <button type="button" class="patient-filter" data-filter="today" aria-pressed="false">Hoje</button>
+        <button type="button" class="patient-filter" data-filter="portal" aria-pressed="false">Acesso pendente</button>
+        <button type="button" class="patient-filter" data-filter="all" aria-pressed="false">Todos</button>
+      </div>
+    </div>
+    <div id="patients_list" class="patients-list">
       {% for p in clients %}
-      <article class="saas-person">
-        <div><strong>{{p.nome}}</strong><p class="saas-hint">Estado: {{p.status}}</p></div>
-        {% if p.status!='archived' %}
-        <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patient_workspace',client_id=p.id)}}">Abrir espaço individual</a>
-        {% endif %}
+      <article class="patients-person" data-patient-name="{{p.nome|lower}}" data-patient-status="{{p.status}}" data-patient-today="{{'yes' if p.get('today_at') and p.status=='active' else 'no'}}" data-patient-portal="{{'yes' if p.get('portal_request_status')=='pending' else 'no'}}">
+        <div class="patients-person__id">
+          <div class="patients-avatar" aria-hidden="true">{{p.nome[:1]|upper}}</div>
+          <div>
+            <h3>{{p.nome}}</h3>
+            <p>{% if p.get('today_at') and p.status=='active' %}Atendimento hoje, {{p.today_at}}{% elif p.status=='active' %}Em acompanhamento{% else %}Cadastro {{'arquivado' if p.status=='archived' else 'inativo'}}{% endif %}</p>
+            {% if p.get('portal_request_status')=='pending' %}<span class="patients-tag patients-tag--quiet">Solicitação de acesso pendente</span>{% endif %}
+          </div>
+        </div>
+        <span class="patients-tag {{'patients-tag--quiet' if p.status!='active' else ''}}">{% if p.get('today_at') %}Hoje{% elif p.status=='active' %}Ativo{% elif p.status=='archived' %}Arquivado{% else %}Inativo{% endif %}</span>
+        <div class="patients-person__actions">
+          {% if p.status!='archived' %}
+          <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patient_workspace',client_id=p.id)}}">Ver ficha</a>
+          {% if p.status=='active' %}
+          <form method="post" action="{{url_for('saas.clinical_start')}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="client_id" value="{{p.id}}">
+            <input type="hidden" name="request_id" value="{{p.start_request_id}}">
+            <button class="saas-btn" type="submit">Atender</button>
+          </form>
+          {% endif %}
+          {% else %}
+          <span class="saas-hint">Somente histórico administrativo</span>
+          {% endif %}
+        </div>
       </article>
       {% else %}
-      <p class="saas-hint">Nenhum paciente cadastrado ainda.</p>
+      <div class="patients-empty">
+        <h2>Você ainda não possui pacientes cadastrados</h2>
+        <p>Ao cadastrar ou vincular um paciente, ele aparecerá aqui para acompanhamento.</p>
+        <a href="{{url_for('saas.patient_new')}}" class="saas-btn">Cadastrar primeiro paciente</a>
+      </div>
       {% endfor %}
     </div>
+    <p class="saas-hint" id="patients_no_match" hidden>Nenhum paciente corresponde à busca ou ao filtro.</p>
   </section>
+  <p class="saas-hint">O acesso ao prontuário é restrito ao profissional responsável. O acesso do paciente ao portal é configurado separadamente.</p>
 </div>
 {% endblock %}

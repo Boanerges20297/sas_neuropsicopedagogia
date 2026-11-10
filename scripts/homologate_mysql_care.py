@@ -109,6 +109,18 @@ def verify(db):
         raise AssertionError(f"Expected at least 35 tables, found {tables}")
     if mysql("SELECT verification_status FROM care_client_contacts LIMIT 1;", db=db) != "unverified":
         raise AssertionError("Guardian should start UNVERIFIED")
+    # Portal request records an intention, never creates or activates an account.
+    mysql("""INSERT INTO care_portal_access_requests
+        (tenant_id,client_id,professional_user_id,status)
+        VALUES(201,301,101,'pending');""", db=db)
+    if mysql("SELECT status FROM care_portal_access_requests WHERE client_id=301;", db=db) != "pending":
+        raise AssertionError("Portal access intention was not recorded")
+    mysql("""INSERT INTO care_portal_access_requests
+        (tenant_id,client_id,professional_user_id,status)
+        VALUES(202,301,102,'pending');""", db=db, expect_error=True)
+    mysql("""INSERT INTO care_portal_access_requests
+        (tenant_id,client_id,professional_user_id,status)
+        VALUES(201,301,101,'pending');""", db=db, expect_error=True)
     for query, expected in [
         ("SELECT COUNT(*) FROM clients WHERE tenant_id=201 AND professional_user_id=101;", "2"),
         ("SELECT COUNT(*) FROM clients WHERE tenant_id=202 AND professional_user_id=102;", "1"),
@@ -344,6 +356,7 @@ def main():
                  "mysql_care_encounters_assessments_migration.sql",
                  "mysql_care_portal_access_migration.sql",
                  "mysql_care_patient_intake_migration.sql",
+                 "mysql_patient_portal_access_request_migration.sql",
                  "mysql_care_portal_self_access_migration.sql",
                  "mysql_care_client_activation_migration.sql",
                  "mysql_saas_account_rights_migration.sql",

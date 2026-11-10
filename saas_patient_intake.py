@@ -73,12 +73,16 @@ def _cipher():
 
 
 def register_intake(user_id, tenant_id, *, mode, name, birth_date, initial_report="",
-                    guardian_name="", guardian_email="", email=""):
+                    guardian_name="", guardian_email="", email="", portal_access_mode="later"):
     fields = validate_intake(mode, name, birth_date, initial_report,
                              guardian_name, guardian_email)
     email = (email or "").strip().lower()
     if mode == "self" and email and (len(email) > 254 or not store.EMAIL_RE.fullmatch(email)):
         raise ValueError("E-mail do paciente inválido")
+    if portal_access_mode not in ("later", "prepare"):
+        raise ValueError("Seleção de acesso ao portal inválida")
+    if portal_access_mode == "prepare" and not (email if mode == "self" else fields["guardian_email"]):
+        raise ValueError("Informe o e-mail do adulto ou responsável para solicitar acesso ao portal")
     # Encrypt before beginning database writes. A failure must leave no partial
     # patient or contact record behind.
     encrypted = (_cipher().encrypt(fields["report"].encode("utf-8"))
@@ -118,6 +122,15 @@ def register_intake(user_id, tenant_id, *, mode, name, birth_date, initial_repor
                VALUES(%s,%s,%s,%s,%s,%s)""",
             (tenant_id, client_id, user_id, mode, encrypted, contact_id),
         )
+        if portal_access_mode == "prepare":
+            cur.execute(
+                """INSERT INTO care_portal_access_requests
+                   (tenant_id,client_id,professional_user_id,status)
+                   VALUES(%s,%s,%s,'pending')""",
+                (tenant_id, client_id, user_id),
+            )
+            store.audit(cur, user_id, tenant_id, "patient_portal_access_requested",
+                        "client", client_id)
         store.audit(cur, user_id, tenant_id, "patient_intake_created",
                     "client", client_id)
         return client_id

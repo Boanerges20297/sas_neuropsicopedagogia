@@ -233,13 +233,37 @@ def own_tenant(user_id):
 
 
 def list_clients(user_id, tenant_id):
-    # Never derive scope from an untrusted request param without membership check.
-    return all_rows(
-        """SELECT c.id,c.nome,c.email,c.birth_date,c.status,c.created_at
+    """List own patients; a today's schedule is only a correlated summary."""
+    from datetime import timedelta, timezone
+    from zoneinfo import ZoneInfo
+    zone = ZoneInfo("America/Fortaleza")
+    midnight = datetime.now(zone).replace(hour=0, minute=0, second=0, microsecond=0)
+    start = midnight.astimezone(timezone.utc).replace(tzinfo=None)
+    end = (midnight + timedelta(days=1)).astimezone(timezone.utc).replace(tzinfo=None)
+    rows = all_rows(
+        """SELECT c.id,c.nome,c.email,c.birth_date,c.status,c.created_at,
+                  (SELECT pr.status FROM care_portal_access_requests pr
+                    WHERE pr.tenant_id=c.tenant_id AND pr.client_id=c.id
+                      AND pr.professional_user_id=c.professional_user_id
+                    LIMIT 1) AS portal_request_status,
+                  (SELECT MIN(a.starts_at_utc)
+                     FROM care_appointments a
+                    WHERE a.tenant_id=c.tenant_id
+                      AND a.client_id=c.id
+                      AND a.professional_user_id=c.professional_user_id
+                      AND a.status IN ('scheduled','confirmed')
+                      AND a.starts_at_utc >= %s AND a.starts_at_utc < %s
+                  ) AS today_time_utc
            FROM clients c JOIN tenant_members m ON m.tenant_id=c.tenant_id
            WHERE m.user_id=%s AND m.status='active' AND c.tenant_id=%s
              AND c.professional_user_id=%s ORDER BY c.created_at DESC""",
-        (user_id,tenant_id,user_id))
+        (start, end, user_id, tenant_id, user_id))
+    for row in rows:
+        appt = row.get("today_time_utc")
+        row["today_at"] = (appt.replace(tzinfo=timezone.utc).astimezone(zone).strftime("%H:%M")
+                           if appt else None)
+        row.pop("today_time_utc", None)
+    return rows
 
 
 def create_client(user_id, tenant_id, nome, email=None):

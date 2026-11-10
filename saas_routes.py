@@ -347,18 +347,46 @@ def trial_professional(professional_id):
     return redirect(url_for("saas.professionals"))
 
 
-@bp.route("/pacientes",methods=["GET","POST"])
+@bp.route("/pacientes", methods=["GET"])
 @practitioner_only
 def patients():
-    tenant,license=licensed_tenant()
+    tenant, license = licensed_tenant()
     if not license.allowed:
         return render_template("saas_status.html",
                                message="Acesso profissional aguardando licença BTA válida. "+
-                                       "Seu cadastro continua preservado."),403
-    if request.method=="POST":
+                                       "Seu cadastro continua preservado."), 403
+    from uuid import uuid4
+    clients = store.list_clients(int(current_user.id), tenant["id"])
+    for patient in clients:
+        patient["start_request_id"] = str(uuid4())
+    summary = {
+        "active": sum(p["status"] == "active" for p in clients),
+        "today": sum(bool(p.get("today_at")) for p in clients if p["status"] == "active"),
+        "portal": sum(p.get("portal_request_status") == "pending" for p in clients),
+        "total": len(clients),
+    }
+    from flask import make_response
+    response = make_response(render_template(
+        "saas_patients.html", tenant=tenant, clients=clients,
+        summary=summary, csrf_token=csrf()))
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
+@bp.route("/pacientes", methods=["POST"])  # Compatibility with older forms.
+@bp.route("/pacientes/novo", methods=["GET", "POST"])
+@practitioner_only
+def patient_new():
+    tenant, license = licensed_tenant()
+    if not license.allowed:
+        return render_template("saas_status.html",
+                               message="Acesso profissional aguardando licença BTA válida. "+
+                                       "Seu cadastro continua preservado."), 403
+    if request.method == "POST":
         check_csrf()
         try:
             from saas_patient_intake import register_intake
+            access = request.form.get("portal_access_mode", "later")
             register_intake(
                 int(current_user.id), tenant["id"],
                 mode=request.form.get("representation_mode", ""),
@@ -368,14 +396,21 @@ def patients():
                 guardian_name=request.form.get("guardian_name", ""),
                 guardian_email=request.form.get("guardian_email", ""),
                 email=request.form.get("email", ""),
+                portal_access_mode=access,
             )
-            flash("Paciente registrado no seu espaço profissional.","success")
+            if access == "prepare":
+                flash("Paciente cadastrado. Solicitação de acesso ao portal registrada; "+
+                      "a conta ainda exige verificação e ativação.", "success")
+            else:
+                flash("Paciente registrado no seu espaço profissional.", "success")
             return redirect(url_for("saas.patients"))
         except ValueError as exc:
-            flash(str(exc),"danger")
-    return render_template("saas_patients.html",tenant=tenant,
-                           clients=store.list_clients(current_user.id,tenant["id"]),
-                           csrf_token=csrf())
+            flash(str(exc), "danger")
+    from flask import make_response
+    response = make_response(render_template(
+        "saas_patient_new.html", tenant=tenant, csrf_token=csrf()))
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @bp.route("/testes")
