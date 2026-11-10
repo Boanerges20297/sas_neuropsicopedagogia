@@ -1,6 +1,7 @@
 """Synthetic administrator demo patient: strict single-admin scope and idempotence."""
 from contextlib import contextmanager
 from datetime import date
+from pathlib import Path
 from unittest.mock import patch
 import unittest
 
@@ -111,6 +112,17 @@ class DemoPatientContract(unittest.TestCase):
             with self.assertRaises(demo.SeedRefused):
                 demo.seed(apply=True)
         self.assertFalse(any("INSERT" in stmt for stmt, _ in cur.calls))
+
+    def test_docker_build_context_contains_demo_seed(self):
+        root = Path(__file__).resolve().parents[1]
+        rules = (root / '.dockerignore').read_text(encoding='utf-8').splitlines()
+        self.assertIn('scripts/*', rules)
+        self.assertIn('!scripts/seed_demo_admin_patient.py', rules)
+        self.assertLess(rules.index('scripts/*'),
+                        rules.index('!scripts/seed_demo_admin_patient.py'))
+        dockerfile = (root / 'Dockerfile').read_text(encoding='utf-8')
+        self.assertIn('COPY --chown=neuro:neuro scripts/seed_demo_admin_patient.py',
+                      dockerfile)
 
     def test_no_real_identity_or_automatic_seed_on_import(self):
         self.assertEqual(demo.DEMO_BIRTH, "2016-08-18")

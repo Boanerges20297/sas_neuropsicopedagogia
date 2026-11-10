@@ -16,5 +16,6 @@ extracted_text.txt
 tests
 docs
 infra
-scripts
+scripts/*
+!scripts/seed_demo_admin_patient.py
 .release
