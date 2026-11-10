@@ -27,12 +27,21 @@ def register_care_routes(bp):
         tenant, decision = licensed_tenant()
         if not decision.allowed:
             abort(403)
-        appointments = care.list_calendar(int(current_user.id), tenant["id"])
-        return render_template(
+        from flask import make_response
+        from saas_slot_booking import list_slots
+        from saas_store import list_clients
+        uid = int(current_user.id)
+        response = make_response(render_template(
             "saas_care_calendar.html", tenant=tenant,
-            appointments=appointments, service_names=SERVICE_NAMES,
-            status_names=STATUS_NAMES,
-        )
+            appointments=care.list_calendar(uid, tenant["id"]),
+            slots=list_slots(uid, tenant["id"]),
+            clients=list_clients(uid, tenant["id"]),
+            service_names=SERVICE_NAMES, status_names=STATUS_NAMES,
+            modality_names=MODALITY_NAMES, csrf_token=csrf(),
+            request_id=str(uuid4()),
+        ))
+        response.headers["Cache-Control"] = "private, no-store"
+        return response
 
     @bp.route("/pacientes/<int:client_id>/agenda", methods=["GET", "POST"])
     @practitioner_only

@@ -73,12 +73,14 @@ class SchedulingContracts(unittest.TestCase):
                 request_id=self.request_id, now=self.now,
             )
         self.assertEqual(appointment_id, 301)
-        self.assertEqual(len(cur.calls), 4)
+        self.assertEqual(len(cur.calls), 6)
         self.assertIn("FOR UPDATE", cur.calls[0][0])
         self.assertIn("c.professional_user_id=%s", cur.calls[0][0])
         self.assertIn("status IN ('scheduled','confirmed')", cur.calls[2][0])
-        self.assertIn("INSERT INTO care_appointments", cur.calls[3][0])
-        self.assertEqual(cur.calls[3][1][0:4], (11, 21, 7, self.request_id))
+        self.assertIn("status='pending'", cur.calls[3][0])
+        self.assertIn("INSERT INTO care_appointments", cur.calls[4][0])
+        self.assertIn("UPDATE care_schedule_slots", cur.calls[5][0])
+        self.assertEqual(cur.calls[4][1][0:4], (11, 21, 7, self.request_id))
         audit.assert_called_once()
 
     def test_duplicate_post_returns_original_without_new_insert(self):
@@ -196,6 +198,8 @@ class CareRouteTests(unittest.TestCase):
             patch.object(routes.nc, "scoped_client",
                          return_value={"id": 21, "nome": "Cliente Fictício"}),
             patch.object(routes.care, "list_calendar", return_value=[]),
+            patch("saas_slot_booking.list_slots", return_value=[]),
+            patch.object(saas_store, "list_clients", return_value=[]),
             patch.object(routes.care, "list_client_appointments", return_value=[]),
         ]
         for mock in self.mocks:

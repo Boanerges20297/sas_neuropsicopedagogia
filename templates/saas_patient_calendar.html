@@ -1,0 +1,79 @@
+{% extends "saas_base.html" %}
+{% block title %}Minha agenda | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-care.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-schedule.css')}}">
+{% endblock %}
+{% block content %}
+<div class="nc-shell schedule-shell">
+  <header class="nc-hero">
+    <div>
+      <span class="saas-kicker">Meu espaço · Neuro-Diagnosis</span>
+      <h1>Marcar uma consulta</h1>
+      <p>Escolha uma das vagas oferecidas pelo profissional. Sua solicitação ficará aguardando confirmação.</p>
+    </div>
+    <span class="nc-tag">Acesso privado</span>
+  </header>
+  {% if patients %}
+    {% if patients|length > 1 %}
+    <nav class="schedule-patient-nav" aria-label="Escolher paciente">
+      {% for p in patients %}<a href="{{url_for('saas.patient_calendar',client_id=p.client_id)}}" class="{{'schedule-current' if selected and p.client_id==selected.client_id else ''}}">{{p.client_name}}</a>{% endfor %}
+    </nav>
+    {% endif %}
+    <div class="saas-card schedule-patient-context">
+      <p><strong>Paciente:</strong> {{selected.client_name}}</p>
+      <p><strong>Profissional:</strong> {{selected.clinician_name}}</p>
+      <p><strong>Local de atendimento:</strong> {{selected.tenant_name}}</p>
+    </div>
+    <section class="schedule-section" aria-label="Solicitações e consultas">
+      <h2>Minhas solicitações</h2>
+      <div class="schedule-list">
+        {% for item in patient_requests %}
+        <article class="saas-card schedule-entry">
+          <div>
+            <strong>{{item.local_start}}</strong>
+            <p>{{service_names.get(item.service_type,item.service_type)}} · {{modality_names.get(item.modality,item.modality)}}</p>
+          </div>
+          <span class="care-status {{'care-status--completed' if item.status=='booked' else ''}}">{{'Confirmado' if item.status=='booked' else 'Aguardando confirmação'}}</span>
+          {% if item.status=='pending' %}
+          <form method="post" action="{{url_for('saas.patient_calendar_action',tenant_id=selected.tenant_id,client_id=selected.client_id,slot_id=item.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="action" value="withdraw">
+            <button type="submit" class="care-outline">Cancelar solicitação</button>
+          </form>
+          {% endif %}
+        </article>
+        {% else %}
+        <p class="saas-hint schedule-empty">Você ainda não solicitou horários.</p>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="schedule-section" aria-label="Horários disponíveis">
+      <h2>Horários disponíveis</h2>
+      <p class="saas-hint">Todos os horários são locais de Fortaleza (UTC−3). A vaga fica reservada enquanto o profissional avalia seu pedido.</p>
+      <div class="schedule-slot-grid">
+        {% for item in available %}
+        <article class="saas-card schedule-open-slot">
+          <strong>{{item.local_start}}</strong>
+          <p>{{item.minutes}} min · {{service_names.get(item.service_type,item.service_type)}}</p>
+          <p class="saas-hint">{{modality_names.get(item.modality,item.modality)}}</p>
+          <form method="post" action="{{url_for('saas.patient_calendar_action',tenant_id=selected.tenant_id,client_id=selected.client_id,slot_id=item.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="action" value="request">
+            <button class="saas-btn" type="submit">Solicitar este horário</button>
+          </form>
+        </article>
+        {% else %}
+        <p class="saas-hint schedule-empty">Não há horários livres publicados para você no momento. Consulte seu profissional.</p>
+        {% endfor %}
+      </div>
+    </section>
+  {% else %}
+  <section class="saas-card schedule-patient-context">
+    <h2>Seu acesso está aguardando liberação</h2>
+    <p>A agenda será exibida quando o profissional confirmar seu vínculo com o paciente e autorizar o acesso de agendamentos. Não é necessário criar outro prontuário.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -339,6 +339,44 @@ def verify_clinical(db):
           "scoped_encounter=1 scoped_assessment=1 private_answers=1")
 
 
+def verify_patient_schedule(db):
+    """Real MySQL FK, slot-state checks and booking transitions, synthetic only."""
+    mysql("""INSERT INTO care_schedule_slots
+      (id,tenant_id,professional_user_id,starts_at_utc,ends_at_utc,
+       service_type,modality,status)
+      VALUES(1601,201,101,'2026-12-03 12:00:00','2026-12-03 13:00:00',
+             'initial','remote','open');""", db=db)
+    if mysql("SELECT status FROM care_schedule_slots WHERE id=1601;", db=db) != "open":
+        raise AssertionError("Published availability not persisted")
+    mysql("""UPDATE care_schedule_slots
+      SET status='pending',pending_user_id=104,pending_client_id=301,
+          requested_at=UTC_TIMESTAMP() WHERE id=1601;""", db=db)
+    if mysql("SELECT status FROM care_schedule_slots WHERE id=1601;", db=db) != "pending":
+        raise AssertionError("Patient request not reserved")
+    mysql("""INSERT INTO care_appointments
+      (id,tenant_id,client_id,professional_user_id,request_id,
+       service_type,modality,starts_at_utc,ends_at_utc,status)
+      VALUES(1701,201,301,101,'f6d878cd-dc5c-4696-b2d1-00690006dcb6',
+             'initial','remote','2026-12-03 12:00:00','2026-12-03 13:00:00',
+             'confirmed');""", db=db)
+    mysql("""UPDATE care_schedule_slots
+      SET status='booked',appointment_id=1701 WHERE id=1601;""", db=db)
+    if mysql("SELECT status FROM care_schedule_slots WHERE id=1601;", db=db) != "booked":
+        raise AssertionError("Confirmed request lost booking")
+    mysql("UPDATE care_schedule_slots SET pending_user_id=NULL WHERE id=1601;",
+          db=db, expect_error=True)
+    mysql("""INSERT INTO care_schedule_slots
+       (tenant_id,professional_user_id,starts_at_utc,ends_at_utc,service_type)
+       VALUES(201,102,'2026-12-10 12:00:00','2026-12-10 13:00:00','initial');""",
+       db=db, expect_error=True)
+    mysql("""INSERT INTO care_schedule_slots
+       (tenant_id,professional_user_id,starts_at_utc,ends_at_utc,service_type)
+       VALUES(201,101,'2026-12-11 13:00:00','2026-12-11 12:00:00','initial');""",
+       db=db, expect_error=True)
+    print("SCHEDULE_MYSQL_HOMOLOGATION_OK published=1 pending=1 booked=1 "
+          "state_check=1 tenant_fk=1 interval_check=1")
+
+
 def main():
     if sys.platform != "win32":
         raise RuntimeError("This harness must run on the STI Windows host")
@@ -370,6 +408,7 @@ def main():
         fixtures(db)
         verify(db)
         verify_clinical(db)
+        verify_patient_schedule(db)
     finally:
         if created:
             mysql("DROP DATABASE " + db + ";")

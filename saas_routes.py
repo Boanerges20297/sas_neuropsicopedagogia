@@ -259,8 +259,10 @@ def logout():
 @bp.route("/painel")
 @login_required
 def dashboard():
+    if is_saas_account() and current_user.role == "patient":
+        return redirect(url_for("saas.patient_calendar"))
     if not is_saas_account() or not current_user.is_practitioner():
-        return render_template("saas_status.html",message="Área do paciente disponível por convite do profissional.")
+        abort(403)
     tenant=(own_admin_workspace(current_user.id) if current_user.is_admin()
             else store.own_tenant(current_user.id))
     decision=(LicenseDecision(status="exempt",reason="admin_permanent_access")
@@ -434,6 +436,8 @@ register_neurocore_routes(bp)
 
 from saas_care_routes import register_care_routes
 register_care_routes(bp)
+from saas_slot_routes import register_slot_routes
+register_slot_routes(bp)
 
 from saas_clinical_routes import register_clinical_routes
 register_clinical_routes(bp)
@@ -465,6 +469,7 @@ def health():
         # Fail release smoke if the NeuroCore additive schema was not applied.
         store.one("SELECT 1 FROM neurocore_evidence_reviews LIMIT 1")
         store.one("SELECT 1 FROM care_appointments LIMIT 1")
+        store.one("SELECT 1 FROM care_schedule_slots LIMIT 1")
         store.one("SELECT 1 FROM care_encounters LIMIT 1")
         store.one("SELECT 1 FROM care_portal_grants LIMIT 1")
         store.one("SELECT 1 FROM care_patient_intakes LIMIT 1")

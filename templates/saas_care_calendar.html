@@ -1,41 +1,165 @@
 {% extends "saas_base.html" %}
-{% block title %}Agenda de atendimento | Neuro-Diagnosis{% endblock %}
+{% block title %}Agenda | Neuro-Diagnosis{% endblock %}
 {% block dashboard_styles %}
 <link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">
 <link rel="stylesheet" href="{{url_for('static',filename='saas-care.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-schedule.css')}}">
 {% endblock %}
 {% block content %}
-<div class="nc-shell">
+<div class="nc-shell schedule-shell">
   <header class="nc-hero">
     <div>
-      <span class="saas-kicker">Atendimento profissional · {{tenant.nome}}</span>
-      <h1>Agenda de atendimentos</h1>
-      <p>Seus compromissos nos próximos 30 dias, com situação registrada e histórico do cliente.</p>
+      <span class="saas-kicker">Espaço clínico · {{tenant.nome}}</span>
+      <h1>Minha agenda</h1>
+      <p>Agende seus pacientes, disponibilize horários e responda às solicitações. Horários de Fortaleza (UTC−3).</p>
     </div>
-    <span class="nc-tag">Agenda privada</span>
+    <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patients')}}">Pacientes</a>
   </header>
-  <div class="care-heading">
-    <h2>Próximos compromissos</h2>
-    <a class="saas-btn" href="{{url_for('saas.patients')}}">Abrir meus pacientes</a>
-  </div>
-  <section class="care-list" aria-label="Atendimentos">
-    {% for item in appointments %}
-      <article class="saas-card care-item">
-        <div class="care-date"><strong>{{item.local_start}}</strong><span>Fortaleza (UTC−3)</span></div>
-        <div class="care-detail">
-          <span class="nc-topic">{{service_names.get(item.service_type, item.service_type)}}</span>
-          <h3>{{item.client_name}}</h3>
-          <span class="care-status care-status--{{item.status}}">{{status_names.get(item.status,item.status)}}</span>
+
+  <div class="schedule-actions-grid">
+    <section class="saas-card schedule-panel">
+      <h2>Agendar um paciente</h2>
+      <p class="saas-hint">Reserva feita diretamente pelo profissional, sem solicitação.</p>
+      <form method="post" class="schedule-form" action="{{url_for('saas.schedule_patient_from_calendar')}}">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="request_id" value="{{request_id}}">
+        <label for="direct_patient">Paciente</label>
+        <select id="direct_patient" name="client_id" required {% if not clients %}disabled{% endif %}>
+          <option value="">Selecione o paciente</option>
+          {% for c in clients if c.status=='active' %}
+          <option value="{{c.id}}">{{c.nome}}</option>
+          {% endfor %}
+        </select>
+        <label for="direct_start">Data e horário</label>
+        <input id="direct_start" name="local_start" type="datetime-local" step="900" required>
+        <div class="schedule-form-grid">
+          <div><label for="direct_duration">Duração</label><select id="direct_duration" name="duration">{% for d in [30,45,60,90,120] %}<option value="{{d}}" {% if d==60 %}selected{% endif %}>{{d}} min</option>{% endfor %}</select></div>
+          <div><label for="direct_type">Tipo</label><select id="direct_type" name="service_type">{% for key,name in service_names.items() %}<option value="{{key}}">{{name}}</option>{% endfor %}</select></div>
         </div>
-        <a class="saas-btn" href="{{url_for('saas.client_appointments',client_id=item.client_id)}}">Ver atendimento</a>
+        <label for="direct_modality">Modalidade</label>
+        <select id="direct_modality" name="modality">{% for key,name in modality_names.items() %}<option value="{{key}}">{{name}}</option>{% endfor %}</select>
+        <button type="submit" class="saas-btn" {% if not clients %}disabled{% endif %}>Marcar consulta</button>
+        {% if not clients %}<p class="saas-hint">Cadastre um paciente antes de marcar consultas.</p>{% endif %}
+      </form>
+    </section>
+
+    <section class="saas-card schedule-panel">
+      <h2>Disponibilizar horários</h2>
+      <p class="saas-hint">Publique vagas que pacientes autorizados poderão solicitar no portal.</p>
+      <form method="post" class="schedule-form" action="{{url_for('saas.publish_availability')}}">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <div class="schedule-form-grid">
+          <div><label for="slot_start_date">De</label><input id="slot_start_date" type="date" name="start_date" required></div>
+          <div><label for="slot_end_date">Até</label><input id="slot_end_date" type="date" name="end_date" required></div>
+          <div><label for="slot_open">Início do expediente</label><input id="slot_open" type="time" name="open_time" value="08:00" step="900" required></div>
+          <div><label for="slot_close">Fim do expediente</label><input id="slot_close" type="time" name="close_time" value="12:00" step="900" required></div>
+        </div>
+        <fieldset class="schedule-weekdays"><legend>Dias de atendimento</legend>
+          {% for key,name in [(0,'Seg'),(1,'Ter'),(2,'Qua'),(3,'Qui'),(4,'Sex'),(5,'Sáb'),(6,'Dom')] %}
+            <label><input type="checkbox" name="weekday" value="{{key}}" {% if key<5 %}checked{% endif %}>{{name}}</label>
+          {% endfor %}
+        </fieldset>
+        <div class="schedule-form-grid">
+          <div><label for="slot_duration">Duração</label><select id="slot_duration" name="duration">{% for d in [30,45,60,90,120] %}<option value="{{d}}" {% if d==60 %}selected{% endif %}>{{d}} min</option>{% endfor %}</select></div>
+          <div><label for="slot_gap">Intervalo entre vagas</label><select id="slot_gap" name="gap">{% for d in [0,15,30,45,60] %}<option value="{{d}}">{{d}} min</option>{% endfor %}</select></div>
+          <div><label for="slot_type">Tipo</label><select id="slot_type" name="service_type">{% for key,name in service_names.items() %}<option value="{{key}}">{{name}}</option>{% endfor %}</select></div>
+          <div><label for="slot_modality">Modalidade</label><select id="slot_modality" name="modality">{% for key,name in modality_names.items() %}<option value="{{key}}">{{name}}</option>{% endfor %}</select></div>
+        </div>
+        <button type="submit" class="saas-btn">Publicar disponibilidade</button>
+        <p class="saas-hint">Até 31 dias por operação. Conflitos de horário impedem a publicação.</p>
+      </form>
+    </section>
+  </div>
+
+  <section class="schedule-section" aria-label="Solicitações pendentes">
+    <div class="care-heading"><h2>Solicitações de pacientes</h2><span class="nc-tag">Aguardam sua decisão</span></div>
+    <div class="schedule-list">
+      {% set pending = slots|selectattr('status','equalto','pending')|list %}
+      {% for s in pending %}
+      <article class="saas-card schedule-entry">
+        <div><strong>{{s.local_start}}</strong><p>{{s.patient_name or 'Paciente vinculado'}} · {{service_names.get(s.service_type,s.service_type)}}</p></div>
+        <span class="care-status">Solicitado</span>
+        <div class="schedule-entry-actions">
+          <form method="post" action="{{url_for('saas.availability_action',slot_id=s.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="accept">
+            <button class="saas-btn" type="submit">Confirmar consulta</button>
+          </form>
+          <form method="post" action="{{url_for('saas.availability_action',slot_id=s.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="reject">
+            <button class="care-outline" type="submit">Recusar e liberar vaga</button>
+          </form>
+        </div>
       </article>
-    {% else %}
-      <div class="saas-card care-empty">
-        <h3>Agenda livre</h3>
-        <p>Ainda não há atendimentos registrados para os próximos 30 dias.</p>
-        <a href="{{url_for('saas.patients')}}">Escolher paciente e agendar</a>
-      </div>
-    {% endfor %}
+      {% else %}
+      <p class="saas-hint schedule-empty">Nenhuma solicitação pendente.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="schedule-section" aria-label="Consultas agendadas">
+    <div class="care-heading"><h2>Consultas marcadas</h2><span class="saas-hint">Próximos 30 dias</span></div>
+    <div class="care-list">
+      {% for a in appointments %}
+      <article class="saas-card schedule-entry">
+        <div><strong>{{a.local_start}}</strong><p>{{a.client_name}} · {{service_names.get(a.service_type,a.service_type)}} · {{modality_names.get(a.modality,a.modality)}}</p></div>
+        <span class="care-status care-status--{{a.status}}">{{status_names.get(a.status,a.status)}}</span>
+        <div class="schedule-entry-actions">
+          <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.client_appointments',client_id=a.client_id)}}">Abrir</a>
+          {% if a.status in ['scheduled','confirmed'] %}
+          <details class="schedule-edit"><summary>Editar</summary>
+            <form class="schedule-form" method="post" action="{{url_for('saas.reschedule_calendar_appointment',appointment_id=a.id)}}">
+              <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="client_id" value="{{a.client_id}}">
+              <label for="appt-date-{{a.id}}">Nova data</label><input id="appt-date-{{a.id}}" type="datetime-local" step="900" name="local_start" value="{{a.local_input}}" required>
+              <label for="appt-duration-{{a.id}}">Duração</label><select id="appt-duration-{{a.id}}" name="duration">{% for m in [30,45,60,90,120] %}<option value="{{m}}" {% if m==a.minutes %}selected{% endif %}>{{m}} min</option>{% endfor %}</select>
+              <label for="appt-type-{{a.id}}">Tipo</label><select id="appt-type-{{a.id}}" name="service_type">{% for key,name in service_names.items() %}<option value="{{key}}" {% if a.service_type==key %}selected{% endif %}>{{name}}</option>{% endfor %}</select>
+              <label for="appt-mod-{{a.id}}">Modalidade</label><select id="appt-mod-{{a.id}}" name="modality">{% for key,name in modality_names.items() %}<option value="{{key}}" {% if a.modality==key %}selected{% endif %}>{{name}}</option>{% endfor %}</select>
+              <button type="submit" class="saas-btn">Salvar alteração</button>
+            </form>
+          </details>
+          <form method="post" action="{{url_for('saas.cancel_calendar_appointment',appointment_id=a.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="client_id" value="{{a.client_id}}">
+            <button type="submit" class="care-outline">Cancelar</button>
+          </form>
+          {% endif %}
+        </div>
+      </article>
+      {% else %}
+      <div class="saas-card care-empty"><p>Nenhuma consulta marcada no período.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="schedule-section" aria-label="Horários publicados">
+    <div class="care-heading"><h2>Gerenciar disponibilidade</h2><span class="saas-hint">Horários futuros, até 250 por página</span></div>
+    <div class="schedule-list">
+      {% for s in slots %}
+      <article class="saas-card schedule-entry">
+        <div><strong>{{s.local_start}}</strong><p>{{s.minutes}} min · {{service_names.get(s.service_type,s.service_type)}} · {{modality_names.get(s.modality,s.modality)}}</p></div>
+        <span class="care-status {{'care-status--cancelled' if s.status=='closed' else ''}}">{{{'open':'Livre','pending':'Solicitado','booked':'Agendado','closed':'Encerrado'}.get(s.status,s.status)}}</span>
+        <div class="schedule-entry-actions">
+          {% if s.status=='open' %}
+          <details class="schedule-edit"><summary>Editar</summary>
+            <form class="schedule-form" method="post" action="{{url_for('saas.availability_action',slot_id=s.id)}}">
+              <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="edit">
+              <label for="slot-new-{{s.id}}">Data e hora</label><input id="slot-new-{{s.id}}" name="local_start" type="datetime-local" step="900" value="{{s.local_input}}" required>
+              <label for="slot-min-{{s.id}}">Duração</label><select id="slot-min-{{s.id}}" name="duration">{% for d in [30,45,60,90,120] %}<option value="{{d}}" {% if d==s.minutes %}selected{% endif %}>{{d}} min</option>{% endfor %}</select>
+              <label for="slot-type-{{s.id}}">Tipo</label><select id="slot-type-{{s.id}}" name="service_type">{% for key,name in service_names.items() %}<option value="{{key}}" {% if s.service_type==key %}selected{% endif %}>{{name}}</option>{% endfor %}</select>
+              <label for="slot-mod-{{s.id}}">Modalidade</label><select id="slot-mod-{{s.id}}" name="modality">{% for key,name in modality_names.items() %}<option value="{{key}}" {% if s.modality==key %}selected{% endif %}>{{name}}</option>{% endfor %}</select>
+              <button type="submit" class="saas-btn">Salvar horário</button>
+            </form>
+          </details>
+          <form method="post" action="{{url_for('saas.availability_action',slot_id=s.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="close">
+            <button type="submit" class="care-outline">Retirar horário</button>
+          </form>
+          {% elif s.status=='pending' %}<span class="saas-hint">Aguardando sua decisão acima</span>
+          {% elif s.status=='booked' %}<span class="saas-hint">Vinculado à consulta</span>{% endif %}
+        </div>
+      </article>
+      {% else %}
+      <p class="saas-hint schedule-empty">Ainda não há horários publicados.</p>
+      {% endfor %}
+    </div>
   </section>
 </div>
 {% endblock %}
