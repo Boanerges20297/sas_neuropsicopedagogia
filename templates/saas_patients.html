@@ -48,12 +48,13 @@
           <div class="patients-avatar" aria-hidden="true">{{p.nome[:1]|upper}}</div>
           <div>
             <h3>{{p.nome}}</h3>
-            <p>{% if p.get('today_at') and p.status=='active' %}Atendimento hoje, {{p.today_at}}{% elif p.status=='active' %}Em acompanhamento{% else %}Cadastro {{'arquivado' if p.status=='archived' else 'inativo'}}{% endif %}</p>
+            <p>{% if p.get('today_at') and p.status=='active' %}Atendimento hoje, {{p.today_at}}{% elif p.status=='active' %}Em acompanhamento{% else %}{{'Encerrado' if p.status=='archived' else 'Alta registrada'}}{% endif %}</p>
             {% if p.get('portal_request_status')=='pending' %}<span class="patients-tag patients-tag--quiet">Solicitação de acesso pendente</span>{% endif %}
           </div>
         </div>
-        <span class="patients-tag {{'patients-tag--quiet' if p.status!='active' else ''}}">{% if p.get('today_at') %}Hoje{% elif p.status=='active' %}Ativo{% elif p.status=='archived' %}Arquivado{% else %}Inativo{% endif %}</span>
+        <span class="patients-tag {{'patients-tag--quiet' if p.status!='active' else ''}}">{% if p.get('today_at') and p.status=='active' %}Hoje{% elif p.status=='active' %}Em acompanhamento{% elif p.status=='archived' %}Encerrado{% else %}Alta{% endif %}</span>
         <div class="patients-person__actions">
+          <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patient_manage',client_id=p.id)}}">Gerenciar</a>
           {% if p.status!='archived' %}
           <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patient_workspace',client_id=p.id)}}">Ver ficha</a>
           {% if p.status=='active' %}

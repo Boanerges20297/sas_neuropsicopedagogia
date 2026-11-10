@@ -1,0 +1,57 @@
+{% extends "saas_base.html" %}
+{% block title %}Gerenciar paciente | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-patients.css')}}">{% endblock %}
+{% block content %}
+<div class="patients-shell">
+  <nav><a href="{{url_for('saas.patients')}}">Meus pacientes</a> / Gerenciar</nav>
+  <header class="patients-head"><div><span class="saas-kicker">Espaço clínico • {{tenant.nome}}</span>
+    <h1>Gerenciar paciente</h1><p>{{patient.nome}} • Situação: <strong>{{states[patient.status]}}</strong></p></div>
+    <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.patients')}}">Voltar à lista</a>
+  </header>
+  <section class="saas-card">
+    <h2>Dados cadastrais</h2>
+    <p>Corrigir identificação sem alterar o vínculo profissional, o histórico ou a conta de acesso.</p>
+    <form method="post" action="{{url_for('saas.patient_manage_identity',client_id=patient.id)}}" style="display:grid;gap:12px;max-width:520px">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+      <label for="patient_name">Nome completo</label>
+      <input id="patient_name" name="nome" value="{{patient.nome}}" maxlength="180" required>
+      <label for="patient_birth">Data de nascimento</label>
+      <input id="patient_birth" name="birth_date" type="date" value="{{patient.birth_date.isoformat() if patient.birth_date else ''}}" required>
+      <button class="saas-btn" type="submit">Salvar alterações</button>
+    </form>
+  </section>
+  <section class="saas-card">
+    <h2>Situação do acompanhamento</h2>
+    <p><strong>Alta</strong> encerra o acompanhamento por conclusão; <strong>Encerrado</strong> encerra por outros motivos. Ambos preservam consultas, hipóteses e testes já registrados. É possível reativar.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px">
+      {% if patient.status == 'active' %}
+      <form method="post" action="{{url_for('saas.patient_manage_status',client_id=patient.id)}}" onsubmit="return confirm('Registrar alta? O histórico será preservado e novos atendimentos ficarão bloqueados até reativar.');">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="alta">
+        <button class="saas-btn" type="submit">Dar alta</button>
+      </form>
+      {% endif %}
+      {% if patient.status in ('active','inactive') %}
+      <form method="post" action="{{url_for('saas.patient_manage_status',client_id=patient.id)}}" onsubmit="return confirm('Encerrar o acompanhamento deste paciente? O histórico será preservado.');">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="encerrar">
+        <button class="saas-btn saas-btn--ghost" type="submit">Encerrar acompanhamento</button>
+      </form>
+      {% endif %}
+      {% if patient.status != 'active' %}
+      <form method="post" action="{{url_for('saas.patient_manage_status',client_id=patient.id)}}" onsubmit="return confirm('Reativar este paciente para novos atendimentos?');">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="action" value="reativar">
+        <button class="saas-btn" type="submit">Reativar paciente</button>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+  <section class="saas-card">
+    <h2>Testes e anamneses</h2>
+    <p>Para cancelar uma aplicação ou zerar respostas de validação, abra os instrumentos do paciente. O catálogo de testes aprovados não será alterado.</p>
+    {% if patient.status != 'archived' %}
+      <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.clinical_assign_test',client_id=patient.id)}}">Gerenciar aplicações</a>
+    {% else %}
+      <p>Reative o paciente para gerenciar novas aplicações.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

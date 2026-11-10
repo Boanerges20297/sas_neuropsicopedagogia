@@ -18,4 +18,5 @@ docs
 infra
 scripts/*
 !scripts/seed_demo_admin_patient.py
+!scripts/seed_demo_superadmin_patient.py
 .release

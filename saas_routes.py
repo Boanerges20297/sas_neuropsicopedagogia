@@ -442,6 +442,8 @@ register_slot_routes(bp)
 from saas_clinical_routes import register_clinical_routes
 register_clinical_routes(bp)
 
+from saas_patient_management_routes import register_patient_management_routes
+register_patient_management_routes(bp)
 from saas_patient_intake_routes import register_patient_intake_routes
 register_patient_intake_routes(bp)
 

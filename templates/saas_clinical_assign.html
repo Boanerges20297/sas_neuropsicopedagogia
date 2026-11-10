@@ -44,7 +44,20 @@
     <div class="clinic-list">
     {% for item in assigned %}
     <div class="clinic-list-item"><div><strong>{{item.title}}</strong><div class="clinic-muted">Versão {{item.version_number}} · {{'Aplicação profissional' if item.mode=='professional' else 'Aguardando portal'}} · {{item.status}}</div></div>
-      <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=item.id)}}">Abrir</a></div>
+      <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=item.id)}}">Abrir</a>
+      <form method="post" action="{{url_for('saas.patient_assessment_manage',client_id=client.id,assessment_id=item.id)}}" onsubmit="return confirm('Cancelar esta aplicação? Os registros clínicos permanecerão preservados.');">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="operation" value="cancel">
+        <button type="submit" class="clinic-button clinic-button--ghost" {% if item.status=='cancelled' %}disabled{% endif %}>Cancelar aplicação</button>
+      </form>
+      {% if item.mode=='professional' %}
+      <form method="post" action="{{url_for('saas.patient_assessment_manage',client_id=client.id,assessment_id=item.id)}}" onsubmit="return confirm('Zerar as respostas desta aplicação e reiniciar? A operação não afeta prontuários nem o catálogo.');">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="operation" value="reset">
+        <button type="submit" class="clinic-button clinic-button--ghost">Zerar respostas</button>
+      </form>
+      {% endif %}
+    </div>
     {% else %}<p class="clinic-empty">Nenhuma aplicação atribuída a este paciente.</p>{% endfor %}
     </div>
   </section>
