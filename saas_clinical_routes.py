@@ -1,7 +1,7 @@
 """Clinical professional routes; portal questionnaire access remains disabled."""
 from uuid import uuid4
 
-from flask import abort, flash, make_response, redirect, render_template, request, url_for
+from flask import abort, flash, jsonify, make_response, redirect, render_template, request, url_for
 from flask_login import current_user
 
 import saas_store as store
@@ -31,6 +31,28 @@ def _private(template, **kwargs):
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     return response
+
+
+def _json_private(payload, status=200):
+    response = make_response(jsonify(payload), status)
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+def _open_hypotheses(records):
+    """Show only the latest unresolved state for each longitudinal condition."""
+    seen = set()
+    pending = []
+    for record in records:
+        key = ((record["label"] or "").strip().casefold(),
+               (record.get("code") or "").strip().upper())
+        if key in seen:
+            continue
+        seen.add(key)
+        if record["certainty"] == "hypothesis":
+            pending.append(record)
+    return pending
 
 
 def register_clinical_routes(bp):
@@ -77,12 +99,13 @@ def register_clinical_routes(bp):
         encounter = clinical.scoped_encounter(uid, tenant["id"], client_id, encounter_id)
         if not encounter:
             abort(404)
+        diagnoses = clinical.list_diagnoses(uid, tenant["id"], client_id, encounter_id)
         return _private(
             "saas_clinical_encounter.html", tenant=tenant, client=client,
             encounter=encounter,
             intake=intake.scoped_summary(uid, tenant["id"], client_id),
             note=clinical.latest_note(uid, tenant["id"], client_id, encounter_id),
-            diagnoses=clinical.list_diagnoses(uid, tenant["id"], client_id, encounter_id),
+            diagnoses=diagnoses, open_hypotheses=_open_hypotheses(diagnoses),
             patient_encounters=clinical.list_encounters(
                 uid, tenant["id"], client_id=client_id, limit=20),
             assigned=assessments.list_for_patient(uid, tenant["id"], client_id),
@@ -95,15 +118,21 @@ def register_clinical_routes(bp):
         uid, tenant = _own_space()
         _own_patient(uid, tenant, client_id)
         check_csrf()
+        wants_json = request.accept_mimetypes.best == "application/json"
         try:
-            clinical.save_note(
+            revision = clinical.save_note(
                 uid, tenant["id"], client_id, encounter_id,
                 request.form.get("html", ""),
                 request.form.get("revision", ""))
+            if wants_json:
+                return _json_private({"ok": True, "revision": revision})
             flash("Evolução salva com histórico de versões.", "success")
         except PermissionError:
             abort(404)
         except ValueError as exc:
+            if wants_json:
+                return _json_private({"ok": False, "message": str(exc)},
+                                     409 if "outra aba" in str(exc) else 400)
             flash(str(exc), "danger")
         next_id = request.form.get("next_assessment", "").strip()
         if next_id.isdecimal():
@@ -126,7 +155,8 @@ def register_clinical_routes(bp):
             clinical.record_diagnosis(
                 uid, tenant["id"], client_id, encounter_id,
                 request.form.get("label"), request.form.get("code"),
-                request.form.get("certainty"))
+                request.form.get("certainty"),
+                hypothesis_id=request.form.get("hypothesis_id"))
             flash("Hipótese diagnóstica registrada para acompanhamento." if
                   request.form.get("certainty") == "hypothesis" else
                   "Evolução da classificação clínica registrada.", "success")
@@ -135,7 +165,8 @@ def register_clinical_routes(bp):
         except ValueError as exc:
             flash(str(exc), "danger")
         return redirect(url_for("saas.clinical_encounter",
-                                client_id=client_id, encounter_id=encounter_id))
+                                client_id=client_id, encounter_id=encounter_id)
+                        + "#hipoteses-diagnosticas")
 
     @bp.route("/pacientes/<int:client_id>/instrumentos", methods=["GET", "POST"])
     @practitioner_only

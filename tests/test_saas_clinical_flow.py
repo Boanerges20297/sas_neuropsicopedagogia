@@ -92,6 +92,44 @@ class ClinicalContracts(unittest.TestCase):
         self.assertFalse(any("INSERT INTO care_encounter_notes" in q
                              for q, _ in cur.calls))
 
+    def test_reassessment_requires_pending_owned_hypothesis(self):
+        with self.assertRaisesRegex(ValueError, "Selecione uma hipótese"):
+            clinical.record_diagnosis(7, 11, 23, 67, None,
+                                      certainty="confirmed")
+        missing = Cursor([{"id": 23}, {"id": 67, "status": "draft"}, None])
+        with patch.object(clinical.store, "transaction", lambda: tx(missing)), \
+             patch.object(clinical.store, "audit") as audit:
+            with self.assertRaisesRegex(ValueError, "não está disponível"):
+                clinical.record_diagnosis(7, 11, 23, 67, None,
+                                          certainty="excluded", hypothesis_id=55)
+            audit.assert_not_called()
+        self.assertIn("professional_user_id=%s", missing.calls[2][0])
+        self.assertFalse(any("INSERT INTO care_diagnosis_records" in q
+                             for q, _ in missing.calls))
+
+        pending = {"id": 55, "label": "Hipótese sintética",
+                   "code": "F90", "certainty": "hypothesis"}
+        stale = Cursor([{"id": 23}, {"id": 67, "status": "draft"},
+                        pending, {"id": 56, "certainty": "confirmed"}])
+        with patch.object(clinical.store, "transaction", lambda: tx(stale)):
+            with self.assertRaisesRegex(ValueError, "já foi reavaliada"):
+                clinical.record_diagnosis(7, 11, 23, 67, "Outro nome",
+                                          certainty="confirmed", hypothesis_id=55)
+        self.assertFalse(any("INSERT INTO care_diagnosis_records" in q
+                             for q, _ in stale.calls))
+
+        valid = Cursor([{"id": 23}, {"id": 67, "status": "draft"},
+                        pending, {"id": 55, "certainty": "hypothesis"}])
+        with patch.object(clinical.store, "transaction", lambda: tx(valid)), \
+             patch.object(clinical.store, "audit"):
+            ident = clinical.record_diagnosis(
+                7, 11, 23, 67, "Texto adulterado", "X",
+                "excluded", hypothesis_id="55")
+        self.assertEqual(ident, 951)
+        insert = next(args for q, args in valid.calls
+                      if "INSERT INTO care_diagnosis_records" in q)
+        self.assertEqual(insert[-3:], ("F90", "Hipótese sintética", "excluded"))
+
     def test_diagnosis_requires_professional_confirmation(self):
         with self.assertRaises(ValueError):
             clinical.record_diagnosis(7, 11, 23, 67, "x")

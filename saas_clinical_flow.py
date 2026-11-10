@@ -220,15 +220,32 @@ def save_note(user_id, tenant_id, client_id, encounter_id, html, expected_revisi
 
 
 def record_diagnosis(user_id, tenant_id, client_id, encounter_id,
-                     label, code="", certainty="hypothesis"):
-    name = (label or "").strip()
-    code = (code or "").strip().upper()
-    if len(name) < 3 or len(name) > 160:
-        raise ValueError("Descreva o diagnóstico ou hipótese em 3 a 160 caracteres")
-    if code and not re.fullmatch(r"[A-Z0-9.\-]{2,32}", code):
-        raise ValueError("Código informado é inválido")
+                     label, code="", certainty="hypothesis", hypothesis_id=None):
+    """Record an original hypothesis or the justified review of an existing one.
+
+    A confirmation/exclusion must reference the latest unresolved hypothesis
+    belonging to the same clinician, tenant and patient. The original row is
+    never overwritten. The selected hypothesis determines label and code.
+    """
     if certainty not in ("hypothesis", "confirmed", "excluded"):
         raise ValueError("Classificação inválida")
+    name = (label or "").strip()
+    code = (code or "").strip().upper()
+    if certainty == "hypothesis":
+        if hypothesis_id not in (None, ""):
+            raise ValueError("Uma nova hipótese não deve referenciar outra")
+        if len(name) < 3 or len(name) > 160:
+            raise ValueError("Descreva o diagnóstico ou hipótese em 3 a 160 caracteres")
+        if code and not re.fullmatch(r"[A-Z0-9.\-]{2,32}", code):
+            raise ValueError("Código informado é inválido")
+    else:
+        try:
+            source_id = int(hypothesis_id)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Selecione uma hipótese existente para reavaliar") from exc
+        if source_id <= 0:
+            raise ValueError("Selecione uma hipótese existente para reavaliar")
+
     with store.transaction() as cur:
         care._lock_owned_client(cur, user_id, tenant_id, client_id)
         cur.execute(
@@ -241,6 +258,29 @@ def record_diagnosis(user_id, tenant_id, client_id, encounter_id,
             raise PermissionError("Atendimento não localizado")
         if item["status"] != "draft":
             raise ValueError("Registro assinado não pode ser alterado")
+        if certainty != "hypothesis":
+            cur.execute(
+                """SELECT id,label,code,certainty
+                   FROM care_diagnosis_records
+                   WHERE id=%s AND tenant_id=%s AND client_id=%s
+                     AND professional_user_id=%s FOR UPDATE""",
+                (source_id, tenant_id, client_id, user_id))
+            origin = cur.fetchone()
+            if not origin or origin["certainty"] != "hypothesis":
+                raise ValueError("A hipótese selecionada não está disponível")
+            cur.execute(
+                """SELECT id,certainty FROM care_diagnosis_records
+                   WHERE tenant_id=%s AND client_id=%s
+                     AND professional_user_id=%s AND label=%s
+                     AND code <=> %s
+                   ORDER BY recorded_at DESC,id DESC LIMIT 1 FOR UPDATE""",
+                (tenant_id, client_id, user_id,
+                 origin["label"], origin["code"]))
+            latest = cur.fetchone()
+            if not latest or latest["id"] != source_id or latest["certainty"] != "hypothesis":
+                raise ValueError("Esta hipótese já foi reavaliada. Atualize o histórico.")
+            name = origin["label"]
+            code = origin["code"] or ""
         cur.execute(
             """INSERT INTO care_diagnosis_records
                (tenant_id,client_id,professional_user_id,encounter_id,code,label,certainty)
@@ -250,7 +290,6 @@ def record_diagnosis(user_id, tenant_id, client_id, encounter_id,
         store.audit(cur, user_id, tenant_id, "care_diagnosis_recorded",
                     "care_diagnosis", ident)
         return ident
-
 
 def list_diagnoses(user_id, tenant_id, client_id, encounter_id):
     """Longitudinal clinical history, restricted to the same professional/patient.

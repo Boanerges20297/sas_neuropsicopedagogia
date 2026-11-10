@@ -1,125 +1,207 @@
 {% extends "saas_base.html" %}
-{% block title %}Atendimento de {{client.nome}} | Neuro-Diagnosis{% endblock %}
-{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-clinical.css')}}">{% endblock %}
+{% block title %}Sessão {{encounter.id}} · {{client.nome}} | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static',filename='saas-clinical.css')}}">
+<link rel="stylesheet" href="{{url_for('static',filename='saas-encounter.css')}}">
+{% endblock %}
 {% block content %}
-<div class="clinic-shell">
-  <nav class="clinic-breadcrumb"><a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span><a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><span>Sessão {{encounter.id}}</span></nav>
-  <header class="clinic-hero"><div><span class="clinic-kicker">Sessão clínica · acesso restrito</span>
-    <h1>Atendimento de {{client.nome}}</h1>
-    <p>Iniciado em {{encounter.opened_at.strftime('%d/%m/%Y %H:%M')}} · {{'Em edição' if encounter.status=='draft' else 'Registro assinado'}}</p>
-  </div><a class="clinic-button clinic-button--light" href="{{url_for('saas.clinical_assign_test',client_id=client.id,encounter_id=encounter.id)}}">+ Indicar instrumento</a></header>
-  <div class="clinic-two clinic-two--notes">
+<div class="clinic-shell clinic-workspace" data-clinic-workspace>
+  <nav class="clinic-breadcrumb" aria-label="Caminho">
+    <a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span>
+    <a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span>
+    <span aria-current="page">Sessão {{encounter.id}}</span>
+  </nav>
+  <header class="clinic-hero clinic-encounter-hero">
     <div>
-      <section class="clinic-panel">
-        <h2>Evolução e observações</h2>
-        <p class="clinic-muted">Editor clínico: títulos, negrito, itálico, listas e parágrafos. Conteúdo criptografado no banco, histórico de revisões e sem envio para serviços externos.</p>
-        <form id="clinicNoteForm" method="post" class="clinic-form" action="{{url_for('saas.clinical_save_note',client_id=client.id,encounter_id=encounter.id)}}">
-          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-          <input type="hidden" name="revision" value="{{note.revision}}">
-          <input type="hidden" name="html" id="clinicHTML">
-          <div role="toolbar" class="clinic-editor-toolbar" aria-label="Formatação das observações">
-            <button type="button" data-command="bold" aria-label="Negrito"><strong>B</strong></button>
-            <button type="button" data-command="italic" aria-label="Itálico"><em>I</em></button>
-            <button type="button" data-command="underline" aria-label="Sublinhado"><u>U</u></button>
-            <button type="button" data-command="formatBlock" data-value="h3" aria-label="Título">H</button>
-            <button type="button" data-command="insertUnorderedList" aria-label="Lista com marcadores">•</button>
-            <button type="button" data-command="insertOrderedList" aria-label="Lista numerada">1.</button>
-            <button type="button" data-command="removeFormat" aria-label="Remover formatação">Tx</button>
+      <span class="clinic-kicker">Espaço clínico · acesso restrito</span>
+      <h1>{{client.nome}}</h1>
+      <p>Sessão {{encounter.id}} · {{encounter.opened_at.strftime('%d/%m/%Y')}} · <strong>{{'Em edição' if encounter.status=='draft' else 'Registro assinado'}}</strong></p>
+    </div>
+    <div class="clinic-encounter-hero-actions">
+      <a class="clinic-button clinic-button--light" href="{{url_for('saas.patient_workspace',client_id=client.id)}}">Voltar ao paciente</a>
+    </div>
+  </header>
+
+  <div class="clinic-workspace-grid">
+    <nav class="clinic-workspace-nav" role="tablist" aria-label="Áreas do atendimento" aria-orientation="vertical">
+      <span class="clinic-nav-caption">Atendimento</span>
+      <button type="button" role="tab" id="clinicTabSession" aria-controls="clinicPaneSession" aria-selected="true" data-clinic-tab="sessao" class="clinic-nav-tab is-active"><span aria-hidden="true">✎</span> Sessão atual</button>
+      <button type="button" role="tab" id="clinicTabOverview" aria-controls="clinicPaneOverview" aria-selected="false" data-clinic-tab="resumo" class="clinic-nav-tab"><span aria-hidden="true">◫</span> Visão geral</button>
+      <button type="button" role="tab" id="clinicTabTests" aria-controls="clinicPaneTests" aria-selected="false" data-clinic-tab="instrumentos" class="clinic-nav-tab"><span aria-hidden="true">▤</span> Instrumentos <span class="clinic-nav-count">{{assigned|length}}</span></button>
+      <button type="button" role="tab" id="clinicTabHypotheses" aria-controls="clinicPaneHypotheses" aria-selected="false" data-clinic-tab="hipoteses-diagnosticas" class="clinic-nav-tab"><span aria-hidden="true">◇</span> Hipóteses <span class="clinic-nav-count">{{open_hypotheses|length}}</span></button>
+      <button type="button" role="tab" id="clinicTabHistory" aria-controls="clinicPaneHistory" aria-selected="false" data-clinic-tab="historico" class="clinic-nav-tab"><span aria-hidden="true">◷</span> Histórico</button>
+      <p class="clinic-nav-footnote">Cada sessão tem seu registro. A avaliação continua nas próximas consultas.</p>
+    </nav>
+
+    <main class="clinic-workspace-main">
+      <section id="clinicPaneSession" role="tabpanel" aria-labelledby="clinicTabSession" data-clinic-pane="sessao" class="clinic-view">
+        <div class="clinic-view-heading">
+          <div><span class="clinic-step">01 / Atendimento</span><h2>Registro da sessão</h2><p>Documente o que aconteceu hoje. A ficha e as avaliações anteriores ficam acessíveis ao lado.</p></div>
+          <span class="clinic-pill {{'clinic-pill--warn' if encounter.status=='draft' else ''}}">{{'Rascunho clínico' if encounter.status=='draft' else 'Somente leitura'}}</span>
+        </div>
+        {% if intake and intake.initial_report %}
+        <div class="clinic-context-strip"><strong>Motivo inicial</strong><p>{{intake.initial_report}}</p></div>
+        {% else %}
+        <div class="clinic-context-strip"><strong>Motivo inicial</strong><p>Sem relato inicial disponível. <a href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Consultar ficha</a></p></div>
+        {% endif %}
+        <section class="clinic-panel clinic-edit-panel">
+          <div class="clinic-panel-head"><h3>Evolução e observações</h3><span class="clinic-muted">Registro privativo · histórico de versões</span></div>
+          <form id="clinicNoteForm" method="post" class="clinic-form" action="{{url_for('saas.clinical_save_note',client_id=client.id,encounter_id=encounter.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <input type="hidden" name="revision" value="{{note.revision}}">
+            <input type="hidden" name="html" id="clinicHTML">
+            <div role="toolbar" class="clinic-editor-toolbar" aria-label="Formatação das observações">
+              <button type="button" data-command="bold" aria-label="Negrito"><strong>B</strong></button>
+              <button type="button" data-command="italic" aria-label="Itálico"><em>I</em></button>
+              <button type="button" data-command="underline" aria-label="Sublinhado"><u>U</u></button>
+              <button type="button" data-command="formatBlock" data-value="h3" aria-label="Título">H</button>
+              <button type="button" data-command="insertUnorderedList" aria-label="Lista com marcadores">•</button>
+              <button type="button" data-command="insertOrderedList" aria-label="Lista numerada">1.</button>
+              <button type="button" data-command="removeFormat" aria-label="Remover formatação">Tx</button>
+            </div>
+            <div id="clinicEditor" class="clinic-editor" contenteditable="{{'true' if encounter.status=='draft' else 'false'}}" role="textbox" aria-label="Observações clínicas" aria-multiline="true" data-placeholder="Relatos, observações, intervenções e encaminhamentos da sessão...">{{note.html|safe}}</div>
+            <div class="clinic-save-row">
+              <div>
+                <span id="clinicSaveStatus" role="status" aria-live="polite" class="clinic-save-status">Versão {{note.revision}}{% if note.created_at %} · Salva em {{note.created_at.strftime('%d/%m/%Y %H:%M')}}{% endif %}</span>
+                <small class="clinic-muted">Salvamento manual, criptografado e versionado. Alterações não salvas serão sinalizadas.</small>
+              </div>
+              <button type="submit" class="clinic-button" id="clinicSaveButton" {% if encounter.status!='draft' %}disabled{% endif %}>Salvar evolução</button>
+            </div>
+          </form>
+        </section>
+        <div class="clinic-next-context">
+          <div><strong>Qual o próximo passo?</strong><p>É possível continuar a avaliação sem emitir diagnóstico nesta sessão.</p></div>
+          <div class="clinic-action-row">
+            <button type="button" class="clinic-button clinic-button--ghost" data-clinic-open="instrumentos">Indicar instrumento</button>
+            <a href="{{url_for('saas.client_appointments',client_id=client.id)}}" class="clinic-button clinic-button--ghost">Agenda e retorno</a>
           </div>
-          <div id="clinicEditor" class="clinic-editor" contenteditable="{{'true' if encounter.status=='draft' else 'false'}}" role="textbox" aria-label="Observações clínicas" aria-multiline="true" data-placeholder="Descreva o atendimento aqui...">{{note.html|safe}}</div>
-          <div class="clinic-inline">
-            <span class="clinic-muted">Versão {{note.revision}}{% if note.created_at %} · Salva em {{note.created_at.strftime('%d/%m/%Y %H:%M')}}{% endif %}</span>
-            <button type="submit" class="clinic-button" {% if encounter.status!='draft' %}disabled{% endif %}>Salvar observações</button>
-          </div>
-        </form>
-      </section>
-      <section class="clinic-panel">
-        <h2>Instrumentos deste paciente</h2>
-        <p class="clinic-muted">Uma versão aprovada por aplicação. O mesmo questionário pode ser respondido pelo profissional ou reservado para o portal do usuário.</p>
-        <div class="clinic-list">
-          {% for item in assigned %}
-          <div class="clinic-list-item"><div><strong>{{item.title}}</strong><div class="clinic-muted">Versão {{item.version_number}} · {{'Profissional' if item.mode=='professional' else 'Portal do paciente'}} · {{item.status}}</div></div>
-          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=item.id)}}">Abrir</a></div>
-          {% else %}<p class="clinic-empty">Nenhum instrumento atribuído ainda.</p>{% endfor %}
         </div>
       </section>
-      <section class="clinic-panel" id="hipoteses-diagnosticas">
-        <h2>Hipóteses diagnósticas e acompanhamento</h2>
-        <p class="clinic-muted">A avaliação é longitudinal: uma consulta não encerra o processo diagnóstico. Registre hipóteses provisórias e acompanhe a evolução nas próximas sessões. Testes não geram diagnósticos automaticamente.</p>
+
+      <section id="clinicPaneOverview" role="tabpanel" aria-labelledby="clinicTabOverview" data-clinic-pane="resumo" class="clinic-view">
+        <div class="clinic-view-heading"><div><span class="clinic-step">02 / Contexto</span><h2>Visão geral do paciente</h2><p>O contexto necessário antes de conduzir a sessão, sem repetir formulários de cadastro.</p></div></div>
+        <div class="clinic-overview-stats">
+          <div><span>Sessões registradas</span><strong>{{patient_encounters|length}}</strong></div>
+          <div><span>Instrumentos indicados</span><strong>{{assigned|length}}</strong></div>
+          <div><span>Hipóteses em avaliação</span><strong>{{open_hypotheses|length}}</strong></div>
+        </div>
+        <section class="clinic-panel">
+          <h3>Informações iniciais</h3>
+          {% if intake %}
+          <dl class="clinic-facts">
+            <div><dt>Idade</dt><dd>{{intake.age}} anos</dd></div>
+            <div><dt>Representação</dt><dd>{{'Adulto / próprio paciente' if intake.representation_mode=='self' else 'Menor com responsável'}}</dd></div>
+            {% if intake.guardian_name %}<div><dt>Responsável informado</dt><dd>{{intake.guardian_name}}</dd></div>{% endif %}
+          </dl>
+          <h4>Relato inicial</h4><p class="clinic-report">{{intake.initial_report or 'Não informado.'}}</p>
+          {% else %}<p class="clinic-empty">Dados complementares não preenchidos.</p>{% endif %}
+          <a href="{{url_for('saas.patient_intake_details',client_id=client.id)}}" class="clinic-inline-link">Consultar ficha completa</a>
+        </section>
+        <section class="clinic-panel">
+          <h3>Andamento da avaliação</h3>
+          <p class="clinic-muted">O acompanhamento é longitudinal. Testes e observações são subsídios; não produzem diagnósticos automaticamente.</p>
+          {% if open_hypotheses %}<p>{{open_hypotheses|length}} hipótese(s) ainda em avaliação.</p>{% else %}<p class="clinic-empty">Nenhuma hipótese em avaliação registrada. Isso não impede a continuidade do atendimento.</p>{% endif %}
+          <button type="button" class="clinic-button clinic-button--ghost" data-clinic-open="hipoteses-diagnosticas">Acompanhar hipóteses</button>
+        </section>
+      </section>
+
+      <section id="clinicPaneTests" role="tabpanel" aria-labelledby="clinicTabTests" data-clinic-pane="instrumentos" class="clinic-view">
+        <div class="clinic-view-heading">
+          <div><span class="clinic-step">03 / Investigação</span><h2>Instrumentos e anamneses</h2><p>Selecione o instrumento apropriado e retorne à sessão sem perder o contexto.</p></div>
+          {% if encounter.status=='draft' %}<a class="clinic-button" href="{{url_for('saas.clinical_assign_test',client_id=client.id,encounter_id=encounter.id)}}">+ Indicar instrumento</a>{% endif %}
+        </div>
+        <section class="clinic-panel">
+          <h3>Instrumentos vinculados ao paciente</h3>
+          <div class="clinic-list">
+          {% for item in assigned %}
+            <div class="clinic-list-item"><div><strong>{{item.title}}</strong><p class="clinic-muted">Versão {{item.version_number}} · {{'Aplicação pelo profissional' if item.mode=='professional' else 'Aguardando portal do paciente'}} · {{item.status}}</p></div>
+              {% if item.mode=='professional' %}<a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=item.id)}}">Abrir instrumento</a>{% else %}<span class="clinic-pill clinic-pill--warn">Portal ainda não liberado</span>{% endif %}
+            </div>
+          {% else %}<p class="clinic-empty">Nenhum instrumento indicado. Você pode prosseguir com a entrevista clínica e adicionar um instrumento quando necessário.</p>{% endfor %}
+          </div>
+        </section>
+        <p class="clinic-muted">Os instrumentos do catálogo são versões aprovadas. A análise e a decisão são sempre do profissional habilitado.</p>
+      </section>
+
+      <section id="clinicPaneHypotheses" role="tabpanel" aria-labelledby="clinicTabHypotheses" data-clinic-pane="hipoteses-diagnosticas" class="clinic-view">
+        <div class="clinic-view-heading"><div><span class="clinic-step">04 / Avaliação longitudinal</span><h2>Hipóteses diagnósticas</h2><p>Hipóteses são provisórias e podem ser revistas em consultas posteriores. Nenhuma sessão exige um diagnóstico conclusivo.</p></div></div>
         {% if encounter.status=='draft' %}
-        <form class="clinic-form" method="post" action="{{url_for('saas.clinical_record_diagnosis',client_id=client.id,encounter_id=encounter.id)}}">
-          <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-          <input type="hidden" name="certainty" value="hypothesis">
-          <label for="diag-label">Hipótese diagnóstica em avaliação</label>
-          <input id="diag-label" name="label" maxlength="160" required>
-          <label for="diag-code">Código de classificação (opcional)</label><input id="diag-code" name="code" maxlength="32">
-          <button class="clinic-button" type="submit">Registrar hipótese diagnóstica</button>
-        </form>
-        <details class="clinic-follow-up">
-          <summary>Registrar confirmação ou descarte após avaliação</summary>
-          <p class="clinic-muted">Decisão fundamentada exclusivamente pelo profissional habilitado. O registro não encerra o acompanhamento do paciente.</p>
+        <section class="clinic-panel">
+          <h3>Registrar nova hipótese</h3>
           <form class="clinic-form" method="post" action="{{url_for('saas.clinical_record_diagnosis',client_id=client.id,encounter_id=encounter.id)}}">
             <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-            <label for="diag-review-label">Condição reavaliada</label><input id="diag-review-label" name="label" maxlength="160" required>
-            <div class="clinic-inline">
-              <div><label for="diag-review-code">Código (opcional)</label><input id="diag-review-code" name="code" maxlength="32"></div>
-              <div><label for="diag-review-certainty">Decisão profissional</label><select id="diag-review-certainty" name="certainty" required><option value="confirmed">Confirmado</option><option value="excluded">Descartado</option></select></div>
-            </div>
+            <input type="hidden" name="certainty" value="hypothesis">
+            <label for="diag-label">Hipótese diagnóstica em avaliação</label>
+            <input id="diag-label" name="label" maxlength="160" required placeholder="Descreva a hipótese clínica">
+            <label for="diag-code">Código de classificação (opcional)</label>
+            <input id="diag-code" name="code" maxlength="32" placeholder="Ex.: código aplicável">
+            <button class="clinic-button" type="submit">Registrar hipótese diagnóstica</button>
+          </form>
+        </section>
+        {% if open_hypotheses %}
+        <section class="clinic-panel">
+          <h3>Reavaliar hipótese existente</h3>
+          <p class="clinic-muted">Confirmação ou descarte exige escolha explícita de uma hipótese já registrada. A decisão será registrada no histórico, sem apagar o registro anterior.</p>
+          <form class="clinic-form" method="post" action="{{url_for('saas.clinical_record_diagnosis',client_id=client.id,encounter_id=encounter.id)}}">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <label for="diag-review-id">Hipótese em acompanhamento</label>
+            <select id="diag-review-id" name="hypothesis_id" required>
+              <option value="">Selecione uma hipótese</option>
+              {% for record in open_hypotheses %}<option value="{{record.id}}">{{record.label}}{% if record.code %} ({{record.code}}){% endif %}</option>{% endfor %}
+            </select>
+            <label for="diag-review-certainty">Decisão profissional</label>
+            <select id="diag-review-certainty" name="certainty" required><option value="">Selecione uma decisão</option><option value="confirmed">Confirmar hipótese</option><option value="excluded">Descartar hipótese</option></select>
             <button class="clinic-button clinic-button--ghost" type="submit">Registrar decisão clínica</button>
           </form>
-        </details>
+        </section>
         {% endif %}
-        <h3>Histórico de hipóteses e decisões</h3>
-        <div class="clinic-list">
+        {% endif %}
+        <section class="clinic-panel">
+          <h3>Histórico de hipóteses e decisões</h3>
+          <div class="clinic-list">
           {% for record in diagnoses %}
-          <div class="clinic-list-item"><div><strong>{{record.label}}</strong>
-            <div class="clinic-muted"><span class="clinic-pill {{'clinic-pill--warn' if record.certainty=='hypothesis' else 'clinic-pill--gray' if record.certainty=='excluded' else ''}}">{{'Hipótese em avaliação' if record.certainty=='hypothesis' else 'Confirmado pelo profissional' if record.certainty=='confirmed' else 'Descartado'}}</span> · {{record.code or 'Sem código'}} · {{record.recorded_at.strftime('%d/%m/%Y')}} · <a href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=record.encounter_id)}}">Sessão {{record.encounter_id}}</a></div>
-          </div></div>
+            <div class="clinic-list-item"><div><strong>{{record.label}}</strong>
+            <p class="clinic-muted"><span class="clinic-pill {{'clinic-pill--warn' if record.certainty=='hypothesis' else 'clinic-pill--gray' if record.certainty=='excluded' else ''}}">{{'Hipótese em avaliação' if record.certainty=='hypothesis' else 'Confirmado pelo profissional' if record.certainty=='confirmed' else 'Descartado'}}</span>
+            · {{record.code or 'Sem código'}} · {{record.recorded_at.strftime('%d/%m/%Y')}} · <a href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=record.encounter_id)}}">Sessão {{record.encounter_id}}</a></p></div></div>
           {% else %}<p class="clinic-empty">Nenhuma hipótese registrada. O acompanhamento pode prosseguir sem diagnóstico definido.</p>{% endfor %}
-        </div>
+          </div>
+        </section>
       </section>
-    </div>
-    <aside>
-      <section class="clinic-panel">
-        <h2>Dados iniciais</h2>
-        <p><strong>Paciente:</strong> {{client.nome}}</p>
-        {% if intake %}
-        <p><strong>Idade:</strong> {{intake.age}} anos</p>
-        <p><strong>Vínculo:</strong> {{'Adulto' if intake.representation_mode=='self' else 'Menor com responsável'}}</p>
-        {% if intake.guardian_name %}<p><strong>Responsável informado:</strong> {{intake.guardian_name}}</p>{% endif %}
-        <h3>Relato inicial</h3>
-        <p style="white-space:pre-wrap">{{intake.initial_report or 'Não informado'}}</p>
-        {% else %}<p class="clinic-muted">Cadastro anterior: dados complementares ainda não preenchidos.</p>{% endif %}
-        <a href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Ver ficha completa</a>
-      </section>
-      <section class="clinic-panel">
-        <h2>Histórico de atendimentos</h2>
-        <p class="clinic-muted">Evoluções de cada sessão permanecem separadas, vinculadas ao mesmo paciente e profissional.</p>
-        <div class="clinic-list">
+
+      <section id="clinicPaneHistory" role="tabpanel" aria-labelledby="clinicTabHistory" data-clinic-pane="historico" class="clinic-view">
+        <div class="clinic-view-heading"><div><span class="clinic-step">05 / Continuidade</span><h2>Histórico de atendimentos</h2><p>Consulte as sessões anteriores sem misturá-las ao registro clínico de hoje.</p></div></div>
+        <section class="clinic-panel">
+          <div class="clinic-list">
           {% for session in patient_encounters %}
-          <div class="clinic-list-item"><div><strong>{{session.opened_at.strftime('%d/%m/%Y')}}</strong><div class="clinic-muted">Sessão {{session.id}}{{' · atual' if session.id==encounter.id else ''}}</div></div>
-          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=session.id)}}">Ver evolução</a></div>
-          {% else %}<p class="clinic-empty">Sem atendimentos anteriores.</p>{% endfor %}
-        </div>
+            <div class="clinic-list-item"><div><strong>Sessão {{session.id}}</strong>
+              <p class="clinic-muted">{{session.opened_at.strftime('%d/%m/%Y')}} · {{'Sessão atual' if session.id==encounter.id else 'Atendimento anterior'}} · {{'Em edição' if session.status=='draft' else 'Registro assinado' if session.status else 'Registro'}}</p></div>
+              {% if session.id==encounter.id %}<span class="clinic-pill">Atual</span>{% else %}<a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_encounter',client_id=client.id,encounter_id=session.id)}}">Ver evolução</a>{% endif %}
+            </div>
+          {% else %}<p class="clinic-empty">Nenhuma sessão registrada.</p>{% endfor %}
+          </div>
+        </section>
       </section>
-      <section class="clinic-panel">
-        <h2>Próximos passos</h2>
-        <div class="clinic-list">
-          <a class="clinic-button" href="{{url_for('saas.clinical_assign_test',client_id=client.id,encounter_id=encounter.id)}}">Selecionar teste ou anamnese</a>
-          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.client_appointments',client_id=client.id)}}">Ver agenda e histórico</a>
-          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_dashboard')}}">Voltar aos indicadores</a>
-        </div>
+    </main>
+
+    <aside class="clinic-context-sidebar" aria-label="Contexto do paciente">
+      <section class="clinic-context-card">
+        <span class="clinic-context-caption">Contexto permanente</span>
+        <h3>{{client.nome}}</h3>
+        {% if intake %}<p class="clinic-muted">{{intake.age}} anos · {{'Adulto' if intake.representation_mode=='self' else 'Menor com responsável'}}</p>{% endif %}
+        <div class="clinic-context-data"><span>Atendimento atual</span><strong>Sessão {{encounter.id}}</strong></div>
+        <div class="clinic-context-data"><span>Hipóteses em avaliação</span><strong>{{open_hypotheses|length}}</strong></div>
+        <div class="clinic-context-data"><span>Instrumentos</span><strong>{{assigned|length}}</strong></div>
       </section>
+      <section class="clinic-context-card">
+        <h3>Próximas ações</h3>
+        <button type="button" class="clinic-context-action" data-clinic-open="instrumentos">Ver instrumentos</button>
+        <button type="button" class="clinic-context-action" data-clinic-open="hipoteses-diagnosticas">Acompanhar hipóteses</button>
+        <a class="clinic-context-action" href="{{url_for('saas.client_appointments',client_id=client.id)}}">Agenda e retorno</a>
+        <a class="clinic-context-action" href="{{url_for('saas.patient_intake_details',client_id=client.id)}}">Ficha do paciente</a>
+      </section>
+      <p class="clinic-context-privacy">Prontuário restrito ao profissional responsável. Navegação contextual sem acesso a registros de outros profissionais.</p>
     </aside>
   </div>
 </div>
-<script>
-(()=>{const editor=document.getElementById('clinicEditor'),form=document.getElementById('clinicNoteForm'),output=document.getElementById('clinicHTML');
-if(!editor||!form||editor.getAttribute('contenteditable')!=='true')return;
-document.querySelectorAll('#clinicNoteForm [data-command]').forEach(button=>button.addEventListener('click',()=>{
-  editor.focus();document.execCommand(button.dataset.command,false,button.dataset.value||null);
-}));
-form.addEventListener('submit',()=>{output.value=editor.innerHTML;});
-})();
-</script>
+<script defer src="{{url_for('static',filename='saas-encounter.js')}}"></script>
 {% endblock %}

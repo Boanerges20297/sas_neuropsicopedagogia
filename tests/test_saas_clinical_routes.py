@@ -66,6 +66,53 @@ class ClinicalHTTPTests(unittest.TestCase):
         records.assert_called_once_with(7, 11, 21, 67)
         encounter_list.assert_called_once_with(7, 11, client_id=21, limit=20)
 
+    def test_contextual_clinical_workspace_and_pending_choices(self):
+        from datetime import datetime
+        date_value = datetime(2026, 11, 10, 10, 30)
+        hypothesis = {"id": 8, "label": "Hipótese sintética", "code": None,
+                      "certainty": "hypothesis", "encounter_id": 67,
+                      "recorded_at": date_value}
+        confirmed = {"id": 9, "label": "Hipótese já reavaliada", "code": None,
+                     "certainty": "confirmed", "encounter_id": 67,
+                     "recorded_at": date_value}
+        with patch.object(routes.clinical, "scoped_encounter", return_value={
+                "id": 67, "status": "draft", "opened_at": date_value}), \
+             patch.object(routes.clinical, "latest_note", return_value={
+                 "html": "", "revision": 0, "created_at": None}), \
+             patch.object(routes.clinical, "list_diagnoses",
+                          return_value=[confirmed, hypothesis]), \
+             patch.object(routes.clinical, "list_encounters", return_value=[]), \
+             patch.object(routes.intake, "scoped_summary", return_value=None), \
+             patch.object(routes.assessments, "list_for_patient", return_value=[]):
+            result = self.client.get("/saas/pacientes/21/atendimentos/67")
+        self.assertEqual(result.status_code, 200)
+        html = result.get_data(as_text=True)
+        self.assertIn('data-clinic-tab="sessao"', html)
+        self.assertIn('data-clinic-tab="instrumentos"', html)
+        self.assertIn('name="hypothesis_id"', html)
+        self.assertIn('<option value="8">', html)
+        self.assertNotIn('<option value="9">', html)
+        self.assertIn("saas-encounter.js", html)
+        self.assertIn("saas-encounter.css", html)
+
+    def test_note_json_save_returns_revision_or_conflict_without_redirect(self):
+        uri = "/saas/pacientes/21/atendimentos/67/nota"
+        payload = {"csrf_token": "clinical-csrf-test", "html": "<p>Teste</p>",
+                   "revision": "4"}
+        with patch.object(routes.clinical, "save_note", return_value=5) as save:
+            result = self.client.post(uri, data=payload,
+                                      headers={"Accept": "application/json"})
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.json, {"ok": True, "revision": 5})
+        self.assertEqual(result.headers.get("Cache-Control"), "private, no-store")
+        save.assert_called_once_with(7, 11, 21, 67, "<p>Teste</p>", "4")
+        with patch.object(routes.clinical, "save_note",
+                          side_effect=ValueError("Este atendimento mudou em outra aba.")):
+            conflict = self.client.post(uri, data=payload,
+                                        headers={"Accept": "application/json"})
+        self.assertEqual(conflict.status_code, 409)
+        self.assertFalse(conflict.json["ok"])
+
     def test_dashboard_renders_filters_and_own_metrics(self):
         stats = {"period": "month", "anchor": "2026-11",
                  "total": 3, "unique_clients": 2, "tests": 1, "tests_answered": 1,
