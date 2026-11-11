@@ -30,7 +30,15 @@ http:
       tls:
         certResolver: letsencrypt
       service: neuro-bluegreen
-      middlewares: [neuro-auth-limit, neuro-deploy-marker]
+      middlewares: [neuro-auth-limit, neuro-auth-rps, neuro-auth-inflight, neuro-ip-inflight, neuro-global-inflight, neuro-body-limit, neuro-deploy-marker]
+    neuro-bluegreen-probes:
+      rule: "(Host(\`neuro-diagnosis.tech\`) || Host(\`www.neuro-diagnosis.tech\`)) && (Path(\`/saas/saude\`) || Path(\`/health/ready\`))"
+      entryPoints: [websecure]
+      priority: 2200
+      tls:
+        certResolver: letsencrypt
+      service: neuro-bluegreen
+      middlewares: [neuro-health-limit, neuro-health-rps, neuro-ip-inflight, neuro-global-inflight, neuro-deploy-marker]
     neuro-bluegreen:
       rule: "Host(\`neuro-diagnosis.tech\`) || Host(\`www.neuro-diagnosis.tech\`)"
       entryPoints: [websecure]
@@ -38,7 +46,7 @@ http:
       tls:
         certResolver: letsencrypt
       service: neuro-bluegreen
-      middlewares: [neuro-general-limit, neuro-deploy-marker]
+      middlewares: [neuro-general-limit, neuro-general-rps, neuro-ip-inflight, neuro-global-inflight, neuro-body-limit, neuro-deploy-marker]
   middlewares:
     neuro-general-limit:
       rateLimit:
@@ -56,6 +64,62 @@ http:
         sourceCriterion:
           ipStrategy:
             ipv6Subnet: 64
+    # Per-origin token buckets: 429 only while the bucket is exhausted.
+    # A 10 req/s allowance + 24 burst helps real pages load on shared NAT.
+    # Existing per-minute ceilings remain in force.
+    neuro-general-rps:
+      rateLimit:
+        average: 10
+        period: 1s
+        burst: 24
+        sourceCriterion:
+          ipStrategy:
+            ipv6Subnet: 64
+    neuro-auth-rps:
+      rateLimit:
+        average: 3
+        period: 1s
+        burst: 8
+        sourceCriterion:
+          ipStrategy:
+            ipv6Subnet: 64
+    neuro-health-rps:
+      rateLimit:
+        average: 2
+        period: 1s
+        burst: 5
+        sourceCriterion:
+          ipStrategy:
+            ipv6Subnet: 64
+    # Concurrent connection ceilings prevent slow/expensive requests from
+    # monopolizing the Flask workers. No X-Forwarded-For trust is assumed.
+    neuro-global-inflight:
+      inFlightReq:
+        amount: 48
+    neuro-ip-inflight:
+      inFlightReq:
+        amount: 10
+        sourceCriterion:
+          ipStrategy:
+            ipv6Subnet: 64
+    neuro-auth-inflight:
+      inFlightReq:
+        amount: 4
+        sourceCriterion:
+          ipStrategy:
+            ipv6Subnet: 64
+    neuro-health-limit:
+      rateLimit:
+        average: 30
+        period: 1m
+        burst: 6
+        sourceCriterion:
+          ipStrategy:
+            ipv6Subnet: 64
+    neuro-body-limit:
+      buffering:
+        maxRequestBodyBytes: 2097152
+        memRequestBodyBytes: 2097152
     neuro-deploy-marker:
       headers:
         customResponseHeaders:

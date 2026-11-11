@@ -8,11 +8,26 @@ from datetime import datetime
 from uuid import uuid4
 import os
 import re
+import hmac
+import hashlib
 
 import pymysql
 from flask_login import UserMixin
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+def session_auth_proof(user_id, password_hash):
+    """Opaque, user-bound proof; password changes revoke all prior sessions.
+
+    Never stores or exposes the password hash in the session cookie.
+    """
+    secret = os.getenv("SECRET_KEY", "")
+    if not isinstance(password_hash, str) or not password_hash or len(secret) < 32:
+        return None
+    material = (b"neuro-saas-session-v1:" + str(int(user_id)).encode("ascii") +
+                b":" + password_hash.encode("utf-8"))
+    return hmac.new(secret.encode("utf-8"), material, hashlib.sha256).hexdigest()
 
 
 def connect():
@@ -61,6 +76,7 @@ class SaaSUser(UserMixin):
         self.role = row["global_role"]
         self.active = bool(row["active"])
         self.must_change_password = bool(row["must_change_password"])
+        self.auth_stamp = session_auth_proof(self.id, row.get("password_hash"))
         self.mfa_required = self.is_admin() or bool(row.get("mfa_required", False))
         self.mfa_enabled = bool(row.get("mfa_enabled", False))
         self.admin_rights = (
@@ -88,7 +104,7 @@ def get_user(user_id):
     except (ValueError, TypeError):
         return None
     row = one(
-        """SELECT u.id,u.nome,u.email,u.global_role,u.active,u.must_change_password,
+        """SELECT u.id,u.nome,u.email,u.global_role,u.active,u.must_change_password,u.password_hash,
                   COALESCE(f.required,0) AS mfa_required,
                   (f.enabled_at IS NOT NULL) AS mfa_enabled,
                   r.user_id AS rights_id,r.allow_accounts,r.allow_professionals,
@@ -100,7 +116,9 @@ def get_user(user_id):
            LEFT JOIN saas_mfa_factors f ON f.user_id=u.id
            LEFT JOIN saas_account_rights r ON r.user_id=u.id WHERE u.id=%s""",
         (uid,))
-    return SaaSUser(row) if row and row["active"] and not row["email_verification_pending"] else None
+    # Production identities must always have a credential-bound session proof.
+    return (SaaSUser(row) if row and row["active"] and row.get("password_hash")
+            and not row["email_verification_pending"] else None)
 
 
 def user_by_email(email):

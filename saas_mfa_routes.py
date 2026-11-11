@@ -1,6 +1,7 @@
 """MFA enrollment and login challenge for the SaaS identity boundary."""
 import secrets
 import time
+from hmac import compare_digest
 
 from flask import abort, flash, make_response, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user
@@ -38,7 +39,13 @@ def register_mfa_routes(bp):
                 uid, request.form.get("code", "").replace(" ", "").strip())
             if successful:
                 user = store.get_user(uid)
-                if user is None:
+                # A TOTP supplied after a password reset cannot complete a
+                # login whose password phase happened under the old credential.
+                pending_proof = session.get("saas_mfa_pending_proof")
+                current_proof = getattr(user, "auth_stamp", None) if user else None
+                if (not isinstance(pending_proof, str)
+                        or not isinstance(current_proof, str)
+                        or not compare_digest(pending_proof, current_proof)):
                     session.clear()
                     abort(403)
                 save_trust = (
@@ -50,6 +57,7 @@ def register_mfa_routes(bp):
                 session.clear()
                 login_user(user, fresh=True)
                 session["saas_auth"] = True
+                session["saas_auth_proof"] = user.auth_stamp
                 session["saas_mfa_passed"] = True
                 if not save_trust:
                     # Temporary device: short idle expiry and no remembered token.

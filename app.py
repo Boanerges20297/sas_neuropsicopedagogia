@@ -19,6 +19,52 @@ secret_key = os.getenv('SECRET_KEY')
 if not secret_key or len(secret_key) < 32 or secret_key == 'sua-chave-secreta-super-segura-aqui':
     raise RuntimeError('Configure SECRET_KEY segura no ambiente (minimo 32 caracteres)')
 app.config['SECRET_KEY'] = secret_key
+
+# Independent project-scoped IP bans (SQLite on Neuro's existing data volume).
+# Traefik remains the first line of defense; this catches recurrent abuse.
+import saas_ip_ban as _neuro_ip_ban
+
+
+@app.before_request
+def neuro_ip_ban_gate():
+    return _neuro_ip_ban.enforce()
+
+
+@app.after_request
+def neuro_ip_ban_observe(response):
+    return _neuro_ip_ban.track_response(response)
+# SaaS production runs only behind HTTPS. Never emit a session bearer cookie
+# without Secure/SameSite; local HTTP development remains unaffected.
+if os.getenv("SAAS_PRIMARY", "false").lower() == "true":
+    app.config.update(
+        MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_SECURE=True,
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
+    )
+
+
+@app.after_request
+def saas_security_response_headers(response):
+    if os.getenv("SAAS_PRIMARY", "false").lower() != "true":
+        return response
+    response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    # Avoid blocking legacy inline JS during phased CSP adoption. These
+    # directives already deny clickjacking, base-tag and object injection.
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
+    if request.path.startswith("/saas/") and not response.headers.get("Cache-Control"):
+        response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # type: ignore

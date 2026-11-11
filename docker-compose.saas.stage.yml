@@ -25,6 +25,13 @@ services:
       DEBUG_MODE: "false"
       HOME: /tmp
       SAAS_PRIMARY: "true"
+      # Bans are scoped to Neuro and shared by Gunicorn workers through
+      # its pre-existing writable volume; never store raw client addresses.
+      NEURO_IP_BAN_ENABLED: "${NEURO_IP_BAN_ENABLED:-true}"
+      NEURO_IP_BAN_DB: /var/lib/neuro-diagnosis/neuro-ip-bans.sqlite3
+      # Current Docker host gateway on Neuro's isolated 172.18 network.
+      # Trust no external XFF: only this exact one-host proxy hop.
+      NEURO_IP_BAN_TRUSTED_PROXIES: "${NEURO_IP_BAN_TRUSTED_PROXIES:-172.18.0.1/32}"
     volumes:
       - neuro_data:/var/lib/neuro-diagnosis
       - /etc/neuro-diagnosis/keys:/run/neuro-keys:ro

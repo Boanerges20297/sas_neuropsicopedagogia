@@ -45,8 +45,10 @@ class RunnerSecurityContractTests(unittest.TestCase):
 
     def test_health_gate_checks_new_email_schema(self):
         source = (ROOT / "saas_routes.py").read_text(encoding="utf-8")
-        self.assertIn('store.one("SELECT 1 FROM saas_email_verifications LIMIT 1")', source)
-        self.assertIn('store.one("SELECT 1 FROM saas_email_challenges LIMIT 1")', source)
+        self.assertIn("'SELECT 1 FROM saas_email_verifications LIMIT 1'", source)
+        self.assertIn("'SELECT 1 FROM saas_email_challenges LIMIT 1'", source)
+        self.assertIn("for query in _HEALTH_READINESS_QUERIES:", source)
+        self.assertIn("store.one(query)", source)
 
     def test_public_route_has_bounded_retries_before_rollback(self):
         deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(encoding="utf-8")

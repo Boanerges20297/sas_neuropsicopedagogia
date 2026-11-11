@@ -80,6 +80,7 @@ class TrustedDeviceLoginTests(unittest.TestCase):
         with self.client.session_transaction() as sess:
             sess.clear()
             sess["saas_mfa_pending"] = 764
+            sess["saas_mfa_pending_proof"] = self.user.auth_stamp
             sess["saas_mfa_is_admin"] = True
             sess["saas_mfa_pending_at"] = time.time()
             sess["saas_mfa_attempts"] = 0
@@ -99,6 +100,7 @@ class TrustedDeviceLoginTests(unittest.TestCase):
         with self.client.session_transaction() as sess:
             sess.clear()
             sess["saas_mfa_pending"] = 764
+            sess["saas_mfa_pending_proof"] = self.user.auth_stamp
             sess["saas_mfa_is_admin"] = True
             sess["saas_mfa_pending_at"] = time.time()
             sess["saas_mfa_attempts"] = 0
@@ -119,6 +121,7 @@ class TrustedDeviceLoginTests(unittest.TestCase):
             sess["_user_id"] = "saas:764"
             sess["_fresh"] = True
             sess["saas_auth"] = True
+            sess["saas_auth_proof"] = self.user.auth_stamp
             sess["saas_mfa_passed"] = True
             sess["saas_temporary"] = True
             sess["saas_last_seen"] = time.time() - 16 * 60
@@ -135,6 +138,7 @@ class TrustedDeviceLoginTests(unittest.TestCase):
             sess["_user_id"] = "saas:764"
             sess["_fresh"] = True
             sess["saas_auth"] = True
+            sess["saas_auth_proof"] = self.user.auth_stamp
             sess["saas_csrf"] = "first-enrollment-csrf"
         with patch.object(mfa,"finish_enrollment",return_value=["recovery-placeholder"]), \
              patch.object(mfa,"trust_device",return_value="first-setup-token") as trusted, \
@@ -172,6 +176,7 @@ class TrustedDeviceLoginTests(unittest.TestCase):
             sess["_user_id"] = "saas:764"
             sess["_fresh"] = True
             sess["saas_auth"] = True
+            sess["saas_auth_proof"] = self.user.auth_stamp
             sess["saas_csrf"] = "manual-totp-csrf"
         self.user.mfa_enabled = False
         with patch.object(mfa,"enabled",return_value=False), \

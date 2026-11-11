@@ -12,6 +12,9 @@ class EmailSchemaReadinessTests(unittest.TestCase):
         self.old_testing = app.config["TESTING"]
         app.config["TESTING"] = True
         self.client = app.test_client()
+        # Each schema failure scenario must bypass a previous readiness result.
+        import saas_routes
+        saas_routes._health_cache.update(until=0.0, ok=False)
 
     def tearDown(self):
         app.config["TESTING"] = self.old_testing

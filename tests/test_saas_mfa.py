@@ -53,7 +53,8 @@ class FirstAccessFlowTests(unittest.TestCase):
         self.user=store.SaaSUser({
             "id":37,"nome":"Teste","email":"mfa@example.invalid",
             "global_role":"professional","active":True,
-            "must_change_password":False
+            "must_change_password":False,
+            "password_hash":"synthetic-test-password-hash"
         })
         self.get_user=patch.object(store,"get_user",return_value=self.user)
         self.get_user.start()
@@ -65,6 +66,7 @@ class FirstAccessFlowTests(unittest.TestCase):
             s["_user_id"]="saas:37"
             s["_fresh"]=True
             s["saas_auth"]=True
+            s["saas_auth_proof"]=self.user.auth_stamp
             s["saas_csrf"]="mfa-flow-csrf"
 
     def tearDown(self):
@@ -170,6 +172,7 @@ class FirstAccessFlowTests(unittest.TestCase):
         with self.client.session_transaction() as s:
             s.clear()
             s["saas_mfa_pending"]=37
+            s["saas_mfa_pending_proof"]=self.user.auth_stamp
             s["saas_mfa_pending_at"]=__import__("time").time()
             s["saas_mfa_attempts"]=0
             s["saas_csrf"]="confirm-csrf"
@@ -208,6 +211,7 @@ class FirstAccessFlowTests(unittest.TestCase):
         with self.client.session_transaction() as s:
             s.clear()
             s["saas_mfa_pending"] = 37
+            s["saas_mfa_pending_proof"] = self.user.auth_stamp
             s["saas_mfa_pending_at"] = __import__("time").time()
             s["saas_mfa_attempts"] = 0
             s["saas_csrf"] = "confirm-csrf"

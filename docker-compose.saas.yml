@@ -25,6 +25,13 @@ services:
       DEBUG_MODE: "false"
       HOME: /tmp
       SAAS_PRIMARY: "true"
+      # Bans are scoped to Neuro and shared by Gunicorn workers through
+      # its pre-existing writable volume; never store raw client addresses.
+      NEURO_IP_BAN_ENABLED: "${NEURO_IP_BAN_ENABLED:-true}"
+      NEURO_IP_BAN_DB: /var/lib/neuro-diagnosis/neuro-ip-bans.sqlite3
+      # Current Docker host gateway on Neuro's isolated 172.18 network.
+      # Trust no external XFF: only this exact one-host proxy hop.
+      NEURO_IP_BAN_TRUSTED_PROXIES: "${NEURO_IP_BAN_TRUSTED_PROXIES:-172.18.0.1/32}"
     volumes:
       - neuro_data:/var/lib/neuro-diagnosis
       - /etc/neuro-diagnosis/keys:/run/neuro-keys:ro
@@ -42,7 +49,7 @@ services:
       # Project-scoped rate limits, not global Traefik configuration.
       # Sources are remote addresses until a verified CDN/trusted-proxy
       # configuration is deployed at the host edge; never trust arbitrary XFF.
-      - traefik.http.routers.neuro-flask.middlewares=neuro-general-limit
+      - traefik.http.routers.neuro-flask.middlewares=neuro-general-limit,neuro-general-rps,neuro-ip-inflight,neuro-global-inflight,neuro-body-limit
       - traefik.http.middlewares.neuro-general-limit.ratelimit.average=120
       - traefik.http.middlewares.neuro-general-limit.ratelimit.period=1m
       - traefik.http.middlewares.neuro-general-limit.ratelimit.burst=60
@@ -54,11 +61,44 @@ services:
       - traefik.http.routers.neuro-auth.tls.certresolver=letsencrypt
       - traefik.http.routers.neuro-auth.priority=1100
       - traefik.http.routers.neuro-auth.service=neuro-flask
-      - traefik.http.routers.neuro-auth.middlewares=neuro-auth-limit
+      - traefik.http.routers.neuro-auth.middlewares=neuro-auth-limit,neuro-auth-rps,neuro-auth-inflight,neuro-ip-inflight,neuro-global-inflight,neuro-body-limit
       - traefik.http.middlewares.neuro-auth-limit.ratelimit.average=30
       - traefik.http.middlewares.neuro-auth-limit.ratelimit.period=1m
       - traefik.http.middlewares.neuro-auth-limit.ratelimit.burst=15
       - traefik.http.middlewares.neuro-auth-limit.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
+      # Per-IP second-scale throttles, layered with minute-scale limits.
+      - traefik.http.middlewares.neuro-general-rps.ratelimit.average=10
+      - traefik.http.middlewares.neuro-general-rps.ratelimit.period=1s
+      - traefik.http.middlewares.neuro-general-rps.ratelimit.burst=24
+      - traefik.http.middlewares.neuro-general-rps.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
+      - traefik.http.middlewares.neuro-auth-rps.ratelimit.average=3
+      - traefik.http.middlewares.neuro-auth-rps.ratelimit.period=1s
+      - traefik.http.middlewares.neuro-auth-rps.ratelimit.burst=8
+      - traefik.http.middlewares.neuro-auth-rps.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
+      - traefik.http.middlewares.neuro-health-rps.ratelimit.average=2
+      - traefik.http.middlewares.neuro-health-rps.ratelimit.period=1s
+      - traefik.http.middlewares.neuro-health-rps.ratelimit.burst=5
+      - traefik.http.middlewares.neuro-health-rps.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
+      # Docker-provider equivalent for isolated fallback; file provider owns
+      # the production blue/green route and must be reconciled separately.
+      - traefik.http.middlewares.neuro-global-inflight.inflightreq.amount=48
+      - traefik.http.middlewares.neuro-ip-inflight.inflightreq.amount=10
+      - traefik.http.middlewares.neuro-ip-inflight.inflightreq.sourcecriterion.ipstrategy.ipv6subnet=64
+      - traefik.http.middlewares.neuro-auth-inflight.inflightreq.amount=4
+      - traefik.http.middlewares.neuro-auth-inflight.inflightreq.sourcecriterion.ipstrategy.ipv6subnet=64
+      - traefik.http.middlewares.neuro-body-limit.buffering.maxrequestbodybytes=2097152
+      - traefik.http.middlewares.neuro-body-limit.buffering.memrequestbodybytes=2097152
+      - traefik.http.routers.neuro-probes.rule=(Host(`neuro-diagnosis.tech`) || Host(`www.neuro-diagnosis.tech`)) && (Path(`/saas/saude`) || Path(`/health/ready`))
+      - traefik.http.routers.neuro-probes.entrypoints=websecure
+      - traefik.http.routers.neuro-probes.tls=true
+      - traefik.http.routers.neuro-probes.tls.certresolver=letsencrypt
+      - traefik.http.routers.neuro-probes.priority=1200
+      - traefik.http.routers.neuro-probes.service=neuro-flask
+      - traefik.http.routers.neuro-probes.middlewares=neuro-health-limit,neuro-health-rps,neuro-ip-inflight,neuro-global-inflight
+      - traefik.http.middlewares.neuro-health-limit.ratelimit.average=30
+      - traefik.http.middlewares.neuro-health-limit.ratelimit.period=1m
+      - traefik.http.middlewares.neuro-health-limit.ratelimit.burst=6
+      - traefik.http.middlewares.neuro-health-limit.ratelimit.sourcecriterion.ipstrategy.ipv6subnet=64
       - traefik.http.services.neuro-flask.loadbalancer.server.port=8000
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; [urllib.request.urlopen('http://127.0.0.1:8000'+path,timeout=3).close() for path in ('/health/ready','/saas/saude')]"]

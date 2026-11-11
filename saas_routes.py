@@ -7,11 +7,35 @@ from datetime import timedelta
 import os
 from functools import wraps
 from hmac import compare_digest
+from threading import Lock
+
+# Never query seventeen readiness tables for each anonymous request.
+_HEALTH_READINESS_QUERIES = (
+    'SELECT 1 AS ok',
+    'SELECT 1 FROM neurocore_evidence_reviews LIMIT 1',
+    'SELECT 1 FROM care_appointments LIMIT 1',
+    'SELECT 1 FROM care_schedule_slots LIMIT 1',
+    'SELECT 1 FROM care_encounters LIMIT 1',
+    'SELECT 1 FROM care_portal_grants LIMIT 1',
+    'SELECT 1 FROM care_patient_intakes LIMIT 1',
+    'SELECT 1 FROM care_portal_self_links LIMIT 1',
+    'SELECT 1 FROM care_portal_self_grants LIMIT 1',
+    'SELECT 1 FROM care_portal_consents LIMIT 1',
+    'SELECT 1 FROM care_portal_client_activations LIMIT 1',
+    'SELECT 1 FROM saas_account_rights LIMIT 1',
+    'SELECT 1 FROM saas_mfa_factors LIMIT 1',
+    'SELECT 1 FROM saas_mfa_recovery_codes LIMIT 1',
+    'SELECT 1 FROM saas_mfa_trusted_devices LIMIT 1',
+    'SELECT 1 FROM saas_email_verifications LIMIT 1',
+    'SELECT 1 FROM saas_email_challenges LIMIT 1'
+)
+_health_lock = Lock()
+_health_cache = {"until": 0.0, "ok": False}
 import secrets
 import time
 
 import pymysql
-from flask import Blueprint,abort,flash,redirect,render_template,request,session,url_for
+from flask import Blueprint,abort,current_app,flash,redirect,render_template,request,session,url_for
 from flask_login import current_user,login_required,login_user,logout_user
 
 import saas_store as store
@@ -59,6 +83,17 @@ def guard_saas_identity():
         return None
     if current_user.is_authenticated and not is_saas_account():
         abort(403)
+    if is_saas_account():
+        proof = getattr(current_user, "auth_stamp", None)
+        # All production MySQL principals must have the password-bound stamp.
+        # Synthetic legacy fixtures in TESTING may omit a password_hash.
+        valid_fixture = current_app.config.get("TESTING") and proof is None
+        if not valid_fixture and (not isinstance(proof, str) or
+                not secrets.compare_digest(
+                    session.get("saas_auth_proof", ""), proof)):
+            logout_user()
+            session.clear()
+            return redirect(url_for("saas.login"))
     if is_saas_account() and session.get("saas_temporary"):
         # Temporary devices never gain a 30-day trust token.
         # Expire their browser session after 15 minutes without activity.
@@ -222,6 +257,8 @@ def login():
                     # Signed pending session, with no authenticated user yet.
                     session.clear()
                     session["saas_mfa_pending"] = int(row["id"])
+                    session["saas_mfa_pending_proof"] = store.session_auth_proof(
+                        int(row["id"]), row["password_hash"])
                     session["saas_mfa_is_admin"] = row["global_role"] in ("admin", "superadmin")
                     session["saas_mfa_pending_at"] = time.time()
                     session["saas_mfa_attempts"] = 0
@@ -231,6 +268,7 @@ def login():
             session.clear()
             login_user(user,fresh=True)
             session["saas_auth"]=True
+            session["saas_auth_proof"] = user.auth_stamp
             if trusted_device:
                 # The trusted-device cookie was verified against the MFA DB.
                 session["saas_mfa_passed"]=True
@@ -241,6 +279,8 @@ def login():
             session["saas_csrf"]=secrets.token_urlsafe(32)
             recovery.clear_failures(email)
             return redirect(url_for("saas.profile" if user.must_change_password else "saas.dashboard"))
+        from saas_ip_ban import login_failure
+        login_failure()
         if recovery.note_wrong_password(email):
             flash("Cinco tentativas incorretas. Para recuperar o acesso, solicite um código por e-mail.", "warning")
             return redirect(url_for("saas.request_password_reset"))
@@ -465,28 +505,34 @@ register_smtp_routes(bp)
 
 @bp.route("/saude")
 def health():
+    """Readiness with bounded per-worker DB cost under probe floods.
+
+    The 3-second success cache trades a tiny freshness window for a large
+    reduction in repeated schema checks. Failures are cached for 1 second.
+    Health status never contains patient or infrastructure details.
+    """
     from flask import jsonify
+    now = time.monotonic()
+    if _health_cache["until"] > now:
+        return jsonify({"database": "mysql",
+                        "status": "ready" if _health_cache["ok"] else "not_ready"}), (
+                            200 if _health_cache["ok"] else 503)
+    if not _health_lock.acquire(blocking=False):
+        return jsonify({"database": "mysql", "status": "not_ready"}), 503
     try:
-        store.one("SELECT 1 AS ok")
-        # Fail release smoke if the NeuroCore additive schema was not applied.
-        store.one("SELECT 1 FROM neurocore_evidence_reviews LIMIT 1")
-        store.one("SELECT 1 FROM care_appointments LIMIT 1")
-        store.one("SELECT 1 FROM care_schedule_slots LIMIT 1")
-        store.one("SELECT 1 FROM care_encounters LIMIT 1")
-        store.one("SELECT 1 FROM care_portal_grants LIMIT 1")
-        store.one("SELECT 1 FROM care_patient_intakes LIMIT 1")
-        store.one("SELECT 1 FROM care_portal_self_links LIMIT 1")
-        store.one("SELECT 1 FROM care_portal_self_grants LIMIT 1")
-        store.one("SELECT 1 FROM care_portal_consents LIMIT 1")
-        store.one("SELECT 1 FROM care_portal_client_activations LIMIT 1")
-        store.one("SELECT 1 FROM saas_account_rights LIMIT 1")
-        store.one("SELECT 1 FROM saas_mfa_factors LIMIT 1")
-        store.one("SELECT 1 FROM saas_mfa_recovery_codes LIMIT 1")
-        store.one("SELECT 1 FROM saas_mfa_trusted_devices LIMIT 1")
-        # Registration and login require these tables. Never report ready
-        # before migrations reached the live production MySQL instance.
-        store.one("SELECT 1 FROM saas_email_verifications LIMIT 1")
-        store.one("SELECT 1 FROM saas_email_challenges LIMIT 1")
-        return jsonify({"database":"mysql","status":"ready"})
-    except (pymysql.MySQLError,RuntimeError):
-        return jsonify({"database":"mysql","status":"not_ready"}),503
+        now = time.monotonic()
+        if _health_cache["until"] > now:
+            ok = _health_cache["ok"]
+        else:
+            try:
+                for query in _HEALTH_READINESS_QUERIES:
+                    store.one(query)
+                ok = True
+            except (pymysql.MySQLError, RuntimeError):
+                ok = False
+            _health_cache["ok"] = ok
+            _health_cache["until"] = time.monotonic() + (3.0 if ok else 1.0)
+        return jsonify({"database": "mysql",
+                        "status": "ready" if ok else "not_ready"}), (200 if ok else 503)
+    finally:
+        _health_lock.release()
