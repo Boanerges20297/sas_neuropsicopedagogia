@@ -9,7 +9,12 @@ import saas_neurocore_store as nc
 import saas_patient_intake as intake
 import saas_clinical_flow as clinical
 import saas_assessment_flow as assessments
+from neurocore.assessment_feedback import received_test_feedback
+from neurocore.indicator_engine import identify_indicators
+from neurocore.feedback_learning import annotate_report, select_signal
+from neurocore.record_context import read_owned_record
 from saas_routes import check_csrf, csrf, licensed_tenant, practitioner_only
+from neurocore import feedback_store as nc_learning
 
 
 def _own_space():
@@ -206,6 +211,70 @@ def register_clinical_routes(bp):
             assigned=assessments.list_for_patient(uid, tenant["id"], client_id),
             csrf_token=csrf())
 
+    @bp.route("/pacientes/<int:client_id>/instrumentos/<int:assessment_id>/neurocore",
+              methods=["GET", "POST"])
+    @practitioner_only
+    def clinical_neurocore_feedback(client_id, assessment_id):
+        """Optional, read-only feedback after receiving a completed instrument."""
+        from neurocore.engine import load_knowledge
+        uid, tenant = _own_space()
+        client = _own_patient(uid, tenant, client_id)
+        item = assessments.scoped_assessment(
+            uid, tenant["id"], client_id, assessment_id)
+        if not item:
+            abort(404)
+        if item["status"] not in ("submitted", "reviewed"):
+            abort(409)
+        configured = item["definition"].get("neurocore_topic")
+        topic = request.values.get("topic", "").strip() or configured
+        topics = load_knowledge()["topics"]
+        if topic and topic not in topics:
+            abort(400)
+        if configured and topic and topic != configured:
+            abort(400)
+        record_context = None
+        action = request.form.get("action") if request.method == "POST" else None
+        if request.method == "POST":
+            check_csrf()
+            if action not in ("read_record", "feedback_indicator") or not topic:
+                abort(400)
+            if action == "read_record" or request.form.get("with_record") == "1":
+                record_context = read_owned_record(uid, tenant["id"], client_id)
+        feedback = None
+        indicator_report = None
+        if topic:
+            saved = assessments.read_answers(
+                uid, tenant["id"], client_id, assessment_id)
+            feedback = received_test_feedback(item["definition"], saved, topic)
+            indicator_report = identify_indicators(
+                topic, definition=item["definition"], answers=saved,
+                record=record_context)
+            annotate_report(indicator_report, assessment_id=assessment_id)
+            if action == "feedback_indicator":
+                try:
+                    signal = select_signal(
+                        indicator_report, request.form.get("domain_key", ""),
+                        request.form.get("signal_key", ""))
+                    nc_learning.save_feedback(
+                        uid, tenant["id"], client_id, topic, signal,
+                        request.form.get("verdict", ""),
+                        indicator_report["engine_version"],
+                        assessment_id=assessment_id)
+                except ValueError:
+                    abort(400)
+                except PermissionError:
+                    abort(404)
+                flash("Sua avaliação do indicador foi registrada.", "success")
+            annotate_report(
+                indicator_report, assessment_id=assessment_id,
+                existing=nc_learning.list_feedback(
+                    uid, tenant["id"], client_id, topic))
+        return _private(
+            "saas_clinical_neurocore_feedback.html", tenant=tenant,
+            client=client, assessment=item, feedback=feedback,
+            selected_topic=topic, topics=topics, record_context=record_context,
+            indicator_report=indicator_report, csrf_token=csrf())
+
     @bp.route("/pacientes/<int:client_id>/instrumentos/<int:assessment_id>",
               methods=["GET", "POST"])
     @practitioner_only
@@ -256,4 +325,6 @@ def register_clinical_routes(bp):
         return _private(
             "saas_clinical_questionnaire.html", tenant=tenant, client=client,
             assessment=item, answers=saved, encounter=encounter, note=note,
+            professional_score=(assessments.professional_score(item["definition"], saved)
+                                if item["status"] in ("submitted", "reviewed") else None),
             csrf_token=csrf())

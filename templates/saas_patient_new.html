@@ -51,14 +51,14 @@
       <p class="saas-hint" id="initial_report_help">Relato inicial, não diagnóstico. O conteúdo é restrito ao profissional.</p>
 
       <fieldset class="patient-new__access">
-        <legend>2. Acesso ao portal do paciente</legend>
-        <p>É no portal que o adulto ou responsável poderá receber e responder instrumentos liberados pelo profissional. <strong>Cadastrar o paciente não cria automaticamente uma conta.</strong></p>
-        <label for="portal_access_mode">Deseja iniciar o acesso ao portal para este paciente?</label>
+        <legend>2. Como será conduzido o atendimento?</legend>
+        <p>O profissional cadastra o paciente e registra os sinais iniciais em ambos os caminhos. <strong>Não é obrigatório criar uma conta de acesso para iniciar o acompanhamento.</strong></p>
+        <label for="portal_access_mode">Escolha como deseja começar</label>
         <select id="portal_access_mode" name="portal_access_mode">
-          <option value="later" {% if request.form.get('portal_access_mode','later')=='later' %}selected{% endif %}>Não agora — somente cadastro clínico</option>
-          <option value="prepare" {% if request.form.get('portal_access_mode')=='prepare' %}selected{% endif %}>Sim — registrar solicitação de criação ou vínculo de conta</option>
+          <option value="later" {% if request.form.get('portal_access_mode','later')=='later' %}selected{% endif %}>Conduzir pessoalmente — profissional aplica e registra os testes</option>
+          <option value="prepare" {% if request.form.get('portal_access_mode')=='prepare' %}selected{% endif %}>Solicitar acesso online — paciente ou responsável poderá responder</option>
         </select>
-        <p class="patient-new__hint">A solicitação será registrada, mas não enviará um convite ou liberará testes automaticamente. A ativação requer conta verificada, vínculo e autorização.</p>
+        <p class="patient-new__hint">O modo presencial funciona imediatamente. O acesso online gera uma solicitação, sem convite automático: depende de conta verificada, vínculo e consentimento para liberação dos instrumentos.</p>
       </fieldset>
       <div class="patient-new__actions">
         <button class="saas-btn" type="submit">Cadastrar paciente</button>

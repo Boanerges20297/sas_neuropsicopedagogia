@@ -462,8 +462,12 @@ def tests():
     if not license.allowed:
         return render_template("saas_status.html",
                                message="Instrumentos indisponíveis sem licença BTA válida."),403
-    return render_template("saas_tests.html",tenant=tenant,
-                           tests=store.list_visible_tests(current_user.id,tenant["id"]))
+    import saas_test_governance as governance
+    return render_template(
+        "saas_tests.html", tenant=tenant,
+        tests=store.list_visible_tests(current_user.id,tenant["id"]),
+        private_tests=governance.list_private_instruments(int(current_user.id),tenant["id"]),
+        csrf_token=csrf())
 
 
 from saas_profile_routes import register_profile_routes

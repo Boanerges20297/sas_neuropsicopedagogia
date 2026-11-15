@@ -216,6 +216,9 @@ class PatientIntakeRouteTests(TestCase):
         self.assertIn('name="birth_date"', html)
         self.assertIn('name="initial_report"', html)
         self.assertIn('name="portal_access_mode"', html)
+        self.assertIn("Conduzir pessoalmente", html)
+        self.assertIn("Solicitar acesso online", html)
+        self.assertIn("sinais iniciais", html)
 
     def test_portal_access_request_is_explicit(self):
         with patch.object(intake, "register_intake", return_value=310) as create:

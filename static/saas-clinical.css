@@ -5,7 +5,7 @@
 .clinic-hero h1{font-size:clamp(1.55rem,3vw,2.4rem);line-height:1.2;margin:.2rem 0 .5rem;color:#fff}
 .clinic-hero p{max-width:65ch;opacity:.9;margin:0}
 .clinic-kicker{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:800;opacity:.82}
-.clinic-button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;text-decoration:none;border:0;border-radius:12px;padding:.77rem 1.15rem;background:#0f766e;color:#fff;font:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+.clinic-button{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;text-decoration:none;border:0;border-radius:10px;padding:9px 14px;min-height:44px;line-height:1.35;background:#0f766e;color:#fff;font:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
 .clinic-button:hover{background:#0b5551}
 .clinic-button--light{background:#fff;color:#0b5551}
 .clinic-button--light:hover{background:#e9fbf6}
@@ -23,14 +23,18 @@
 .clinic-two{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr);gap:1rem}
 .clinic-two--notes{grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr)}
 .clinic-form{display:flex;flex-direction:column;gap:.65rem}
+.clinic-form>.clinic-button{align-self:flex-start;max-width:100%}
+@media(max-width:600px){.clinic-form>.clinic-button{align-self:stretch}}
 .clinic-form label,.clinic-label{display:block;font-weight:650;color:#284957;margin-top:.35rem;font-size:.9rem}
-.clinic-form input,.clinic-form select,.clinic-form textarea,.clinic-filter input,.clinic-filter select{width:100%;min-height:42px;border:1px solid #cbd5dc;border-radius:10px;padding:.6rem .75rem;background:#fff;color:#173c47;font:inherit}
+.clinic-form input,.clinic-form select,.clinic-form textarea,.clinic-filter input,.clinic-filter select{width:100%;min-height:44px;border:1px solid #cbd5dc;border-radius:10px;padding:.5rem .75rem;background:#fff;color:#173c47;font:inherit}
 .clinic-form textarea{min-height:110px;resize:vertical}
 .clinic-form input:focus-visible,.clinic-form select:focus-visible,.clinic-form textarea:focus-visible,.clinic-editor:focus-visible{outline:3px solid #9ce8d3;outline-offset:1px}
 .clinic-inline{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.7rem}
 .clinic-inline>*{flex:1;min-width:150px}
+.clinic-inline>.clinic-button{flex:0 1 auto;min-width:0}
 .clinic-filter{display:flex;gap:.75rem;align-items:end;flex-wrap:wrap}
 .clinic-filter>*{min-width:150px}
+.clinic-filter>.clinic-button{min-width:0}
 .clinic-filter label{font-size:.88rem}
 .clinic-table{width:100%;border-collapse:collapse;font-size:.9rem}
 .clinic-table th,.clinic-table td{text-align:left;padding:.7rem .4rem;border-bottom:1px solid #edf2f3}

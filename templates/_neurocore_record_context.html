@@ -1,0 +1,30 @@
+{% if record_context %}
+<section class="saas-card nc-record-card" aria-label="Prontuário solicitado pelo profissional">
+  <h2>Prontuário consultado nesta revisão</h2>
+  <p class="nc-record-notice">Leitura temporária autorizada pelo profissional. Nenhum trecho foi enviado a serviços externos ou usado para diagnóstico automático.</p>
+  <p class="nc-record-limits">{{record_context.limit_notice}}</p>
+  {% if record_context.intake_text %}
+    <details class="nc-record-detail">
+      <summary>Observações iniciais da anamnese</summary>
+      <p class="nc-record-text">{{record_context.intake_text}}</p>
+    </details>
+  {% endif %}
+  <h3>Registros de atendimento ({{record_context.notes|length}} com observações)</h3>
+  {% for note in record_context.notes %}
+    <details class="nc-record-detail">
+      <summary>Atendimento #{{note.encounter_id}}{% if note.opened_at %} · {{note.opened_at}}{% endif %}</summary>
+      <p class="nc-record-text">{{note.text}}</p>
+      {% if note.truncated %}<small>Trecho limitado para esta consulta.</small>{% endif %}
+    </details>
+  {% else %}<p class="nc-record-limits">Nenhuma observação textual encontrada nas consultas recentes.</p>{% endfor %}
+  <h3>Hipóteses e classificações registradas pelo profissional</h3>
+  {% if record_context.prior_records %}
+    <ul class="nc-record-list">
+      {% for entry in record_context.prior_records %}
+        <li>{{entry.label}} — {{entry.certainty}}{% if entry.recorded_at %} · {{entry.recorded_at}}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  {% else %}<p class="nc-record-limits">Nenhum registro classificatório encontrado.</p>{% endif %}
+  <p class="nc-record-notice">Esses registros são contexto documental, não prova de critérios DSM. Use o julgamento clínico ao preencher as áreas do NeuroCore.</p>
+</section>
+{% endif %}

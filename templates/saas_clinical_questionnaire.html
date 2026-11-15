@@ -5,7 +5,7 @@
 <div class="clinic-shell">
   <nav class="clinic-breadcrumb"><a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span><a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span><a href="{{url_for('saas.clinical_assign_test',client_id=client.id)}}">Instrumentos</a><span>/</span><span>Aplicação</span></nav>
   <header class="clinic-hero"><div>
-    <span class="clinic-kicker">Instrumento aprovado · Versão {{assessment.version_number}}</span>
+    <span class="clinic-kicker">Instrumento registrado · Versão {{assessment.version_number}}</span>
     <h1>{{assessment.title}}</h1><p>{{client.nome}} · {{'Profissional aplicador' if assessment.mode=='professional' else 'Destinado ao portal do paciente'}} · {{assessment.status}}</p>
   </div></header>
 
@@ -58,6 +58,20 @@
       </form>
     </section>
     <aside>
+      {% if assessment.status in ['submitted', 'reviewed'] %}
+      <section class="clinic-panel" aria-label="Feedback clínico opcional">
+        <h2>Revisão com o NeuroCore</h2>
+        <p class="clinic-muted">Confronte as áreas documentadas pelo teste com um roteiro profissional de TEA/TDAH. O sistema não verifica critérios DSM nem emite diagnóstico.</p>
+        <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_neurocore_feedback',client_id=client.id,assessment_id=assessment.id)}}">Solicitar feedback documental</a>
+      </section>
+      {% endif %}
+      {% if professional_score and professional_score.total is not none %}
+      <section class="clinic-panel" aria-label="Pontuação restrita ao profissional">
+        <h2>Pontuação para análise profissional</h2>
+        <p><strong>{{professional_score.total}}</strong> pontos · {{professional_score.counted}} de {{professional_score.scoreable}} questões pontuáveis respondidas.</p>
+        <p class="clinic-muted">Soma descritiva do instrumento personalizado, sem diagnóstico automático. Não é exibida no portal do paciente.</p>
+      </section>
+      {% endif %}
       {% if encounter and note %}
       <section class="clinic-panel">
         <h2>Observações do atendimento</h2>

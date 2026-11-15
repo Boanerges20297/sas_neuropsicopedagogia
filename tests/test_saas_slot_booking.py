@@ -92,7 +92,10 @@ class SlotsContracts(TestCase):
             {"user_id": 7}, {"id": 81, "global_role": "patient", "active": 1},
             {"id": 21}, {"allowed": 1}, row, None])
         with patch.object(store, "transaction", return_value=Tx(cur)), \
-             patch.object(store, "audit") as audit:
+             patch.object(store, "audit") as audit, \
+             patch.object(booking, "datetime") as clock:
+            # Freeze time: the synthetic slot is intentionally dated 2026-11-12.
+            clock.now.return_value = NOW
             self.assertEqual(booking.patient_slot_action(
                 81, 11, 21, 7, 51, "request"), "request")
         self.assertIn("FOR UPDATE", cur.calls[0][0])

@@ -63,7 +63,7 @@ class NeuroCoreSaaSRouteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         page = response.get_data(as_text=True)
         self.assertEqual(page.count('name="status_'), 8)
-        self.assertIn("Não há pontuação", page)
+        self.assertIn("não determina critérios DSM", page)
         self.assertIn('name="csrf_token" value="test-csrf"', page)
 
     def test_patient_from_another_tenant_is_not_found(self):

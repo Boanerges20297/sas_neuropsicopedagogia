@@ -13,9 +13,19 @@
     <p>Paciente: <strong>{{client.nome}}</strong> · {{fields|length}} áreas de documentação</p>
   </div><span class="nc-tag">Revisão profissional</span></header>
   <section class="nc-notice" role="note"><strong>Atenção:</strong>
-    este roteiro experimental registra a disponibilidade de informações, não a presença ou ausência de sintomas.
-    Preencher todas as áreas não confirma nem exclui TEA/TDAH. Não há pontuação, triagem automática ou laudo.
+    os campos abaixo documentam as evidências. A leitura opcional do prontuário pode destacar menções e padrões relacionados a domínios clínicos, mas não determina critérios DSM.
+    Preencher todas as áreas não confirma nem exclui TEA/TDAH; a conclusão pertence ao profissional.
   </section>
+  <section class="saas-card nc-record-request-card">
+    <h2>Consulta opcional ao prontuário</h2>
+    <p>Se desejar, o NeuroCore pode apresentar as observações iniciais e os registros de atendimento deste paciente como contexto documental. Sem envio externo ou inferência diagnóstica.</p>
+    <form method="post" class="nc-record-request">
+      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+      <button type="submit" name="action" value="read_record" class="saas-btn saas-btn--ghost">Ler prontuário deste paciente</button>
+    </form>
+  </section>
+  {% include "_neurocore_record_context.html" %}
+  {% include "_neurocore_indicator_report.html" %}
   <section class="nc-two-col">
     <div>
       <h2>Fontes e documentação</h2>

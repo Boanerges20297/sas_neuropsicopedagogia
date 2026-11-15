@@ -1,6 +1,6 @@
 {% extends "saas_base.html" %}
 {% block title %}Instrumentos e roteiros | Neuro-Diagnosis{% endblock %}
-{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}">{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-neurocore.css')}}"><link rel="stylesheet" href="{{url_for('static',filename='saas-test-editor.css')}}">{% endblock %}
 {% block content %}
 <div class="nc-shell">
   <header class="nc-hero">
@@ -9,6 +9,33 @@
       <p>Organize os dados do acompanhamento e consulte instrumentos disponibilizados no seu espaço.</p>
     </div><span class="nc-tag">Biblioteca em evolução</span>
   </header>
+  <section class="saas-card" aria-labelledby="custom-tests-title">
+    <div class="saas-actions saas-tests-heading">
+      <div><h2 id="custom-tests-title">Meus instrumentos personalizados</h2>
+      <p class="saas-hint">Versões privadas podem ser usadas no seu espaço. Para compartilhar, solicite revisão administrativa.</p></div>
+      <a class="saas-btn" href="{{url_for('saas.create_custom_test')}}">+ Criar instrumento</a>
+    </div>
+    <div class="saas-list">
+    {% for instrument in private_tests %}
+      <article class="saas-person">
+        <div>
+          <strong>{{instrument.title}}</strong>
+          <p class="saas-hint">Privado · versão {{instrument.version_number}} · {{instrument.description or 'Sem descrição'}}</p>
+        </div>
+        <div class="saas-actions">
+          <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.edit_custom_test',test_id=instrument.id)}}">Editar</a>
+          <form method="post" action="{{url_for('saas.share_custom_test',test_id=instrument.id)}}" class="saas-form saas-private-share">
+            <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+            <label class="saas-hint"><input type="checkbox" name="rights_confirm" value="yes" required> Sou autor ou possuo autorização para uso digital do conteúdo.</label>
+            <button class="saas-btn saas-btn--ghost" type="submit">Pedir compartilhamento</button>
+          </form>
+        </div>
+      </article>
+    {% else %}
+      <p>Você ainda não criou instrumentos personalizados.</p>
+    {% endfor %}
+    </div>
+  </section>
   <section class="saas-card">
     <span class="nc-topic">NEUROCORE EXPERIMENTAL</span>
     <h2>Roteiros documentais de TEA e TDAH</h2>
@@ -24,7 +51,7 @@
         <span class="saas-chip">{{'Compartilhado' if test.visibility=='global' else 'Meu espaço'}}</span>
         <h2>{{test.title}}</h2>
         <p>{{test.description or 'Descrição ainda não cadastrada.'}}</p>
-        <p class="nc-draft">Disponível para consulta de catálogo. Aplicação digital não habilitada nesta etapa.</p>
+        <p class="nc-draft">Disponível no fluxo profissional de atendimento. O acesso do paciente ao portal ainda depende das verificações de identidade e consentimento.</p>
       </article>
       {% else %}
       <div class="saas-card"><h2>Nenhum instrumento publicado</h2><p>Instrumentos aprovados pela administração aparecerão aqui. Enquanto isso, utilize os roteiros documentais experimentais por paciente.</p></div>

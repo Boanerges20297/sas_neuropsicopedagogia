@@ -1,0 +1,257 @@
+{% extends "saas_base.html" %}
+{% block title %}{{'Editar instrumento' if item else 'Novo instrumento'}} | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}<link rel="stylesheet" href="{{url_for('static',filename='saas-test-editor.css')}}">{% endblock %}
+{% block content %}
+<section class="saas-intro">
+  <span class="saas-kicker">Biblioteca profissional · Conteúdo privado</span>
+  <h1>{{'Editar instrumento personalizado' if item else 'Criar instrumento personalizado'}}</h1>
+  <p>Monte perguntas e alternativas. Somente seu espaço profissional acessa a versão privada; compartilhar exige revisão administrativa.</p>
+  <a href="{{url_for('saas.tests')}}">Voltar à biblioteca</a>
+</section>
+<section class="saas-card instrument-shell">
+  <form method="post" id="instrument-editor" class="instrument-form">
+    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+    <input type="hidden" id="instrument-definition" name="definition_json">
+    <div class="instrument-grid">
+      <label>Título do instrumento
+        <input type="text" name="title" maxlength="240" minlength="3" required value="{{request.form.get('title',item.title if item else '')}}">
+      </label>
+      <label>Categoria
+        <select id="instrument-kind">
+          <option value="assessment">Avaliação / questionário</option>
+          <option value="anamnesis">Anamnese</option>
+        </select>
+      </label>
+    </div>
+    <label>Descrição e finalidade
+      <textarea name="description" rows="3" maxlength="1500">{{request.form.get('description',item.description if item else '')}}</textarea>
+    </label>
+    <label>Conferência opcional no NeuroCore após o recebimento
+      <select id="instrument-neuro-topic">
+        <option value="">Não vincular a tema clínico</option>
+        <option value="tea">TEA — áreas de documentação</option>
+        <option value="tdah">TDAH — áreas de documentação</option>
+      </select>
+    </label>
+    <p class="instrument-hint">Se escolher um tema, relacione cada pergunta a uma área do NeuroCore e marque somente alternativas que merecem investigação. O motor cruzará esses indicadores com possíveis menções do prontuário, com origem identificada. Não confirma critérios DSM nem produz diagnóstico.</p>
+    <p class="instrument-hint">Instrumentos próprios não se tornam testes psicológicos reconhecidos por serem digitais. Pontuações são apenas descrições para análise profissional, nunca diagnóstico automático.</p>
+    <div class="instrument-section-title">
+      <h2>Perguntas</h2>
+      <button type="button" id="instrument-add-question" class="saas-btn saas-btn--ghost">+ Adicionar pergunta</button>
+    </div>
+    <div id="instrument-questions" class="instrument-questions"></div>
+    <div class="instrument-footer">
+      <a class="saas-btn saas-btn--ghost" href="{{url_for('saas.tests')}}">Cancelar</a>
+      <button type="submit" class="saas-btn">{{'Salvar nova versão' if item else 'Criar instrumento privado'}}</button>
+    </div>
+  </form>
+</section>
+<template id="instrument-question-template">
+  <fieldset class="instrument-question">
+    <legend>Pergunta <span class="instrument-number"></span></legend>
+    <div class="instrument-grid">
+      <label>Enunciado
+        <textarea class="instrument-label" rows="2" maxlength="500" required></textarea>
+      </label>
+      <label>Tipo de resposta
+        <select class="instrument-type">
+          <option value="single">Escolha única</option>
+          <option value="multiple">Múltiplas escolhas</option>
+          <option value="yes_no">Sim / Não</option>
+          <option value="text">Resposta escrita</option>
+          <option value="number">Número</option>
+        </select>
+      </label>
+    </div>
+    <div class="instrument-grid">
+      <label>Orientação opcional
+        <input type="text" class="instrument-help" maxlength="400">
+      </label>
+      <label class="instrument-checkbox"><input type="checkbox" class="instrument-required"> Resposta obrigatória</label>
+    </div>
+    <label class="instrument-neuro-wrap" hidden>Área documental relacionada (opcional)
+      <select class="instrument-neuro-field"></select>
+    </label>
+    <div class="instrument-options">
+      <strong>Alternativas e pontos</strong>
+      <p class="instrument-hint">Pontos são opcionais e só aparecem na análise do profissional. Valores entre -100 e 100.</p>
+      <div class="instrument-option-list"></div>
+      <button type="button" class="saas-btn saas-btn--ghost instrument-add-option">+ Alternativa</button>
+    </div>
+    <button type="button" class="saas-btn saas-btn--ghost instrument-remove-question">Remover pergunta</button>
+  </fieldset>
+</template>
+<template id="instrument-option-template">
+  <div class="instrument-option">
+    <label>Texto da alternativa
+      <input type="text" class="instrument-option-label" maxlength="200" required>
+    </label>
+    <label>Pontos (opcional)
+      <input type="number" class="instrument-option-points" min="-100" max="100" step=".01">
+    </label>
+    <label class="instrument-indicator-label" hidden title="A resposta poderá sugerir um indicador para conferência profissional, nunca diagnóstico">
+      <input type="checkbox" class="instrument-indicator"> Indicador a investigar
+    </label>
+    <button type="button" class="saas-btn saas-btn--ghost instrument-remove-option">Remover</button>
+  </div>
+</template>
+<script id="instrument-initial" type="application/json">{{initial_definition|tojson}}</script>
+<script id="neurocore-areas" type="application/json">{{neurocore_fields|tojson}}</script>
+<script>
+(function () {
+  "use strict";
+  const neurocoreFields = JSON.parse(document.getElementById("neurocore-areas").textContent);
+  const neuroTopic = document.getElementById("instrument-neuro-topic");
+  const form = document.getElementById("instrument-editor");
+  const container = document.getElementById("instrument-questions");
+  const qTemplate = document.getElementById("instrument-question-template");
+  const oTemplate = document.getElementById("instrument-option-template");
+  const definitionField = document.getElementById("instrument-definition");
+  const kind = document.getElementById("instrument-kind");
+  let initial;
+  try { initial = JSON.parse(document.getElementById("instrument-initial").textContent); }
+  catch (_) { initial = {}; }
+  if (!initial || typeof initial !== "object" || !Array.isArray(initial.questions)) {
+    initial = {kind:"assessment", questions:[]};
+  }
+  kind.value = initial.kind === "anamnesis" ? "anamnesis" : "assessment";
+  neuroTopic.value = ["tea", "tdah"].includes(initial.neurocore_topic) ? initial.neurocore_topic : "";
+  function configureIndicators(question) {
+    const active = !!neuroTopic.value && !!question.querySelector(".instrument-neuro-field").value;
+    question.querySelectorAll(".instrument-indicator-label").forEach(function (label) {
+      const check = label.querySelector(".instrument-indicator");
+      label.hidden = !active;
+      check.disabled = !active;
+      if (!active) check.checked = false;
+    });
+  }
+  function configureNeuroField(question, preferred) {
+    const select = question.querySelector(".instrument-neuro-field");
+    const wrap = question.querySelector(".instrument-neuro-wrap");
+    select.replaceChildren();
+    select.add(new Option("Sem associação documental", ""));
+    const topic = neuroTopic.value;
+    (neurocoreFields[topic] || []).forEach(function (field) {
+      select.add(new Option(field.label, field.key));
+    });
+    select.value = preferred || "";
+    if (!select.value) select.value = "";
+    select.disabled = !topic;
+    wrap.hidden = !topic;
+    select.onchange = function () { configureIndicators(question); };
+    configureIndicators(question);
+  }
+  function renumber() {
+    Array.from(container.children).forEach(function (q, i) {
+      q.querySelector(".instrument-number").textContent = String(i + 1);
+    });
+  }
+  function addQuestion(initialQuestion) {
+    if (container.children.length >= 100) { alert("Limite de 100 perguntas."); return; }
+    const data = initialQuestion || {};
+    const el = qTemplate.content.firstElementChild.cloneNode(true);
+    const type = el.querySelector(".instrument-type");
+    const options = el.querySelector(".instrument-options");
+    const optionList = el.querySelector(".instrument-option-list");
+    el.querySelector(".instrument-label").value = typeof data.label === "string" ? data.label : "";
+    el.querySelector(".instrument-help").value = typeof data.help === "string" ? data.help : "";
+    el.querySelector(".instrument-required").checked = data.required === true;
+    type.value = ["single","multiple","yes_no","text","number"].includes(data.type) ? data.type : "single";
+
+    function addOption(option, fixedValue) {
+      if (optionList.children.length >= 12) { alert("Máximo de 12 alternativas."); return; }
+      const row = oTemplate.content.firstElementChild.cloneNode(true);
+      const text = row.querySelector(".instrument-option-label");
+      const points = row.querySelector(".instrument-option-points");
+      text.value = option && typeof option.label === "string" ? option.label : "";
+      points.value = option && typeof option.points === "number" ? String(option.points) : "";
+      row.querySelector(".instrument-indicator").checked = !!(option && option.neurocore_indicator === true);
+      if (fixedValue) {
+        row.dataset.fixedValue = fixedValue;
+        text.value = fixedValue === "yes" ? "Sim" : "Não";
+        text.readOnly = true;
+        row.querySelector(".instrument-remove-option").hidden = true;
+      }
+      row.querySelector(".instrument-remove-option").addEventListener("click", function () {
+        row.remove();
+      });
+      optionList.appendChild(row);
+      if (el.querySelector(".instrument-neuro-field").options.length) configureIndicators(el);
+    }
+    function configureOptions(preserve) {
+      const t = type.value;
+      const choice = ["single","multiple","yes_no"].includes(t);
+      options.hidden = !choice;
+      if (!preserve) optionList.replaceChildren();
+      if (t === "yes_no") {
+        const prior = preserve && Array.isArray(data.options) ? data.options : [];
+        optionList.replaceChildren();
+        ["yes","no"].forEach(function (value) {
+          addOption(prior.find(function (o) { return o.value === value; }), value);
+        });
+      } else if (choice && optionList.children.length < 2) {
+        while (optionList.children.length < 2) addOption();
+      }
+      optionList.querySelectorAll(".instrument-option-label").forEach(function (input) {
+        input.required = choice;
+      });
+      el.querySelector(".instrument-add-option").hidden = t === "yes_no" || !choice;
+    }
+    el.querySelector(".instrument-add-option").addEventListener("click", function () { addOption(); });
+    el.querySelector(".instrument-remove-question").addEventListener("click", function () { el.remove(); renumber(); });
+    type.addEventListener("change", function () { configureOptions(false); });
+    container.appendChild(el);
+    if (type.value !== "yes_no" && Array.isArray(data.options)) {
+      data.options.slice(0, 12).forEach(function (option) { addOption(option); });
+    }
+    configureOptions(true);
+    configureNeuroField(el, data.neurocore_field);
+    renumber();
+  }
+  (initial.questions.length ? initial.questions : [{}]).forEach(addQuestion);
+  neuroTopic.addEventListener("change", function () {
+    Array.from(container.children).forEach(function (q) {
+      configureNeuroField(q, q.querySelector(".instrument-neuro-field").value);
+    });
+  });
+  document.getElementById("instrument-add-question").addEventListener("click", function () { addQuestion(); });
+  form.addEventListener("submit", function (event) {
+    const blocks = Array.from(container.children);
+    if (!blocks.length) { event.preventDefault(); alert("Adicione ao menos uma pergunta."); return; }
+    const questions = blocks.map(function (block, index) {
+      const type = block.querySelector(".instrument-type").value;
+      const q = {
+        key:"q" + String(index + 1),
+        label:block.querySelector(".instrument-label").value.trim(),
+        type:type,
+        required:block.querySelector(".instrument-required").checked,
+        help:block.querySelector(".instrument-help").value.trim(),
+        options:[]
+      };
+      const linkedField = block.querySelector(".instrument-neuro-field").value;
+      if (neuroTopic.value && linkedField) q.neurocore_field = linkedField;
+      if (["single","multiple","yes_no"].includes(type)) {
+        const rows = Array.from(block.querySelector(".instrument-option-list").children);
+        rows.forEach(function (row, i) {
+          const option = {
+            value:type === "yes_no" ? row.dataset.fixedValue : "o" + String(i + 1),
+            label:row.querySelector(".instrument-option-label").value.trim()
+          };
+          const raw = row.querySelector(".instrument-option-points").value;
+          if (raw !== "") option.points = Number(raw);
+          const indicator = row.querySelector(".instrument-indicator");
+          if (indicator.checked && !indicator.disabled) option.neurocore_indicator = true;
+          q.options.push(option);
+        });
+      }
+      return q;
+    });
+    if (questions.some(function (q) { return !q.label || (q.options.length > 0 && q.options.length < 2); })) {
+      event.preventDefault(); alert("Revise os enunciados e as alternativas."); return;
+    }
+    definitionField.value = JSON.stringify({kind:kind.value,
+      neurocore_topic:neuroTopic.value || null, questions:questions});
+  });
+})();
+</script>
+{% endblock %}

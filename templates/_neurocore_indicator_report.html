@@ -1,0 +1,75 @@
+{% if indicator_report %}
+<section class="saas-card nc-indicator-panel" aria-label="Indicadores clínicos exploratórios">
+  <div class="nc-indicator-title">
+    <div>
+      <span class="nc-indicator-kicker">NeuroCore · apoio à investigação</span>
+      <h2>Padrões de sinais para revisão — {{indicator_report.topic_name}}</h2>
+    </div>
+    <span class="nc-indicator-version">{{indicator_report.engine_version}}</span>
+  </div>
+  <p class="nc-indicator-caution">O motor cruza alternativas sinalizadas pelo autor com menções contextuais em documentos autorizados. <strong>Não confirma critérios DSM</strong>; ausência de detecção também não descarta uma condição.</p>
+  {% if indicator_report.active_domains %}
+    <div class="nc-indicator-grid">
+      {% for domain in indicator_report.active_domains %}
+        <article class="nc-indicator-card">
+          <div class="nc-indicator-title">
+            <h3>{{domain.label}}</h3>
+            {% if domain.state == 'convergencia_documental' %}
+              <span class="nc-indicator-tag nc-indicator-tag--convergence">Convergência documental</span>
+            {% elif domain.state == 'revisar_divergencia' %}
+              <span class="nc-indicator-tag nc-indicator-tag--caution">Revisar contraponto</span>
+            {% elif domain.state == 'registro_de_negacao' %}
+              <span class="nc-indicator-tag">Menção negada</span>
+            {% else %}
+              <span class="nc-indicator-tag">Sinal a investigar</span>
+            {% endif %}
+          </div>
+          {% if domain.requires_differential_review %}
+            <p class="nc-indicator-alternative">Atenção a outras explicações e condições coexistentes.</p>
+          {% endif %}
+          <ul class="nc-indicator-sources">
+            {% for signal in domain.signals %}
+              <li>
+                <strong>{{signal.source}}</strong> · {{signal.pattern}}
+                {% if signal.polarity=='negacao_ou_contraponto' %}
+                  <span class="nc-indicator-negative">· negação/contraponto no relato</span>
+                {% endif %}
+                {% if signal.question %}<div>Pergunta: {{signal.question}}</div>{% endif %}
+                {% if signal.excerpt %}<blockquote>{{signal.excerpt}}</blockquote>{% endif %}
+                {% if signal.feedback_key %}
+                  <form method="post" class="nc-indicator-feedback" aria-label="Avaliar utilidade do indicador">
+                    <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+                    <input type="hidden" name="action" value="feedback_indicator">
+                    <input type="hidden" name="domain_key" value="{{domain.key}}">
+                    <input type="hidden" name="signal_key" value="{{signal.feedback_key}}">
+                    <input type="hidden" name="with_record" value="{{'1' if record_context is defined and record_context else '0'}}">
+                    {% if assessment is defined and assessment %}
+                      <input type="hidden" name="topic" value="{{selected_topic}}">
+                    {% endif %}
+                    <span class="nc-feedback-prompt">Este indicador foi útil para sua investigação?</span>
+                    <div class="nc-feedback-choices">
+                      <button type="submit" name="verdict" value="confirmado" class="nc-feedback-choice {{'is-selected' if signal.feedback_verdict=='confirmado' else ''}}" aria-pressed="{{'true' if signal.feedback_verdict=='confirmado' else 'false'}}">Confirmar</button>
+                      <button type="submit" name="verdict" value="descartado" class="nc-feedback-choice {{'is-selected' if signal.feedback_verdict=='descartado' else ''}}" aria-pressed="{{'true' if signal.feedback_verdict=='descartado' else 'false'}}">Descartar</button>
+                      <button type="submit" name="verdict" value="inconclusivo" class="nc-feedback-choice {{'is-selected' if signal.feedback_verdict=='inconclusivo' else ''}}" aria-pressed="{{'true' if signal.feedback_verdict=='inconclusivo' else 'false'}}">Inconclusivo</button>
+                    </div>
+                  </form>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="nc-indicator-empty">Nenhum indicador identificável nas fontes selecionadas. Isso não significa ausência de sinais clínicos; revise instrumentos e prontuário diretamente.</p>
+  {% endif %}
+  <p class="nc-indicator-caution">Referências gerais:
+    {% if indicator_report.topic=='tea' %}
+      <a href="https://www.cdc.gov/autism/hcp/diagnosis/index.html" target="_blank" rel="noopener noreferrer">CDC · avaliação do TEA</a>
+    {% else %}
+      <a href="https://www.cdc.gov/adhd/hcp/clinical-care/" target="_blank" rel="noopener noreferrer">CDC · avaliação do TDAH</a>
+    {% endif %}
+    · <a href="https://www.psychiatry.org/psychiatrists/practice/dsm/about-dsm/" target="_blank" rel="noopener noreferrer">APA · uso clínico do DSM</a>
+  </p>
+</section>
+{% endif %}

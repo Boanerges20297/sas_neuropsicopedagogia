@@ -4,6 +4,7 @@ Portal delivery can be queued but NOT opened until identity verification,
 purpose-limited grant, consent and patient-account UI are implemented.
 """
 import json
+import math
 import re
 
 import saas_store as store
@@ -28,6 +29,13 @@ def parse_definition(raw):
     questions = raw["questions"]
     if not 1 <= len(questions) <= 100:
         raise ValueError("Instrumento deve possuir entre 1 e 100 perguntas")
+    topic = raw.get("neurocore_topic") or None
+    if topic not in (None, "tea", "tdah"):
+        raise ValueError("Tema NeuroCore inválido")
+    from neurocore.engine import load_knowledge
+    topic_fields = ({field["key"] for field in
+                     load_knowledge()["topics"][topic]["review_fields"]}
+                    if topic else set())
     normalized = []
     seen = set()
     for q in questions:
@@ -39,10 +47,20 @@ def parse_definition(raw):
         seen.add(key)
         if kind not in QUESTION_TYPES or not isinstance(label, str) or not 1 <= len(label.strip()) <= 500:
             raise ValueError("Tipo ou enunciado de pergunta inválido")
+        field = q.get("neurocore_field") or None
+        if field is not None and field not in topic_fields:
+            raise ValueError("Área NeuroCore incompatível com o tema do instrumento")
         options = q.get("options", [])
         if kind == "yes_no":
-            options = [{"value": "yes", "label": "Sim"},
-                       {"value": "no", "label": "Não"}]
+            supplied = {o.get("value"): o
+                        for o in (options if isinstance(options, list) else [])
+                        if isinstance(o, dict) and o.get("value") in ("yes", "no")}
+            options = [{"value": key, "label": label,
+                        **({"points": supplied[key]["points"]}
+                           if key in supplied and "points" in supplied[key] else {}),
+                        **({"neurocore_indicator": supplied[key]["neurocore_indicator"]}
+                           if key in supplied and "neurocore_indicator" in supplied[key] else {})}
+                       for key, label in (("yes", "Sim"), ("no", "Não"))]
         if kind in ("single", "multiple", "yes_no"):
             if not isinstance(options, list) or not 2 <= len(options) <= 12:
                 raise ValueError("Pergunta deve apresentar de 2 a 12 opções")
@@ -57,18 +75,70 @@ def parse_definition(raw):
                         or not 1 <= len(title.strip()) <= 200):
                     raise ValueError("Opção repetida ou inválida")
                 vals.add(val)
-                cleaned.append({"value": val, "label": title.strip()})
+                points = option.get("points")
+                entry = {"value": val, "label": title.strip()}
+                if points is not None:
+                    if (type(points) not in (int, float) or not math.isfinite(points)
+                            or not -100 <= points <= 100):
+                        raise ValueError("Pontuação da opção inválida")
+                    entry["points"] = round(float(points), 2)
+                marker = option.get("neurocore_indicator", False)
+                if type(marker) is not bool or (marker and not field):
+                    raise ValueError("Sinal NeuroCore exige área mapeada e confirmação explícita")
+                if marker:
+                    entry["neurocore_indicator"] = True
+                cleaned.append(entry)
             options = cleaned
         else:
             options = []
         normalized.append({"key": key, "type": kind, "label": label.strip(),
                            "required": q.get("required", False) is True,
                            "options": options,
-                           "help": str(q.get("help") or "")[:400]})
+                           "help": str(q.get("help") or "")[:400],
+                           "neurocore_field": field})
     kind = raw.get("kind", "assessment")
     if kind not in ("assessment", "anamnesis"):
         raise ValueError("Categoria de instrumento desconhecida")
-    return {"kind": kind, "questions": normalized}
+    return {"kind": kind, "neurocore_topic": topic, "questions": normalized}
+
+
+def public_definition(raw):
+    """Patient-facing structure; scoring and reviewer metadata never leave the server."""
+    definition = parse_definition(raw)
+    return {"kind": definition["kind"], "questions": [
+        {**{key: q[key] for key in ("key", "type", "label", "required", "help")},
+         "options": [{"value": o["value"], "label": o["label"]}
+                     for o in q["options"]]}
+        for q in definition["questions"]]}
+
+
+def professional_score(raw, answers):
+    """Descriptive raw sum only, exclusively for an authenticated professional view.
+
+    The score does not imply validation, thresholds, diagnosis, or clinical advice.
+    """
+    definition = parse_definition(raw)
+    if not isinstance(answers, dict):
+        raise ValueError("Respostas inválidas")
+    total, counted, scoreable = 0.0, 0, 0
+    for question in definition["questions"]:
+        weighted = {o["value"]: o["points"] for o in question["options"]
+                    if "points" in o}
+        if not weighted:
+            continue
+        scoreable += 1
+        answer = answers.get(question["key"])
+        if question["type"] in ("single", "yes_no"):
+            if isinstance(answer, str) and answer in weighted:
+                total += weighted[answer]
+                counted += 1
+        elif question["type"] == "multiple" and isinstance(answer, list):
+            selected = [weighted[v] for v in answer if isinstance(v, str) and v in weighted]
+            if selected:
+                total += sum(selected)
+                counted += 1
+    return {"total": round(total, 2) if counted else None,
+            "counted": counted, "scoreable": scoreable}
 
 
 def list_available(user_id, tenant_id):

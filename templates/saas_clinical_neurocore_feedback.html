@@ -1,0 +1,102 @@
+{% extends "saas_base.html" %}
+{% block title %}Feedback NeuroCore | Neuro-Diagnosis{% endblock %}
+{% block dashboard_styles %}
+<link rel="stylesheet" href="{{url_for('static', filename='saas-clinical.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='saas-neurocore.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='saas-neuro-feedback.css')}}">
+{% endblock %}
+{% block content %}
+<div class="clinic-shell nc-feedback-shell">
+  <nav class="clinic-breadcrumb" aria-label="Navegação">
+    <a href="{{url_for('saas.clinical_dashboard')}}">Atendimentos</a><span>/</span>
+    <a href="{{url_for('saas.patient_workspace',client_id=client.id)}}">{{client.nome}}</a><span>/</span>
+    <a href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=assessment.id)}}">Respostas recebidas</a><span>/</span>
+    <span>NeuroCore</span>
+  </nav>
+  <header class="clinic-hero"><div>
+    <span class="clinic-kicker">Revisão profissional · Opcional</span>
+    <h1>Feedback documental NeuroCore</h1>
+    <p>{{assessment.title}} · Versão {{assessment.version_number}}</p>
+  </div></header>
+  <section class="clinic-warning" role="note">
+    <strong>Limite clínico:</strong> o motor identifica padrões de relato para investigação, mas não aplica automaticamente os critérios diagnósticos DSM-5-TR.
+    O profissional verifica origem, duração, contexto, impacto e explicações alternativas. Nenhuma pontuação ou feedback é enviado ao paciente.
+  </section>
+
+  {% if not selected_topic %}
+    <section class="clinic-panel">
+      <h2>Escolha o tema a revisar</h2>
+      <p class="clinic-muted">A escolha não modifica o teste nem o prontuário.</p>
+      <div class="nc-feedback-actions">
+        {% for key, data in topics.items() %}
+          <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_neurocore_feedback',client_id=client.id,assessment_id=assessment.id,topic=key)}}">Revisar {{data.name}}</a>
+        {% endfor %}
+      </div>
+    </section>
+  {% else %}
+    <section class="clinic-panel" aria-label="Resumo de cobertura documental">
+      <h2>{{feedback.topic_name}} · Guia NeuroCore v{{feedback.knowledge_version}}</h2>
+      <div class="nc-feedback-facts">
+        <div><strong>{{feedback.mapped_questions}}</strong><span>Perguntas vinculadas</span></div>
+        <div><strong>{{feedback.answered_questions}}</strong><span>Com resposta recebida</span></div>
+        <div><strong>{{feedback.unmapped_questions}}</strong><span>Sem área associada</span></div>
+      </div>
+      {% if not feedback.has_mapping %}
+        <p class="nc-feedback-notice">Este instrumento ainda não tem perguntas associadas às áreas do NeuroCore.
+          Para obter uma conferência específica, o autor pode mapear suas perguntas na próxima versão.
+          A revisão manual continua disponível.</p>
+      {% else %}
+        <p class="clinic-muted">Resposta registrada significa apenas material disponível para revisão; não significa critério diagnóstico atendido.</p>
+      {% endif %}
+      <div class="nc-feedback-actions">
+        <a class="clinic-button" href="{{url_for('saas.neurocore_review',client_id=client.id,topic=selected_topic)}}">Abrir roteiro profissional {{feedback.topic_name}}</a>
+        <a class="clinic-button clinic-button--ghost" href="{{url_for('saas.clinical_questionnaire',client_id=client.id,assessment_id=assessment.id)}}">Voltar às respostas</a>
+      </div>
+    </section>
+    {% include "_neurocore_indicator_report.html" %}
+    <section class="clinic-panel">
+      <h2>Consultar prontuário (opcional)</h2>
+      <p class="clinic-muted">Somente mediante sua solicitação: anamnese inicial, notas recentes e hipóteses já registradas. A leitura ocorre nesta tela, sem processamento externo ou alteração do prontuário.</p>
+      <form method="post" class="nc-record-request">
+        <input type="hidden" name="csrf_token" value="{{csrf_token}}">
+        <input type="hidden" name="topic" value="{{selected_topic}}">
+        <button class="clinic-button clinic-button--ghost" type="submit" name="action" value="read_record">Ler prontuário deste paciente</button>
+      </form>
+    </section>
+    {% include "_neurocore_record_context.html" %}
+    <section class="nc-feedback-grid" aria-label="Áreas para conferência">
+      {% for area in feedback.areas %}
+        <article class="clinic-panel nc-feedback-area">
+          <div class="nc-feedback-area-head">
+            <h3>{{loop.index}}. {{area.label}}</h3>
+            {% if area.status=='com_respostas' %}
+              <span class="nc-feedback-tag nc-feedback-tag--present">Há respostas</span>
+            {% elif area.status=='sem_resposta' %}
+              <span class="nc-feedback-tag nc-feedback-tag--pending">Sem resposta</span>
+            {% else %}
+              <span class="nc-feedback-tag">Sem vínculo</span>
+            {% endif %}
+          </div>
+          <p class="clinic-muted">{{area.guidance}}</p>
+          {% if area.questions %}
+            <ul class="nc-feedback-questions">
+              {% for q in area.questions %}
+                <li>{{q.label}} — {{'resposta recebida' if q.answered else 'sem resposta'}}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="clinic-muted">Nenhuma pergunta deste instrumento foi vinculada a esta área.</p>
+          {% endif %}
+          {% if area.references %}
+            <p class="nc-feedback-references">Fontes de orientação:
+              {% for ref in area.references %}
+                <a href="{{ref.url}}" target="_blank" rel="noopener noreferrer">{{ref.title}}</a>{% if not loop.last %} · {% endif %}
+              {% endfor %}
+            </p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,12 +1,16 @@
 """TEA/TDAH clinical evidence organization — no diagnosis, no scoring."""
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, flash, make_response, redirect, render_template, request, url_for
 from uuid import uuid4
 from flask_login import current_user, login_required
 
 from neurocore import evaluate_evidence
 from neurocore.engine import load_knowledge
+from neurocore.indicator_engine import identify_indicators
+from neurocore.feedback_learning import annotate_report, select_signal
+from neurocore.record_context import read_owned_record
 from saas_routes import licensed_tenant, practitioner_only, check_csrf, csrf
 import saas_neurocore_store as nc_store
+from neurocore import feedback_store as nc_learning
 
 
 def register_neurocore_routes(bp):
@@ -40,8 +44,18 @@ def register_neurocore_routes(bp):
         if not client:
             abort(404)
         fields = topics[topic]["review_fields"]
+        record_context = None
+        action = request.form.get("action") if request.method == "POST" else None
         if request.method == "POST":
             check_csrf()
+        if action in ("read_record", "feedback_indicator"):
+            try:
+                record_context = read_owned_record(user_id, tenant["id"], client_id)
+            except PermissionError:
+                abort(404)
+        elif request.method == "POST":
+            if action not in (None, "save_documentation"):
+                abort(400)
             evidence = {}
             for field in fields:
                 key = field["key"]
@@ -65,10 +79,34 @@ def register_neurocore_routes(bp):
         row = nc_store.get_review(user_id, tenant["id"], client_id, topic)
         values = row["evidence_json"] if row else {}
         summary = evaluate_evidence(topic, values)
+        indicator_report = (identify_indicators(topic, record=record_context)
+                            if record_context is not None else None)
+        if indicator_report is not None:
+            annotate_report(indicator_report)
+            if action == "feedback_indicator":
+                try:
+                    signal = select_signal(
+                        indicator_report, request.form.get("domain_key", ""),
+                        request.form.get("signal_key", ""))
+                    nc_learning.save_feedback(
+                        user_id, tenant["id"], client_id, topic, signal,
+                        request.form.get("verdict", ""),
+                        indicator_report["engine_version"])
+                except ValueError:
+                    abort(400)
+                except PermissionError:
+                    abort(404)
+                flash("Sua avaliação do indicador foi registrada.", "success")
+            annotate_report(indicator_report, existing=nc_learning.list_feedback(
+                user_id, tenant["id"], client_id, topic))
         from saas_routes import csrf
-        return render_template(
+        result = make_response(render_template(
             "saas_neurocore_review.html",
             tenant=tenant, client=client, fields=fields, topic=topic,
             topic_name=topics[topic]["name"], values=values,
             summary=summary, csrf_token=csrf(), saved=row,
-        )
+            record_context=record_context, indicator_report=indicator_report,
+        ))
+        result.headers["Cache-Control"] = "private, no-store"
+        result.headers["Referrer-Policy"] = "no-referrer"
+        return result

@@ -106,9 +106,14 @@ class TestGovernanceBoundaryTests(unittest.TestCase):
             governance.decide_catalog_item(9,40,decision,reason)
         return c.sql,audit
 
-    def test_only_superadmin_can_decide(self):
-        with self.assertRaises(PermissionError):
-            self.decide(Recorder(actor_role="admin"))
+    def test_admin_and_superadmin_can_decide_but_not_clinical_users(self):
+        for role in ("admin","superadmin"):
+            sql,audit=self.decide(Recorder(actor_role=role))
+            self.assertTrue(any("UPDATE test_versions" in q for q,_ in sql))
+            audit.assert_called_once()
+        for role in ("professional","patient"):
+            with self.assertRaises(PermissionError):
+                self.decide(Recorder(actor_role=role))
 
     def test_cannot_approve_unsubmitted_test(self):
         with self.assertRaisesRegex(ValueError,"pendentes"):
@@ -219,11 +224,36 @@ class AdminAccountRouteTests(unittest.TestCase):
         with patch("saas_routes.can_admin", return_value=True):
             self.assertEqual(self.client.get("/saas/pacientes").status_code,403)
 
-    def test_test_catalog_is_superadmin_only(self):
+    def test_test_catalog_allows_admin_and_superadmin_only(self):
         with patch.object(governance,"list_catalog_for_review",return_value=[]):
             self.assertEqual(self.client.get("/saas/admin/testes").status_code,200)
             self.user.role="admin"
+            self.assertEqual(self.client.get("/saas/admin/testes").status_code,200)
+            self.user.role="professional"
             self.assertEqual(self.client.get("/saas/admin/testes").status_code,403)
+
+    def test_admin_can_approve_with_fresh_mfa_and_password(self):
+        self.user.role="admin"
+        password="AdminStrongTest12!"
+        digest=bcrypt.generate_password_hash(password).decode()
+        sample=dict(id=40,title="Teste sintético",status="pending",
+                    version_id=12,version_status="draft",version_number=1,
+                    visibility="global",description="",author_name="Autor")
+        with patch("saas_test_governance_routes.login_fresh",return_value=True), \
+             patch.object(store,"user_by_email",return_value={"password_hash":digest}), \
+             patch.object(governance,"catalog_item",return_value=sample), \
+             patch.object(governance,"decide_catalog_item",return_value=True) as decide:
+            wrong=self.client.post("/saas/admin/testes/40",data={
+                "csrf_token":"safe-csrf","senha_atual":"wrong",
+                "decision":"approve","reason":"Revisão técnica documentada"})
+            self.assertEqual(wrong.status_code,200)
+            decide.assert_not_called()
+            accepted=self.client.post("/saas/admin/testes/40",data={
+                "csrf_token":"safe-csrf","senha_atual":password,
+                "decision":"approve","reason":"Revisão técnica documentada"})
+            self.assertEqual(accepted.status_code,302)
+            decide.assert_called_once_with(
+                9,40,"approve","Revisão técnica documentada")
 
     def test_bootstrap_email_form_only_for_eligible_initial_admin(self):
         import saas_email_verification as verify
