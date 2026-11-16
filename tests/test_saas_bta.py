@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import bta_license_client as bta
-import saas_routes
+from saas.core import saas_routes
 
 
 class BTAIntegrationTests(unittest.TestCase):

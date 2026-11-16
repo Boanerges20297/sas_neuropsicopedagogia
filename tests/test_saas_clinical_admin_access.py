@@ -3,9 +3,9 @@ import unittest
 from unittest.mock import patch
 
 from app import app
-import saas_store as store
-import saas_routes
-import saas_neurocore_store as neuro_store
+from saas.core import saas_store as store
+from saas.core import saas_routes
+from saas.neurocore import saas_neurocore_store as neuro_store
 
 
 class ClinicalAdministratorAccessTests(unittest.TestCase):

@@ -6,9 +6,9 @@ import unittest
 from unittest.mock import patch
 
 from app import app
-import saas_login_recovery as recovery
-import saas_email_otp_transport as transport
-import saas_store as store
+from saas.auth import saas_login_recovery as recovery
+from saas.auth import saas_email_otp_transport as transport
+from saas.core import saas_store as store
 
 
 class CounterCursor:

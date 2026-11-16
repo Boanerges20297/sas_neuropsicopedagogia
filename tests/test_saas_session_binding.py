@@ -5,8 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from app import app
-import saas_store as store
-import saas_mfa_store as factors
+from saas.core import saas_store as store
+from saas.auth import saas_mfa_store as factors
 
 
 class SessionBindingTests(unittest.TestCase):

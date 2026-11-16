@@ -28,7 +28,7 @@ if not admin["senha_hash"].startswith(("$2a$","$2b$","$2y$")):
     raise SystemExit("BOOTSTRAP_ABORTED: unexpected bcrypt hash")
 import sys
 sys.path.insert(0, str(root))
-from saas_store import transaction
+from saas.core.saas_store import transaction
 with transaction() as cur:
     cur.execute("SELECT id,global_role FROM users WHERE email=%s FOR UPDATE",(admin["email"],))
     existing=cur.fetchone()

@@ -4,8 +4,8 @@ import unittest
 from unittest.mock import patch
 
 from app import app, bcrypt
-import saas_store as store
-from saas_profile_data import validate_cpf, validate_area, validate_birth_date, validate_phone, prepare_cpf, masked_cpf
+from saas.core import saas_store as store
+from saas.accounts.saas_profile_data import validate_cpf, validate_area, validate_birth_date, validate_phone, prepare_cpf, masked_cpf
 
 
 class ProfessionalDetailsTests(unittest.TestCase):
@@ -50,8 +50,8 @@ class SaaSAccountFlowTests(unittest.TestCase):
             cpf_masked="Não informado",practice_area=None,birth_date=None,
             phone_display="",global_role="superadmin",must_change_password=1))
         self.profile_data.start()
-        self.recovery_check=patch("saas_login_recovery.cooldown_remaining",return_value=0)
-        self.recovery_clear=patch("saas_login_recovery.clear_failures",return_value=None)
+        self.recovery_check=patch("saas.auth.saas_login_recovery.cooldown_remaining",return_value=0)
+        self.recovery_clear=patch("saas.auth.saas_login_recovery.clear_failures",return_value=None)
         self.recovery_check.start()
         self.recovery_clear.start()
         with self.client.session_transaction() as s:

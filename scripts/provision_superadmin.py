@@ -2,7 +2,7 @@
 import os
 import secrets
 from uuid import uuid4
-from saas_store import transaction
+from saas.core.saas_store import transaction
 
 
 def provision():

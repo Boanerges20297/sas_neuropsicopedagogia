@@ -14,10 +14,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import saas_store as store
-import saas_patient_intake as intake
-import saas_account_access as access
-import saas_admin_workspace as workspace
+from saas.core import saas_store as store
+from saas.patients import saas_patient_intake as intake
+from saas.accounts import saas_account_access as access
+from saas.accounts import saas_admin_workspace as workspace
 
 DEMO_NAME = "PACIENTE FICTICIO - TESTE NEURO-DIAGNOSIS"
 DEMO_BIRTH = "2016-08-18"

@@ -5,7 +5,7 @@ Neither plaintext passwords nor hashes are written to Git or terminal output.
 """
 import os
 import re
-from saas_store import transaction
+from saas.core.saas_store import transaction
 
 mail = os.getenv("SAAS_SUPERADMIN_EMAIL", "").strip().lower()
 digest = os.getenv("SAAS_SUPERADMIN_HASH", "")

@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest import TestCase
 from unittest.mock import patch
 
-import saas_portal_policy as gate
+from saas.patients import saas_portal_policy as gate
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -116,10 +116,12 @@ class PortalPolicyTests(TestCase):
         self.assertFalse(any(rule.rule.startswith("/saas/portal")
                              for rule in app.url_map.iter_rules()))
         docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-        self.assertIn("saas_portal_policy.py", docker)
-        self.assertIn("saas_portal_activation.py", docker)
-        self.assertIn("saas_portal_activation_routes.py", docker)
-        self.assertIn("saas_portal_activation_queue.py", docker)
+        self.assertIn("COPY --chown=neuro:neuro saas/ ./saas/", docker)
+        for name in (
+            "saas_portal_policy.py", "saas_portal_activation.py",
+            "saas_portal_activation_routes.py", "saas_portal_activation_queue.py",
+        ):
+            self.assertTrue((ROOT / "saas/patients" / name).is_file())
         deploy = (ROOT / "infra/host/deploy-neuro-diagnosis-saas.sh").read_text(
             encoding="utf-8")
         backup = deploy.index("NEURO_BACKUP_INVALID")

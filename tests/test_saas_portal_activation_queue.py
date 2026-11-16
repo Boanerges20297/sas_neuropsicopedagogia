@@ -2,9 +2,9 @@
 import unittest
 from unittest.mock import patch
 from app import app
-import saas_store as store
-import saas_portal_activation_queue as queue
-import saas_portal_activation_routes as routes
+from saas.core import saas_store as store
+from saas.patients import saas_portal_activation_queue as queue
+from saas.patients import saas_portal_activation_routes as routes
 from bta_license_client import LicenseDecision
 
 
@@ -70,7 +70,7 @@ class ActivationQueueRouteTests(unittest.TestCase):
         self.get_user=patch.object(store,"get_user",side_effect=lambda uid:self.user)
         self.get_user.start()
         # Admins can review activations without creating a clinical tenant.
-        self.workspace=patch("saas_routes.own_admin_workspace",return_value=None)
+        self.workspace=patch("saas.core.saas_routes.own_admin_workspace",return_value=None)
         self.workspace.start()
         self.permissions=patch.object(routes,"can_admin",return_value=True)
         self.permissions.start()

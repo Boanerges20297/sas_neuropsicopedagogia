@@ -70,7 +70,7 @@ def import_admin(private_key_path):
             or not str(admin.get("email", "")).strip()
             or not str(admin.get("nome", "")).strip()):
         raise SystemExit("IMPORT_ABORTED: invalid administrator record")
-    from saas_store import transaction
+    from saas.core.saas_store import transaction
     with transaction() as cur:
         cur.execute("SELECT COUNT(*) AS n FROM users WHERE global_role IN ('admin','superadmin')")
         if cur.fetchone()["n"]:

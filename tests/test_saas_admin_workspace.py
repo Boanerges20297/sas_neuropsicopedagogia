@@ -3,8 +3,8 @@ import unittest
 from unittest.mock import patch
 
 from app import app
-import saas_store as store
-import saas_admin_workspace as admin_workspace
+from saas.core import saas_store as store
+from saas.accounts import saas_admin_workspace as admin_workspace
 
 
 class AdminWorkspaceRouteTests(unittest.TestCase):
@@ -19,7 +19,7 @@ class AdminWorkspaceRouteTests(unittest.TestCase):
         })
         self.loader = patch.object(store, "get_user", return_value=self.admin)
         self.loader.start()
-        self.permissions=patch("saas_routes.can_admin",return_value=True)
+        self.permissions=patch("saas.core.saas_routes.can_admin",return_value=True)
         self.permissions.start()
         with self.client.session_transaction() as sess:
             sess["_user_id"] = "saas:9"
@@ -34,7 +34,7 @@ class AdminWorkspaceRouteTests(unittest.TestCase):
         app.config["TESTING"] = self.prev
 
     def test_admin_without_private_tenant_gets_activation_option_not_patient_link(self):
-        with patch("saas_routes.own_admin_workspace", return_value=None), patch.object(
+        with patch("saas.core.saas_routes.own_admin_workspace", return_value=None), patch.object(
             store, "admin_global_stats", return_value=dict(
                 professionals=0, pending=0, active_tenants=0, total_clients=0)):
             response = self.client.get("/saas/painel")

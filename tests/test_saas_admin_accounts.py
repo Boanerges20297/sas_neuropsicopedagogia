@@ -3,10 +3,10 @@ import unittest
 from contextlib import contextmanager
 from unittest.mock import patch
 
-import saas_account_provision as provisioning
-import saas_account_access as access
-import saas_login_policy as passwords
-import saas_store as store
+from saas.accounts import saas_account_provision as provisioning
+from saas.accounts import saas_account_access as access
+from saas.auth import saas_login_policy as passwords
+from saas.core import saas_store as store
 
 
 class Cursor:

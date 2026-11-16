@@ -5,10 +5,10 @@ import unittest
 from unittest.mock import patch
 
 from app import app, bcrypt
-import saas_store as store
-import saas_mfa as otp
-import saas_mfa_store as factors
-import saas_email_otp_transport as email_transport
+from saas.core import saas_store as store
+from saas.auth import saas_mfa as otp
+from saas.auth import saas_mfa_store as factors
+from saas.auth import saas_email_otp_transport as email_transport
 
 
 class CryptoTests(unittest.TestCase):
@@ -58,8 +58,8 @@ class FirstAccessFlowTests(unittest.TestCase):
         })
         self.get_user=patch.object(store,"get_user",return_value=self.user)
         self.get_user.start()
-        self.cooldown=patch("saas_login_recovery.cooldown_remaining",return_value=0)
-        self.reset_failures=patch("saas_login_recovery.clear_failures",return_value=None)
+        self.cooldown=patch("saas.auth.saas_login_recovery.cooldown_remaining",return_value=0)
+        self.reset_failures=patch("saas.auth.saas_login_recovery.clear_failures",return_value=None)
         self.cooldown.start()
         self.reset_failures.start()
         with self.client.session_transaction() as s:
@@ -191,7 +191,7 @@ class FirstAccessFlowTests(unittest.TestCase):
             self.assertTrue(s["saas_auth"])
 
     def test_manual_totp_key_available_when_qr_cannot_be_scanned(self):
-        import saas_routes
+        from saas.core import saas_routes
         seed = otp.new_seed()
         with patch.object(factors, "enabled", return_value=False), \
              patch.object(factors, "pending_seed", return_value=seed), \
@@ -239,7 +239,7 @@ class FirstAccessFlowTests(unittest.TestCase):
     def test_before_first_login_account_provision_marks_mfa_required(self):
         from pathlib import Path
         root=Path(__file__).resolve().parents[1]
-        for path in ("saas_account_provision.py","saas_store.py"):
+        for path in ("saas/accounts/saas_account_provision.py","saas/core/saas_store.py"):
             self.assertIn(
                 "INSERT INTO saas_mfa_factors(user_id,required) VALUES(%s,1)",
                 (root / path).read_text(encoding="utf-8"))

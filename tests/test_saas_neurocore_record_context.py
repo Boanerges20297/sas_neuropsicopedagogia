@@ -4,10 +4,10 @@ import re
 from unittest.mock import patch
 
 from app import app
-import saas_store as store
-import saas_assessment_flow as assessments
-import saas_neurocore_routes as core_routes
-import saas_clinical_routes as clinical_routes
+from saas.core import saas_store as store
+from saas.clinical import saas_assessment_flow as assessments
+from saas.neurocore import saas_neurocore_routes as core_routes
+from saas.clinical import saas_clinical_routes as clinical_routes
 from neurocore import record_context
 from bta_license_client import LicenseDecision
 

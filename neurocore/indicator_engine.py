@@ -100,7 +100,7 @@ def _chart_signals(topic, record):
 def _test_signals(topic, raw_definition, answers):
     if raw_definition is None:
         return []
-    from saas_assessment_flow import parse_definition
+    from saas.clinical.saas_assessment_flow import parse_definition
     definition = parse_definition(raw_definition)
     if definition.get("neurocore_topic") not in (None, topic):
         raise ValueError("Instrumento vinculado a outro tema NeuroCore")

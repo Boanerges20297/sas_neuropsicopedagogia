@@ -7,8 +7,8 @@ from uuid import uuid4
 import unittest
 import os
 
-import saas_clinical_flow as clinical
-import saas_assessment_flow as assessments
+from saas.clinical import saas_clinical_flow as clinical
+from saas.clinical import saas_assessment_flow as assessments
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -258,11 +258,12 @@ class QuestionnaireContracts(unittest.TestCase):
         self.assertNotIn("DROP TABLE", sql.upper())
 
     def test_existing_responses_schema_is_not_used(self):
-        source = (ROOT / "saas_assessment_flow.py").read_text(encoding="utf-8")
+        source = (ROOT / "saas/clinical/saas_assessment_flow.py").read_text(encoding="utf-8")
         self.assertIn("care_assessment_private_answers", source)
         self.assertNotIn("INSERT INTO assessment_responses", source)
         self.assertIn("mode", source)
         docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("COPY --chown=neuro:neuro saas/ ./saas/", docker)
         for fname in ("saas_clinical_flow.py", "saas_assessment_flow.py",
                       "saas_clinical_routes.py"):
-            self.assertIn(fname, docker)
+            self.assertTrue((ROOT / "saas/clinical" / fname).is_file())

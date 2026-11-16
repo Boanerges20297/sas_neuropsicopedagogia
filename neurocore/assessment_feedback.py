@@ -4,7 +4,7 @@ Never tests DSM diagnostic criteria, estimates a disorder, or copies DSM content
 Only the authenticated professional route can call this with decrypted answers.
 """
 from neurocore.engine import load_knowledge
-from saas_assessment_flow import parse_definition
+from saas.clinical.saas_assessment_flow import parse_definition
 
 
 def received_test_feedback(raw_definition, answers, topic):

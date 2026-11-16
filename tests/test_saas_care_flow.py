@@ -7,9 +7,9 @@ import unittest
 
 from app import app
 from bta_license_client import LicenseDecision
-import saas_store
-import saas_care_store as care
-import saas_care_routes as routes
+from saas.core import saas_store
+from saas.clinical import saas_care_store as care
+from saas.clinical import saas_care_routes as routes
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -165,7 +165,7 @@ class SchedulingContracts(unittest.TestCase):
                 self.assertEqual(len(cur.calls), 2)
 
     def test_cannot_read_other_clients_appointments(self):
-        with patch("saas_neurocore_store.scoped_client", return_value=None), \
+        with patch("saas.neurocore.saas_neurocore_store.scoped_client", return_value=None), \
              patch.object(care.store, "all_rows") as rows:
             with self.assertRaises(PermissionError):
                 care.list_client_appointments(7, 11, 999)
@@ -198,7 +198,7 @@ class CareRouteTests(unittest.TestCase):
             patch.object(routes.nc, "scoped_client",
                          return_value={"id": 21, "nome": "Cliente Fictício"}),
             patch.object(routes.care, "list_calendar", return_value=[]),
-            patch("saas_slot_booking.list_slots", return_value=[]),
+            patch("saas.clinical.saas_slot_booking.list_slots", return_value=[]),
             patch.object(saas_store, "list_clients", return_value=[]),
             patch.object(routes.care, "list_client_appointments", return_value=[]),
         ]
@@ -281,8 +281,9 @@ class MigrationAndRuntimeContracts(unittest.TestCase):
 
     def test_docker_contains_care_modules_and_no_sklearn(self):
         docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-        self.assertIn("saas_care_routes.py", docker)
-        self.assertIn("saas_care_store.py", docker)
+        self.assertIn("COPY --chown=neuro:neuro saas/ ./saas/", docker)
+        self.assertTrue((ROOT / "saas/clinical/saas_care_routes.py").is_file())
+        self.assertTrue((ROOT / "saas/clinical/saas_care_store.py").is_file())
         self.assertNotIn("scikit-learn", (ROOT / "requirements.production.txt").read_text())
 
     def test_deploy_backup_before_both_migrations_and_web(self):

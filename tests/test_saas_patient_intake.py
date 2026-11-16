@@ -7,9 +7,9 @@ import os
 
 from app import app
 from bta_license_client import LicenseDecision
-import saas_patient_intake as intake
-import saas_patient_intake_routes as routes
-import saas_store as store
+from saas.patients import saas_patient_intake as intake
+from saas.patients import saas_patient_intake_routes as routes
+from saas.core import saas_store as store
 
 
 class FakeCursor:
@@ -157,7 +157,7 @@ class PatientIntakeModelTests(TestCase):
         self.assertEqual(len(cursor.calls), 1)
 
     def test_initial_summary_checks_professional_ownership_first(self):
-        with patch("saas_neurocore_store.scoped_client", return_value=None), \
+        with patch("saas.neurocore.saas_neurocore_store.scoped_client", return_value=None), \
              patch.object(intake.store, "one") as read:
             self.assertIsNone(intake.scoped_summary(7, 11, 999))
             read.assert_not_called()
@@ -175,7 +175,7 @@ class PatientIntakeRouteTests(TestCase):
         })
         self.patches = [
             patch.object(store, "get_user", return_value=user),
-            patch("saas_routes.licensed_tenant", return_value=(
+            patch("saas.core.saas_routes.licensed_tenant", return_value=(
                 {"id": 11, "nome": "Consultório"},
                 LicenseDecision(status="exempt"))),
             patch.object(routes, "licensed_tenant", return_value=(

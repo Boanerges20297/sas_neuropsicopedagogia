@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from app import app
 import pymysql
-import saas_store as store
+from saas.core import saas_store as store
 
 
 class EmailSchemaReadinessTests(unittest.TestCase):
@@ -13,7 +13,7 @@ class EmailSchemaReadinessTests(unittest.TestCase):
         app.config["TESTING"] = True
         self.client = app.test_client()
         # Each schema failure scenario must bypass a previous readiness result.
-        import saas_routes
+        from saas.core import saas_routes
         saas_routes._health_cache.update(until=0.0, ok=False)
 
     def tearDown(self):

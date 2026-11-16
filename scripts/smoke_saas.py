@@ -12,7 +12,7 @@ if os.getenv("SAAS_SMOKE_ALLOW") != "1":
     raise SystemExit("SMOKE_ABORTED: set SAAS_SMOKE_ALLOW=1 explicitly")
 
 from app import app, bcrypt
-import saas_store as store
+from saas.core import saas_store as store
 from bta_license_client import resolve_tenant_license
 
 def synthetic_cpf():

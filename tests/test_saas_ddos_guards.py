@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pymysql
 from app import app
-import saas_routes as routes
+from saas.core import saas_routes as routes
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 from app import app
 from bta_license_client import LicenseDecision
-import saas_store as store
-import saas_portal_activation as activation
-import saas_portal_activation_routes as activation_routes
+from saas.core import saas_store as store
+from saas.patients import saas_portal_activation as activation
+from saas.patients import saas_portal_activation_routes as activation_routes
 
 
 class FakeCursor:
@@ -158,8 +158,9 @@ class ActivationRulesTests(unittest.TestCase):
         self.assertIn("UNIQUE KEY uq_portal_client_activation (tenant_id,client_id,user_id)", schema)
         self.assertIn("CREATE TABLE IF NOT EXISTS care_portal_login_requests", schema)
         self.assertIn("ENUM('pending','active','suspended')", schema)
-        for sql in ( __import__("saas_portal_policy").SELECT_ALLOWED,
-                     __import__("saas_portal_policy").SELECT_SELF_ALLOWED):
+        from saas.patients import saas_portal_policy
+        for sql in (saas_portal_policy.SELECT_ALLOWED,
+                    saas_portal_policy.SELECT_SELF_ALLOWED):
             self.assertIn("care_portal_client_activations",sql)
             self.assertIn("a.status='active'",sql)
             self.assertIn("a.client_id=g.client_id",sql)

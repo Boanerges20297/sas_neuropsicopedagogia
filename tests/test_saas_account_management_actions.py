@@ -5,10 +5,10 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app import app, bcrypt
-import saas_store as store
-import saas_account_management as management
-import saas_test_governance as governance
-import saas_account_admin_routes as account_routes
+from saas.core import saas_store as store
+from saas.accounts import saas_account_management as management
+from saas.clinical import saas_test_governance as governance
+from saas.accounts import saas_account_admin_routes as account_routes
 
 
 class Recorder:
@@ -51,7 +51,7 @@ def fake_tx(cursor):
 class AdminManagementBoundaryTests(unittest.TestCase):
     def update(self, cursor, **kwargs):
         with patch.object(store,"transaction",return_value=fake_tx(cursor)), \
-             patch("saas_account_management.actor_can_grant",return_value=True), \
+             patch("saas.accounts.saas_account_management.actor_can_grant",return_value=True), \
              patch.object(store,"audit") as audit:
             result=management.update_managed_account(
                 9,50,nome="After",email=kwargs.get("email","before@example.invalid"),
@@ -175,7 +175,7 @@ class AdminAccountRouteTests(unittest.TestCase):
         self.fresh=patch.object(account_routes,"login_fresh",return_value=True)
         self.fresh.start()
         # This fixture has no private clinic; new dual-role tests cover activation.
-        self.workspace=patch("saas_routes.own_admin_workspace",return_value=None)
+        self.workspace=patch("saas.core.saas_routes.own_admin_workspace",return_value=None)
         self.workspace.start()
         with self.client.session_transaction() as sess:
             sess["_user_id"]="saas:9"
@@ -221,7 +221,7 @@ class AdminAccountRouteTests(unittest.TestCase):
             self.assertEqual(self.client.get("/saas/contas/50/editar").status_code,403)
 
     def test_superadmin_without_private_clinic_cannot_browse_patient_workspace(self):
-        with patch("saas_routes.can_admin", return_value=True):
+        with patch("saas.core.saas_routes.can_admin", return_value=True):
             self.assertEqual(self.client.get("/saas/pacientes").status_code,403)
 
     def test_test_catalog_allows_admin_and_superadmin_only(self):
@@ -239,7 +239,7 @@ class AdminAccountRouteTests(unittest.TestCase):
         sample=dict(id=40,title="Teste sintético",status="pending",
                     version_id=12,version_status="draft",version_number=1,
                     visibility="global",description="",author_name="Autor")
-        with patch("saas_test_governance_routes.login_fresh",return_value=True), \
+        with patch("saas.clinical.saas_test_governance_routes.login_fresh",return_value=True), \
              patch.object(store,"user_by_email",return_value={"password_hash":digest}), \
              patch.object(governance,"catalog_item",return_value=sample), \
              patch.object(governance,"decide_catalog_item",return_value=True) as decide:
@@ -256,7 +256,7 @@ class AdminAccountRouteTests(unittest.TestCase):
                 9,40,"approve","Revisão técnica documentada")
 
     def test_bootstrap_email_form_only_for_eligible_initial_admin(self):
-        import saas_email_verification as verify
+        from saas.auth import saas_email_verification as verify
         account=dict(id=50,nome="Initial Admin",email="unknown@example.invalid",
                      global_role="admin",active=1,rights_id=None,
                      allow_accounts=0,allow_professionals=0,
@@ -273,10 +273,10 @@ class AdminAccountRouteTests(unittest.TestCase):
             self.assertNotIn("Regularizar e-mail do administrador inicial",html)
 
     def test_bootstrap_email_request_requires_superadmin_and_operator_password(self):
-        import saas_email_verification as verify
+        from saas.auth import saas_email_verification as verify
         pwd="SuperAdminPassword12!"
         path="/saas/contas/50/regularizar-email"
-        with (patch("saas_email_routes.login_fresh",return_value=True),
+        with (patch("saas.auth.saas_email_routes.login_fresh",return_value=True),
               patch.object(store,"user_by_email",return_value={
                   "password_hash":bcrypt.generate_password_hash(pwd).decode()}),
               patch.object(verify,"request_bootstrap_code",return_value=True) as send):
@@ -301,7 +301,7 @@ class AdminAccountRouteTests(unittest.TestCase):
         send.assert_not_called()
 
     def test_superadmin_can_start_email_reset_without_seeing_credentials(self):
-        import saas_login_recovery as recovery
+        from saas.auth import saas_login_recovery as recovery
         pwd="OperatorPassword1234!"
         target=dict(id=50,nome="Synthetic",email="patient@example.invalid",
                     global_role="patient",active=1,rights_id=None,
@@ -325,7 +325,7 @@ class AdminAccountRouteTests(unittest.TestCase):
         self.assertEqual(audit.call_args.args[5],50)
 
     def test_password_reset_requires_superadmin_role(self):
-        import saas_login_recovery as recovery
+        from saas.auth import saas_login_recovery as recovery
         self.user.role="admin"
         with patch.object(recovery,"request_reset") as send:
             result=self.client.post("/saas/contas/50/recuperar-senha",
@@ -334,7 +334,7 @@ class AdminAccountRouteTests(unittest.TestCase):
         send.assert_not_called()
 
     def test_password_reset_requires_csrf_and_second_factor(self):
-        import saas_login_recovery as recovery
+        from saas.auth import saas_login_recovery as recovery
         with patch.object(recovery,"request_reset") as send:
             self.assertEqual(self.client.post("/saas/contas/50/recuperar-senha",
                 data={"csrf_token":"invalid","senha_atual":"anything"}).status_code,400)
@@ -347,7 +347,7 @@ class AdminAccountRouteTests(unittest.TestCase):
         send.assert_not_called()
 
     def test_password_reset_wrong_operator_password_never_sends(self):
-        import saas_login_recovery as recovery
+        from saas.auth import saas_login_recovery as recovery
         target=dict(id=50,nome="Synthetic",email="patient@example.invalid",
                     global_role="patient",active=1)
         with patch.object(account_routes,"account_detail",return_value=target):
@@ -369,7 +369,7 @@ class AdminAccountRouteTests(unittest.TestCase):
                 html=self.client.get("/saas/contas/50/editar").get_data(as_text=True)
                 self.assertIn("Enviar código de recuperação ao titular",html)
                 self.user.role="admin"
-                with patch("saas_routes.own_admin_workspace",return_value=None):
+                with patch("saas.core.saas_routes.own_admin_workspace",return_value=None):
                     html=self.client.get("/saas/contas/50/editar").get_data(as_text=True)
                 self.assertNotIn("Enviar código de recuperação ao titular",html)
 
@@ -389,7 +389,7 @@ class AdminAccountRouteTests(unittest.TestCase):
 
 class AccountPaginationTests(unittest.TestCase):
     def test_filters_use_parameters_and_never_query_patient_records(self):
-        import saas_account_provision as provisioning
+        from saas.accounts import saas_account_provision as provisioning
         with patch.object(provisioning,"can_admin",return_value=True), \
              patch.object(store,"all_rows",return_value=[]) as fetch:
             self.assertEqual(provisioning.list_managed_accounts(
@@ -401,7 +401,7 @@ class AccountPaginationTests(unittest.TestCase):
         self.assertEqual(args,("%synthetic@example.invalid%","%synthetic@example.invalid%","patient",26,50))
 
     def test_invalid_filter_and_page_rejected(self):
-        import saas_account_provision as provisioning
+        from saas.accounts import saas_account_provision as provisioning
         with patch.object(provisioning,"can_admin",return_value=True):
             with self.assertRaises(ValueError):
                 provisioning.list_managed_accounts(9,page=0)

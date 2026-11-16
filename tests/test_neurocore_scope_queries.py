@@ -2,9 +2,9 @@
 import unittest
 from unittest.mock import patch
 
-import saas_admin_workspace
-import saas_neurocore_store
-import saas_store
+from saas.accounts import saas_admin_workspace
+from saas.neurocore import saas_neurocore_store
+from saas.core import saas_store
 
 
 class ScopeQueryContracts(unittest.TestCase):

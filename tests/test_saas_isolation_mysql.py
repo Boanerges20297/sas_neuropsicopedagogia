@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pymysql
 from app import app, bcrypt
-import saas_store as store
+from saas.core import saas_store as store
 from bta_license_client import LicenseDecision
 
 
@@ -111,7 +111,7 @@ class MySQLTenantIsolationTests(unittest.TestCase):
                         "responsible_user_id) VALUES (%s,%s,%s,%s)",
                         (tb, ca, version_id, b),
                     )
-            with patch("saas_routes.resolve_tenant_license",
+            with patch("saas.core.saas_routes.resolve_tenant_license",
                        return_value=LicenseDecision(status="licensed", state="active")):
                 for pid, own_name, foreign_name, own_test, foreign_test in (
                     (a, alpha_name, beta_name, "PRIV_ALPHA_" + tag, "PRIV_BETA_" + tag),

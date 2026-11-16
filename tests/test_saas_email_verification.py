@@ -5,8 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from app import app, bcrypt
-import saas_store as store
-import saas_email_verification as verify
+from saas.core import saas_store as store
+from saas.auth import saas_email_verification as verify
 
 
 class EmailCodeUnitTests(unittest.TestCase):
@@ -93,8 +93,8 @@ class EmailRouteUnitTests(unittest.TestCase):
                      global_role="professional",active=1,
                      must_change_password=0,email_verification_pending=1)
         with patch.object(store,"user_by_email",return_value=account), \
-             patch("saas_login_recovery.cooldown_remaining",return_value=0), \
-             patch("saas_login_recovery.clear_failures"):
+             patch("saas.auth.saas_login_recovery.cooldown_remaining",return_value=0), \
+             patch("saas.auth.saas_login_recovery.clear_failures"):
             response=self.client.post("/saas/entrar",data={
                 "csrf_token":"email-synthetic-csrf",
                 "email":"verify@example.invalid","senha":password})

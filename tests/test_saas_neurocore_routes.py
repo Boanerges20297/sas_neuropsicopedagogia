@@ -4,8 +4,8 @@ import unittest
 from unittest.mock import patch
 
 from app import app
-import saas_store as store
-import saas_neurocore_routes as routes
+from saas.core import saas_store as store
+from saas.neurocore import saas_neurocore_routes as routes
 from bta_license_client import LicenseDecision
 
 ROOT = Path(__file__).resolve().parents[1]

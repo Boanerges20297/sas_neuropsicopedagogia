@@ -5,9 +5,9 @@ or persistence of the decrypted material in a NeuroCore table.
 """
 from html.parser import HTMLParser
 
-import saas_clinical_flow as clinical
-import saas_neurocore_store as patients
-import saas_patient_intake as intake
+from saas.clinical import saas_clinical_flow as clinical
+from saas.neurocore import saas_neurocore_store as patients
+from saas.patients import saas_patient_intake as intake
 
 
 class _PlainNote(HTMLParser):

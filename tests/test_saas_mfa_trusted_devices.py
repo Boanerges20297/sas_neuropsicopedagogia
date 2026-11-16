@@ -4,8 +4,8 @@ import unittest
 from unittest.mock import patch
 
 from app import app, bcrypt
-import saas_store as store
-import saas_mfa_store as mfa
+from saas.core import saas_store as store
+from saas.auth import saas_mfa_store as mfa
 
 
 class TrustedDeviceLoginTests(unittest.TestCase):
@@ -24,9 +24,9 @@ class TrustedDeviceLoginTests(unittest.TestCase):
             patch.object(store,"user_by_email",return_value=self.account),
             patch.object(store,"get_user",return_value=self.user),
             # MFA tests have no database-backed clinical workspace.
-            patch("saas_routes.own_admin_workspace",return_value=None),
-            patch("saas_login_recovery.cooldown_remaining",return_value=0),
-            patch("saas_login_recovery.clear_failures",return_value=None),
+            patch("saas.core.saas_routes.own_admin_workspace",return_value=None),
+            patch("saas.auth.saas_login_recovery.cooldown_remaining",return_value=0),
+            patch("saas.auth.saas_login_recovery.clear_failures",return_value=None),
         ]
         for p in self.patches: p.start()
         with self.client.session_transaction() as sess:
@@ -170,7 +170,7 @@ class TrustedDeviceLoginTests(unittest.TestCase):
             self.assertTrue(sess["saas_temporary"])
 
     def test_manual_totp_key_offered_only_during_enrollment(self):
-        from saas_mfa import new_seed
+        from saas.auth.saas_mfa import new_seed
         seed = new_seed()
         with self.client.session_transaction() as sess:
             sess["_user_id"] = "saas:764"

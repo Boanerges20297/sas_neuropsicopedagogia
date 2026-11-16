@@ -3,7 +3,7 @@ import json
 import unittest
 
 from neurocore.indicator_engine import identify_indicators
-from saas_assessment_flow import parse_definition, public_definition, professional_score
+from saas.clinical.saas_assessment_flow import parse_definition, public_definition, professional_score
 
 
 TEST = {

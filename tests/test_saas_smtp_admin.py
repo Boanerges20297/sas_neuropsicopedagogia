@@ -5,9 +5,9 @@ import unittest
 from unittest.mock import patch
 
 from app import app, bcrypt
-import saas_store as store
-import saas_smtp_settings as settings
-import saas_email_otp_transport as transport
+from saas.core import saas_store as store
+from saas.accounts import saas_smtp_settings as settings
+from saas.auth import saas_email_otp_transport as transport
 
 
 class MockCursor:
@@ -68,11 +68,11 @@ class SmtpAdminRouteTests(unittest.TestCase):
             "mfa_enabled":True,
         })
         self.loader=patch.object(store,"get_user",return_value=self.identity)
-        self.workspace=patch("saas_routes.own_admin_workspace",return_value=None)
+        self.workspace=patch("saas.core.saas_routes.own_admin_workspace",return_value=None)
         self.loader.start()
         self.workspace.start()
         self.feature_flag=patch.dict(os.environ, {"NEURO_SMTP_WEB_CONFIG_ENABLED":"true"})
-        self.fresh_login=patch("saas_smtp_admin_routes.login_fresh", return_value=True)
+        self.fresh_login=patch("saas.accounts.saas_smtp_admin_routes.login_fresh", return_value=True)
         self.feature_flag.start()
         self.fresh_login.start()
         with self.client.session_transaction() as session:
@@ -122,7 +122,7 @@ class SmtpAdminRouteTests(unittest.TestCase):
         passphrase="SafePassword1234!"
         user={"id":945,"active":True,
               "password_hash":bcrypt.generate_password_hash(passphrase).decode()}
-        with patch("saas_login_recovery.cooldown_remaining",return_value=0), \
+        with patch("saas.auth.saas_login_recovery.cooldown_remaining",return_value=0), \
              patch.object(store,"user_by_email",return_value=user), \
              patch.object(settings,"save_password") as save:
             response=self.client.post("/saas/admin/seguranca/email",data={

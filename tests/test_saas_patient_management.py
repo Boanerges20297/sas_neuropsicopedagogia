@@ -6,10 +6,10 @@ import unittest
 
 from app import app
 from bta_license_client import LicenseDecision
-import saas_store as store
-import saas_patient_management as patients
-import saas_patient_management_routes as routes
-import saas_assessment_management as assessments
+from saas.core import saas_store as store
+from saas.patients import saas_patient_management as patients
+from saas.patients import saas_patient_management_routes as routes
+from saas.clinical import saas_assessment_management as assessments
 
 
 class Cursor:

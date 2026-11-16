@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from app import app
-import saas_ip_ban as bans
+from saas.auth import saas_ip_ban as bans
 
 
 class IpBanSecurityTests(unittest.TestCase):
@@ -102,7 +102,7 @@ class IpBanSecurityTests(unittest.TestCase):
         # Protected app route is blocked without reaching the view.
         self.assertEqual(self.route().status_code, 429)
         # The only public health probe must remain available.
-        with patch("saas_routes.store.one", return_value={"ok": 1}):
+        with patch("saas.core.saas_routes.store.one", return_value={"ok": 1}):
             health = self.route(path="/saas/saude")
         self.assertEqual(health.status_code, 200)
 

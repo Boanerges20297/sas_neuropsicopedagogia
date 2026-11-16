@@ -6,9 +6,9 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from app import app
-import saas_store as store
-import saas_test_governance as governance
-import saas_assessment_flow as assessments
+from saas.core import saas_store as store
+from saas.clinical import saas_test_governance as governance
+from saas.clinical import saas_assessment_flow as assessments
 from bta_license_client import LicenseDecision
 
 
@@ -164,9 +164,9 @@ class InstrumentEditorHTTPTests(unittest.TestCase):
             "must_change_password": 0})
         self.patches = [
             patch.object(store, "get_user", return_value=self.user),
-            patch("saas_routes.store.own_tenant",
+            patch("saas.core.saas_routes.store.own_tenant",
                   return_value={"id": 11, "nome": "Espaço de teste"}),
-            patch("saas_routes.licensed_tenant",
+            patch("saas.core.saas_routes.licensed_tenant",
                   return_value=({"id": 11, "nome": "Espaço de teste"},
                                 LicenseDecision(status="exempt"))),
         ]

@@ -5,8 +5,8 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from app import app
-import saas_store
-import saas_clinical_routes as routes
+from saas.core import saas_store
+from saas.clinical import saas_clinical_routes as routes
 from bta_license_client import LicenseDecision
 
 

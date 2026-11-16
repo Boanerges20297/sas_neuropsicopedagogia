@@ -22,7 +22,7 @@ app.config['SECRET_KEY'] = secret_key
 
 # Independent project-scoped IP bans (SQLite on Neuro's existing data volume).
 # Traefik remains the first line of defense; this catches recurrent abuse.
-import saas_ip_ban as _neuro_ip_ban
+from saas.auth import saas_ip_ban as _neuro_ip_ban
 
 
 @app.before_request
@@ -225,7 +225,7 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     if isinstance(user_id, str) and user_id.startswith("saas:"):
-        from saas_store import get_user
+        from saas.core.saas_store import get_user
         return get_user(user_id[5:])
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -694,7 +694,7 @@ def login():
 
 @app.before_request
 def require_password_rotation():
-    from saas_store import SaaSUser
+    from saas.core.saas_store import SaaSUser
     if (current_user.is_authenticated
             and not isinstance(current_user._get_current_object(), SaaSUser)
             and current_user.must_change_password
@@ -1248,7 +1248,7 @@ def user_area():
     return render_template('user_area.html')
 
 # SaaS MySQL routes remain separate from existing SQLite paths during migration.
-from saas_routes import bp as saas_blueprint
+from saas.core.saas_routes import bp as saas_blueprint
 app.register_blueprint(saas_blueprint)
 
 # Human-readable HTTP errors without disclosing internal permissions or stack traces.
@@ -1303,7 +1303,7 @@ if os.getenv('SAAS_PRIMARY', 'false').lower() == 'true':
 @app.before_request
 def isolate_saas_sessions_from_legacy_sqlite():
     """Never allow MySQL identities to authorize legacy SQLite routes."""
-    from saas_store import SaaSUser
+    from saas.core.saas_store import SaaSUser
     if (current_user.is_authenticated
             and isinstance(current_user._get_current_object(), SaaSUser)
             and request.blueprint != 'saas'

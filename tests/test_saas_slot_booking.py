@@ -6,10 +6,10 @@ from pathlib import Path
 from app import app
 from flask_login import login_user
 
-import saas_store as store
-import saas_care_store as care
-import saas_slot_booking as booking
-import saas_slot_routes as routes
+from saas.core import saas_store as store
+from saas.clinical import saas_care_store as care
+from saas.clinical import saas_slot_booking as booking
+from saas.clinical import saas_slot_routes as routes
 
 NOW = datetime(2026, 11, 10, 12, tzinfo=timezone.utc)
 START = datetime(2026, 11, 12, 12)
@@ -179,12 +179,14 @@ class SlotsContracts(TestCase):
         self.assertIn("FOREIGN KEY(pending_client_id,tenant_id)", schema)
         self.assertIn("chk_schedule_slot_state", schema)
         self.assertNotIn("DROP TABLE", schema.upper())
-        src = (Path(__file__).resolve().parents[1] / "saas_slot_booking.py").read_text(
+        src = (Path(__file__).resolve().parents[1] / "saas/clinical/saas_slot_booking.py").read_text(
             encoding="utf-8")
         self.assertNotIn("DELETE FROM care_schedule_slots", src)
         docker = (Path(__file__).resolve().parents[1] / "Dockerfile").read_text(
             encoding="utf-8")
-        self.assertIn("saas_slot_booking.py saas_slot_routes.py", docker)
+        self.assertIn("COPY --chown=neuro:neuro saas/ ./saas/", docker)
+        self.assertTrue((Path(__file__).resolve().parents[1] /
+                         "saas/clinical/saas_slot_routes.py").is_file())
 
 
 class PatientCalendarHttpTests(TestCase):

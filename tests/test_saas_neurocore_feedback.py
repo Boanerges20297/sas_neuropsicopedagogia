@@ -6,9 +6,9 @@ from unittest.mock import patch
 from app import app
 from bta_license_client import LicenseDecision
 from neurocore.assessment_feedback import received_test_feedback
-import saas_assessment_flow as assessments
-import saas_clinical_routes as routes
-import saas_store as store
+from saas.clinical import saas_assessment_flow as assessments
+from saas.clinical import saas_clinical_routes as routes
+from saas.core import saas_store as store
 
 
 DEFINITION = {

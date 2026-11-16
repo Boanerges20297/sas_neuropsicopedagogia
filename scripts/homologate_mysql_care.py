@@ -150,8 +150,8 @@ VALUES(201,301,101,'33333333-3333-4333-8333-333333333333','initial','in_person',
     # A linked guardian and a permission record are NOT enough to access a portal.
     if str(BASE) not in sys.path:
         sys.path.insert(0, str(BASE))
-    from saas_portal_policy import SELECT_ALLOWED
-    from saas_portal_activation_queue import QUEUE_SQL
+    from saas.patients.saas_portal_policy import SELECT_ALLOWED
+    from saas.patients.saas_portal_activation_queue import QUEUE_SQL
     admin_queue = QUEUE_SQL.replace("%s", "1", 1).replace("%s", "999", 1)
     owner_101_queue = QUEUE_SQL.replace("%s", "0", 1).replace("%s", "101", 1)
     owner_102_queue = QUEUE_SQL.replace("%s", "0", 1).replace("%s", "102", 1)
@@ -202,7 +202,7 @@ UPDATE care_portal_consents SET status='accepted',
           db=db)
     if mysql(grant_query, db=db):
         raise AssertionError("Revoked guardian still has access")
-    from saas_portal_policy import SELECT_SELF_ALLOWED
+    from saas.patients.saas_portal_policy import SELECT_SELF_ALLOWED
     self_query = SELECT_SELF_ALLOWED
     for value in ("105", "202", "302", "'appointments'"):
         self_query = self_query.replace("%s", value, 1)

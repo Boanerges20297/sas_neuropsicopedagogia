@@ -9,7 +9,7 @@ Este índice separa **referências operacionais**, **decisões**, **propostas ar
 
 ## Decisões de domínio
 
-- [Instrumentos clínicos e compartilhamento](decisions/INSTRUMENTOS_CLINICOS_2026-11-15.md) — decisão em validação local, sem publicação.
+- [Instrumentos clínicos e compartilhamento](decisions/INSTRUMENTOS_CLINICOS_2026-11-15.md) — implementação técnica publicada na release `0720baf`; validação clínica e autorização de instrumentos oficiais continuam pendentes.
 - [Relação entre conta, paciente e responsável](decisions/DECISAO_PACIENTE_CONTA_RESPONSAVEL_2026-11-07.md) — decisão aprovada, com status de implementação datado.
 
 ## Propostas e experimentos de arquitetura
@@ -22,6 +22,7 @@ Este índice separa **referências operacionais**, **decisões**, **propostas ar
 
 - `history/checkpoints/` — checkpoints datados para auditoria e recuperação.
 - `history/legacy/` — documentos de fases anteriores, incluindo os READMEs originais e antigos guias.
+- `history/legacy/assets/` — PDF, texto extraído e planilha do antigo questionário, preservados apenas como histórico; ferramentas correspondentes em `scripts/legacy/`.
 
 ## Disciplina documental
 
